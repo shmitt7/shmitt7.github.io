@@ -123,8 +123,7 @@
             });  
         }  
     });  
-      
-    // Инициализация  
+        
     if (window.appready) {  
         addHeaderButton();  
     } else {  
