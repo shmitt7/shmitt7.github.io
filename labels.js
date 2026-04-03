@@ -4,7 +4,7 @@
     if (window.contentLabels) return;  
     window.contentLabels = true;  
 
-    // Стили для лейблов фильмов  
+    // Стили для лейблов фильмов, для сериалов стандартная метка - красная 
     const style = document.createElement('style');  
     style.textContent = `  
         .card__type--movie { background: #1565C0 !important; color: #fff !important; }  
