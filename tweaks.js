@@ -103,3 +103,56 @@
                 run();
             }
         });
+    }
+})();                return originalPlay.call(this, data);
+            };
+        }
+        
+        // Удаляем кнопку ЕЩЁ в полной карточке, т.как она после отключений - пустая 
+        Lampa.Listener.follow('full', (event) => {
+            if (event.type === 'complite') {
+                $('.button--options').remove();
+            }
+        });
+        
+        // Удаляем иконки уведомлений
+        $('.head__action.open--notice, .head__action.notice--icon').remove();
+        
+        // Отключаем счетчик уведомлений, если он существует
+        if (Lampa.Notice?.drawCount) {
+            Lampa.Notice.drawCount = () => {};
+        }
+        
+        // Удаляем кнопки премиум функций и другие элементы
+        $('.head__action.open--premium, .head__action.open--feed, .head__action.open--broadcast, .black-friday__button').remove();
+        
+        // Функция для удаления истории просмотра и фокуса на первом торренте
+        const removeWatchedHistory = () => {
+            $('.watched-history').remove();
+            const firstTorrent = $('.torrent-item').first();
+            if (firstTorrent.length) {
+                Lampa.Controller.collectionFocus(firstTorrent, $('.scroll').first());
+            }
+        };
+        
+        // Запускаем удаление истории сразу
+        removeWatchedHistory();
+        
+        // Устанавливаем наблюдатель за изменениями DOM для автоматического удаления истории
+        new MutationObserver(removeWatchedHistory).observe(document.body, {
+            childList: true,
+            subtree: true
+        });
+        
+        // Добавляем стили для улучшения отображения сидов и раздач (размер цифр)
+        $('body').append('<style>.torrent-item__seeds span,.torrent-item__grabs span{font-weight:800;font-size:1.25em}</style>');
+    }
+    
+    if (window.appready) {
+        run();
+    } else {
+        Lampa.Listener.follow('app', (event) => {
+            if (event.type === 'ready') {
+                run();
+            }
+        })();
