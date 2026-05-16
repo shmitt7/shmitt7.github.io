@@ -3,7 +3,7 @@
     if (window.qualityPlugin) return;
     window.qualityPlugin = true;
     const CONFIG = {
-        SERVERS: ['https://jac.red', 'https://jr.maxvol.pro'],
+        SERVERS: ['https://jac.red', 'https://jr.maxvol.pro', 'https://jacred.stream', 'https://jac-red.ru'],
         QUALITY_SCORE: { '4K': 3, 'HD': 2, 'TS': 1 },
         CACHE_LIFE: 1440,
         OBSERVER_MARGIN: 100
