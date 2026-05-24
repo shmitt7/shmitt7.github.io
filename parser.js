@@ -85,6 +85,41 @@
             }
         });
     };
+    Lampa.Listener.follow('menu', function(e) {
+        if (e.type !== 'end') return;
+        setTimeout(function() {
+            var item = document.querySelector('[data-action="mytorrents"]');
+            if (item) item.remove();
+        }, 600);
+    });
+    Lampa.Listener.follow('activity', function(e) {
+        if (e.component !== 'bookmarks' || e.type !== 'start') return;
+        setTimeout(function() {
+            var line = document.querySelector('.activity--active .items-line');
+            if (!line) return;
+            var body = line.querySelector('.scroll__body');
+            if (body.querySelector('.torrents-btn')) return;
+            var btn = document.createElement('div');
+            btn.className = 'register layer--render layer--visible register--line selector torrents-btn';
+            var name = document.createElement('div');
+            name.className = 'register__name';
+            name.textContent = 'Торренты';
+            btn.appendChild(name);
+            var counter = document.createElement('div');
+            counter.className = 'register__counter';
+            btn.appendChild(counter);
+            btn.addEventListener('hover:enter', function() {
+                Lampa.Router.call('mytorrents', { title: 'Торренты' });
+            });
+            body.appendChild(btn);
+            Lampa.Controller.collectionAppend(btn);
+            Lampa.Torserver.my(function(result) {
+                counter.textContent = result.length;
+            }, function() {
+                counter.textContent = '0';
+            });
+        }, 0);
+    });
     Lampa.Manifest.plugins.unshift({
         type: 'video',
         name: 'Парсер',
