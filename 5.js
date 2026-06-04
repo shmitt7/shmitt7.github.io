@@ -50,4 +50,3 @@
     if (window.appready) run();
     else Lampa.Listener.follow('app', (e) => { if (e.type === 'ready') run(); });
 })();
-```
