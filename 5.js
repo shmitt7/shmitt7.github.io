@@ -80,21 +80,22 @@
         icon.addClass('jackett-servers-selector');  
         icon.hide();  
         Lampa.Listener.follow('activity', (e) => {  
-            if (e.type === 'start') {  
-                icon[e.component === 'torrents' ? 'show' : 'hide']();  
-            }  
+            if (e.type === 'start') icon[e.component === 'torrents' ? 'show' : 'hide']();  
         });  
-        const removeHistory = () => {  
-    const movie = Lampa.Activity.active()?.movie;  
-    if (movie && movie.number_of_seasons) return;  
-    $('.watched-history').remove();  
-    const firstTorrent = $('.torrent-item').first();  
-    if (firstTorrent.length) Lampa.Controller.collectionFocus(firstTorrent, $('.scroll').first());  
-};  
-        new MutationObserver(removeHistory).observe(document.body, { childList: true, subtree: true });  
-        $('body').append('<style>.torrent-item__seeds span,.torrent-item__grabs span{font-weight:800;font-size:1.25em}</style>');  
+        Lampa.Listener.follow('torrent', (e) => {  
+            if (e.type !== 'render') return;  
+            const movie = Lampa.Activity.active()?.movie;  
+            if (movie && movie.number_of_seasons) return;  
+            if (!$('.watched-history').length) return;  
+            $('.watched-history').remove();  
+            setTimeout(() => {  
+                const first = $('.torrent-item').first();  
+                if (first.length) Lampa.Controller.collectionFocus(first[0], $('.scroll').first()[0]);  
+            }, 0);  
+        });  
+        $('head').append('<style>.torrent-item__seeds span,.torrent-item__grabs span{font-weight:800;font-size:1.25em}</style>');  
     };  
-    Lampa.Manifest.plugins.unshift({  
+    if (Lampa.Manifest?.plugins) Lampa.Manifest.plugins.unshift({  
         type: 'video',  
         name: 'Парсер',  
         subtitle: 'Смотреть торрент',  
