@@ -85,10 +85,12 @@
             }  
         });  
         const removeHistory = () => {  
-            const movie = Lampa.Activity.active()?.movie;  
-            if (movie && movie.number_of_seasons) return;  
-            $('.watched-history').remove();  
-        };  
+    const movie = Lampa.Activity.active()?.movie;  
+    if (movie && movie.number_of_seasons) return;  
+    $('.watched-history').remove();  
+    const firstTorrent = $('.torrent-item').first();  
+    if (firstTorrent.length) Lampa.Controller.collectionFocus(firstTorrent, $('.scroll').first());  
+};  
         new MutationObserver(removeHistory).observe(document.body, { childList: true, subtree: true });  
         $('body').append('<style>.torrent-item__seeds span,.torrent-item__grabs span{font-weight:800;font-size:1.25em}</style>');  
     };  
