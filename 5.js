@@ -1,27 +1,116 @@
 (function() {  
     'use strict';  
-    window.plugin_shots_ready = true;  
-    Object.assign(window.lampa_settings || (window.lampa_settings = {}), {  
-        torrents_use: true, feed: false, services: false,  
-        lang_use: false, white_use: false, read_only: false, demo: false,  
+    if (window.torrentParser) return;  
+    window.torrentParser = true;  
+    const JACKETT_SERVERS = [  
+        'jac.red',  
+        '87.120.84.218:8443=777',  
+        'jacred.stream=pp',  
+        'ru.jacred.stream=pp',  
+        'jr.maxvol.pro',  
+        'jacred.pro',  
+        'jac-red.ru',  
+        'jacblack.ru:9117',  
+        'ru.jacred.pro',  
+        'jacred.freebie.tom.ru=1',  
+        'nmjc.duckdns.org',  
+    ];  
+    let switchTimer = null;  
+    const parseServer = (serverString) => {  
+        const parts = serverString.split('=');  
+        return { url: parts[0], key: parts[1] || '' };  
+    };  
+    const switchServer = (serverString) => {  
+        const activity = Lampa.Activity.active();  
+        if (!activity) return;  
+        const server = parseServer(serverString);  
+        const originalUrl = Lampa.Storage.get('jackett_url', '');  
+        const originalKey = Lampa.Storage.get('jackett_key', '');  
+        Lampa.Storage.set('jackett_url', server.url);  
+        Lampa.Storage.set('jackett_key', server.key);  
+        Lampa.Storage.set('jackett_interview', 'healthy');  
+        Lampa.Activity.replace({  
+            url: '',  
+            title: `Торренты - ${server.url}`,  
+            component: 'torrents',  
+            search: activity.search,  
+            movie: activity.movie,  
+            page: 1  
+        });  
+        if (switchTimer) clearTimeout(switchTimer);  
+        switchTimer = setTimeout(() => {  
+            Lampa.Storage.set('jackett_url', originalUrl);  
+            Lampa.Storage.set('jackett_key', originalKey);  
+            switchTimer = null;  
+        }, 1000);  
+    };  
+    const showServerSelector = () => {  
+        const mainServer = Lampa.Storage.get('jackett_main_server', '');  
+        const items = [  
+            { title: 'Короткий тап - поиск | Долгий тап - сделать основным', separator: true }  
+        ];  
+        JACKETT_SERVERS.forEach((serverString, index) => {  
+            const server = parseServer(serverString);  
+            const displayTitle = `${index + 1}. ${server.url}` + (server.key ? ` (${server.key})` : '') + (mainServer === serverString ? ' ★' : '');  
+            items.push({ title: displayTitle, serverString });  
+        });  
+        Lampa.Select.show({  
+            title: '',  
+            items,  
+            onSelect: (selected) => {  
+                if (selected?.serverString) switchServer(selected.serverString);  
+            },  
+            onLong: (selected) => {  
+                if (selected?.serverString) {  
+                    const server = parseServer(selected.serverString);  
+                    Lampa.Storage.set('jackett_url', server.url);  
+                    Lampa.Storage.set('jackett_key', server.key);  
+                    Lampa.Storage.set('jackett_main_server', selected.serverString);  
+                    showServerSelector();  
+                }  
+            },  
+            onBack: () => Lampa.Controller.toggle('head')  
+        });  
+    };  
+    const addHeaderButton = () => {  
+        const icon = Lampa.Head.addIcon(  
+            '<svg><use xlink:href="#sprite-torrent"></use></svg>',  
+            showServerSelector  
+        );  
+        icon.addClass('jackett-servers-selector');  
+        icon.hide();  
+        Lampa.Listener.follow('activity', (e) => {  
+            if (e.type === 'start') {  
+                icon[e.component === 'torrents' ? 'show' : 'hide']();  
+            }  
+        });  
+        const removeHistory = () => {  
+            const movie = Lampa.Activity.active()?.movie;  
+            if (movie && movie.number_of_seasons) return;  
+            $('.watched-history').remove();  
+        };  
+        new MutationObserver(removeHistory).observe(document.body, { childList: true, subtree: true });  
+        $('body').append('<style>.torrent-item__seeds span,.torrent-item__grabs span{font-weight:800;font-size:1.25em}</style>');  
+    };  
+    Lampa.Manifest.plugins.unshift({  
+        type: 'video',  
+        name: 'Парсер',  
+        subtitle: 'Смотреть торрент',  
+        onContextMenu: () => {},  
+        onContextLauch: (object) => {  
+            Lampa.Activity.push({  
+                component: 'torrents',  
+                search: object.title,  
+                movie: object,  
+                clarification: true  
+            });  
+        }  
     });  
-    Object.assign(  
-        window.lampa_settings.disable_features || (window.lampa_settings.disable_features = {}),  
-        { dmca: true, lgbt: true, ai: true, subscribe: true, blacklist: true, persons: true, ads: true, remote_configuration: true }  
-    );  
-    function run() {  
-        $('.head .open--broadcast, .head .open--profile, .head .notice--icon').remove();  
-        if (Lampa.Notice?.drawCount) Lampa.Notice.drawCount = () => {};  
-        $('.menu [data-action="catalog"], .menu [data-action="relise"], .menu [data-action="timetable"], .menu [data-action="about"], .menu [data-action="mytorrents"]').remove();  
-        const editItem = $('.menu [data-action="edit"]').detach();  
-        $('.menu .nosort:first .menu__list').append(editItem);  
-        const lastNosort = $('.menu .nosort:last');  
-        lastNosort.prev('.menu__split').remove();  
-        lastNosort.remove();  
-        Lampa.Listener.follow('full', (e) => {  
-            if (e.type === 'complite') e.object.activity.render().find('.button--options').remove();  
+    if (window.appready) {  
+        addHeaderButton();  
+    } else {  
+        Lampa.Listener.follow('app', (e) => {  
+            if (e.type === 'ready') addHeaderButton();  
         });  
     }  
-    if (window.appready) run();  
-    else Lampa.Listener.follow('app', (e) => { if (e.type === 'ready') run(); });  
 })();
