@@ -17,6 +17,13 @@
         const $container = e.body.find('.buttons--container');  
         const $target = e.body.find('.full-start-new__buttons');  
         BUTTONS.forEach(({selector, svg}) => $container.find(selector).html(svg));  
-        $container.children().prependTo($target);  
+        const $moved = $container.children();  
+        $moved.prependTo($target);  
+        if (e.link && e.link.items && e.link.items[0]) {  
+            const start = e.link.items[0];  
+            $moved.filter('.selector').on('hover:focus hover:enter hover:hover hover:touch', (ev) => {  
+                start.last = ev.target;  
+            });  
+        }  
     });  
 })();
