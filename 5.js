@@ -50,11 +50,11 @@
     }).observe(document.body, { childList: true, subtree: true });  
     document.querySelectorAll('.card').forEach(processCard);  
     Lampa.Listener.follow('full', e => {  
-        if (e.type !== 'complite' || !e.data?.movie) return;  
-        const poster = document.querySelector('.full-start-new__poster, .full-start__poster');  
-        if (!poster) return;  
-        poster.querySelector('.card__type')?.remove();  
-        const label = getLabel(e.data.movie);  
-        if (label) poster.appendChild(createLabel(label, !!e.data.movie.name));  
-    });  
+    if (e.type !== 'complite' || !e.data?.movie) return;  
+    const poster = e.body.find('.full-start-new__poster, .full-start__poster')[0];  
+    if (!poster) return;  
+    poster.querySelector('.card__type')?.remove();  
+    const label = getLabel(e.data.movie);  
+    if (label) poster.appendChild(createLabel(label, !!e.data.movie.name));  
+});  
 })();
