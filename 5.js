@@ -15,59 +15,43 @@
         'jacred.freebie.tom.ru=1',  
         'nmjc.duckdns.org',  
     ];  
-    let switchTimer = null;  
-    const parseServer = (serverString) => {  
-        const parts = serverString.split('=');  
-        return { url: parts[0], key: parts[1] || '' };  
-    };  
+    let switchTimer;  
+    const parseServer = s => { const p = s.split('='); return { url: p[0], key: p[1] || '' }; };  
     const switchServer = (serverString) => {  
         const activity = Lampa.Activity.active();  
         if (!activity) return;  
-        const server = parseServer(serverString);  
+        const srv = parseServer(serverString);  
         const originalUrl = Lampa.Storage.get('jackett_url', '');  
         const originalKey = Lampa.Storage.get('jackett_key', '');  
-        Lampa.Storage.set('jackett_url', server.url);  
-        Lampa.Storage.set('jackett_key', server.key);  
+        Lampa.Storage.set('jackett_url', srv.url);  
+        Lampa.Storage.set('jackett_key', srv.key);  
         Lampa.Storage.set('jackett_interview', 'healthy');  
-        Lampa.Activity.replace({  
-            url: '',  
-            title: `Торренты - ${server.url}`,  
-            component: 'torrents',  
-            search: activity.search,  
-            movie: activity.movie,  
-            page: 1  
-        });  
-        if (switchTimer) clearTimeout(switchTimer);  
+        Lampa.Activity.replace({ url: '', title: `Торренты - ${srv.url}`, component: 'torrents', search: activity.search, movie: activity.movie, page: 1 });  
+        clearTimeout(switchTimer);  
         switchTimer = setTimeout(() => {  
             Lampa.Storage.set('jackett_url', originalUrl);  
             Lampa.Storage.set('jackett_key', originalKey);  
-            switchTimer = null;  
         }, 1000);  
     };  
     const showServerSelector = () => {  
         const mainServer = Lampa.Storage.get('jackett_main_server', '');  
-        const items = [  
-            { title: 'Короткий тап - поиск | Долгий тап - сделать основным', separator: true }  
-        ];  
-        JACKETT_SERVERS.forEach((serverString, index) => {  
-            const server = parseServer(serverString);  
-            const displayTitle = `${index + 1}. ${server.url}` + (server.key ? ` (${server.key})` : '') + (mainServer === serverString ? ' ★' : '');  
-            items.push({ title: displayTitle, serverString });  
-        });  
         Lampa.Select.show({  
             title: '',  
-            items,  
-            onSelect: (selected) => {  
-                if (selected?.serverString) switchServer(selected.serverString);  
-            },  
-            onLong: (selected) => {  
-                if (selected?.serverString) {  
-                    const server = parseServer(selected.serverString);  
-                    Lampa.Storage.set('jackett_url', server.url);  
-                    Lampa.Storage.set('jackett_key', server.key);  
-                    Lampa.Storage.set('jackett_main_server', selected.serverString);  
-                    showServerSelector();  
-                }  
+            items: [  
+                { title: 'Короткий тап - поиск | Долгий тап - сделать основным', separator: true },  
+                ...JACKETT_SERVERS.map((s, i) => {  
+                    const srv = parseServer(s);  
+                    return { title: `${i + 1}. ${srv.url}${srv.key ? ` (${srv.key})` : ''}${mainServer === s ? ' ★' : ''}`, serverString: s };  
+                })  
+            ],  
+            onSelect: (sel) => { if (sel?.serverString) switchServer(sel.serverString); },  
+            onLong: (sel) => {  
+                if (!sel?.serverString) return;  
+                const srv = parseServer(sel.serverString);  
+                Lampa.Storage.set('jackett_url', srv.url);  
+                Lampa.Storage.set('jackett_key', srv.key);  
+                Lampa.Storage.set('jackett_main_server', sel.serverString);  
+                showServerSelector();  
             },  
             onBack: () => Lampa.Controller.toggle('head')  
         });  
@@ -89,36 +73,23 @@
             var counter = document.createElement('div');  
             counter.className = 'register__counter';  
             btn.appendChild(counter);  
-            btn.addEventListener('hover:enter', function() {  
-                Lampa.Router.call('mytorrents', { title: 'Торренты' });  
-            });  
+            btn.addEventListener('hover:enter', () => Lampa.Router.call('mytorrents', { title: 'Торренты' }));  
             body.appendChild(btn);  
             Lampa.Controller.collectionAppend(btn);  
-            Lampa.Torserver.my(function(result) {  
-                counter.textContent = result.length;  
-            }, function() {  
-                counter.textContent = '0';  
-            });  
+            Lampa.Torserver.my(r => counter.textContent = r.length, () => counter.textContent = 0);  
         }, 0);  
     });  
     const addHeaderButton = () => {  
-        const icon = Lampa.Head.addIcon(  
-            '<svg><use xlink:href="#sprite-torrent"></use></svg>',  
-            showServerSelector  
-        );  
+        const icon = Lampa.Head.addIcon('<svg><use xlink:href="#sprite-torrent"></use></svg>', showServerSelector);  
         icon.addClass('jackett-servers-selector');  
         icon.hide();  
         Lampa.Listener.follow('activity', (e) => {  
             if (e.type !== 'start') return;  
-            if (e.component === 'torrents') {  
-                icon.show();  
-                const movie = e.object?.movie;  
-                const isSerial = !!(movie && movie.number_of_seasons);  
-                const activeEl = document.querySelector('.activity--active');  
-                if (activeEl) activeEl.classList.toggle('torrents--serial', isSerial);  
-            } else {  
-                icon.hide();  
-            }  
+            const isTorrents = e.component === 'torrents';  
+            icon[isTorrents ? 'show' : 'hide']();  
+            if (!isTorrents) return;  
+            const movie = e.object?.movie;  
+            document.querySelector('.activity--active')?.classList.toggle('torrents--serial', !!(movie && movie.number_of_seasons));  
         });  
         $('head').append('<style>.torrent-item__seeds span,.torrent-item__grabs span{font-weight:800;font-size:1.25em}.torrent-list .watched-history{display:none}.torrents--serial .torrent-list .watched-history{display:flex}</style>');  
     };  
@@ -127,20 +98,8 @@
         name: 'Парсер',  
         subtitle: 'Смотреть торрент',  
         onContextMenu: () => {},  
-        onContextLauch: (object) => {  
-            Lampa.Activity.push({  
-                component: 'torrents',  
-                search: object.title,  
-                movie: object,  
-                clarification: true  
-            });  
-        }  
+        onContextLauch: (object) => { Lampa.Activity.push({ component: 'torrents', search: object.title, movie: object, clarification: true }); }  
     });  
-    if (window.appready) {  
-        addHeaderButton();  
-    } else {  
-        Lampa.Listener.follow('app', (e) => {  
-            if (e.type === 'ready') addHeaderButton();  
-        });  
-    }  
+    if (window.appready) addHeaderButton();  
+    else Lampa.Listener.follow('app', (e) => { if (e.type === 'ready') addHeaderButton(); });  
 })();
