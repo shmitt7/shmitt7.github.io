@@ -16,7 +16,6 @@
         'nmjc.duckdns.org',  
     ];  
     let switchTimer = null;  
-    let _focusTimer = null;  
     const parseServer = (serverString) => {  
         const parts = serverString.split('=');  
         return { url: parts[0], key: parts[1] || '' };  
@@ -114,23 +113,14 @@
             if (e.component === 'torrents') {  
                 icon.show();  
                 const movie = e.object?.movie;  
+                const isSerial = !!(movie && movie.number_of_seasons);  
                 const activeEl = document.querySelector('.activity--active');  
-                if (activeEl) activeEl.classList.toggle('torrents--movie', !!(movie && !movie.number_of_seasons));  
+                if (activeEl) activeEl.classList.toggle('torrents--serial', isSerial);  
             } else {  
                 icon.hide();  
             }  
         });  
-        Lampa.Listener.follow('torrent', (e) => {  
-            if (e.type !== 'render') return;  
-            const movie = Lampa.Activity.active()?.movie;  
-            if (movie && movie.number_of_seasons) return;  
-            clearTimeout(_focusTimer);  
-            _focusTimer = setTimeout(() => {  
-                const first = $('.activity--active .torrent-item').first();  
-                if (first.length) Lampa.Controller.collectionFocus(first[0], $('.activity--active .scroll')[0]);  
-            }, 0);  
-        });  
-        $('head').append('<style>.torrent-item__seeds span,.torrent-item__grabs span{font-weight:800;font-size:1.25em}.torrents--movie .watched-history{display:none}</style>');  
+        $('head').append('<style>.torrent-item__seeds span,.torrent-item__grabs span{font-weight:800;font-size:1.25em}.torrent-list .watched-history{display:none}.torrents--serial .torrent-list .watched-history{display:flex}</style>');  
     };  
     if (Lampa.Manifest?.plugins) Lampa.Manifest.plugins.unshift({  
         type: 'video',  
