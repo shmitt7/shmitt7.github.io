@@ -16,6 +16,7 @@
         'nmjc.duckdns.org',
     ];
     let switchTimer = null;
+    let _removeHistoryTimer = null;
     const parseServer = (serverString) => {
         const parts = serverString.split('=');
         return { url: parts[0], key: parts[1] || '' };
@@ -115,11 +116,13 @@
             if (e.type !== 'render') return;
             const movie = Lampa.Activity.active()?.movie;
             if (movie && movie.number_of_seasons) return;
-            if (!$('.watched-history').length) return;
-            $('.watched-history').remove();
-            setTimeout(() => {
-                const first = $('.torrent-item').first();
-                if (first.length) Lampa.Controller.collectionFocus(first[0], $('.scroll').first()[0]);
+            clearTimeout(_removeHistoryTimer);
+            _removeHistoryTimer = setTimeout(() => {
+                const wh = $('.activity--active .watched-history');
+                if (!wh.length) return;
+                wh.remove();
+                const first = $('.activity--active .torrent-item').first();
+                if (first.length) Lampa.Controller.collectionFocus(first[0], $('.activity--active .scroll')[0]);
             }, 0);
         });
         $('head').append('<style>.torrent-item__seeds span,.torrent-item__grabs span{font-weight:800;font-size:1.25em}</style>');
