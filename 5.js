@@ -2,10 +2,10 @@
     'use strict';  
     if (window.qualityPlugin) return;  
     window.qualityPlugin = true;  
-    const network = new Lampa.Reguest();  
     document.head.insertAdjacentHTML('beforeend', '<style>.card__quality:not(.card__quality-custom),.tag--quality:not(.quality-badge-custom){display:none!important}</style>');  
-    const QUALITY_SCORE = { '4K': 3, 'HD': 2, 'TS': 1 };  
     const SERVERS = ['https://jac.red', 'https://jr.maxvol.pro'];  
+    const QUALITY_SCORE = { '4K': 3, 'HD': 2, 'TS': 1 };  
+    const net = new Lampa.Reguest();  
     function getQuality(title) {  
         if (!title) return null;  
         if (/\b(ts|telesync|telecine|cam|camrip|workprint|wp|scr|screener|dvdscr)\b/i.test(title) || /звук\s*с\s*ts|sound\s*ts|audio\s*ts|dub\s*ts/i.test(title)) return 'TS';  
@@ -15,44 +15,46 @@
     }  
     function fetchQuality(data, callback) {  
         const title = data.title || data.name;  
-        const year = (data.release_date || data.first_air_date || '').slice(0, 4) || null;  
+        const yearStr = (data.release_date || data.first_air_date || '').substring(0, 4);  
+        const targetYear = parseInt(yearStr) || null;  
         let serverIndex = 0;  
-        const titles = [];  
-        const tryRequest = () => {  
-            if (serverIndex >= SERVERS.length) {  
-                if (!titles.length) return callback(null);  
-                let tsCount = 0, best = { q: null, s: -1 };  
-                for (const t of titles) {  
-                    const q = getQuality(t);  
-                    if (q === 'TS') tsCount++;  
-                    const s = q ? QUALITY_SCORE[q] : -1;  
-                    if (s > best.s) best = { q, s };  
-                }  
-                return callback(tsCount / titles.length >= 0.5 ? 'TS' : best.q);  
+        let titles = [];  
+        const analyzeResults = () => {  
+            if (!titles.length) return callback(null);  
+            let tsCount = 0;  
+            let best = { q: null, s: -1 };  
+            for (const t of titles) {  
+                const q = getQuality(t);  
+                if (q === 'TS') tsCount++;  
+                const s = q ? QUALITY_SCORE[q] : -1;  
+                if (s > best.s) best = { q, s };  
             }  
-            const url = SERVERS[serverIndex] + '/api/v2.0/indexers/all/results?apikey=&Query=' + encodeURIComponent(title) + (year ? '&year=' + year : '');  
-            network.silent(url, (res) => {  
-                for (const r of (res.Results || [])) {  
-                    const relYear = parseInt(r.info?.released || r.year);  
-                    if (!year || !relYear || Math.abs(relYear - parseInt(year)) <= 1) titles.push(r.Title);  
-                }  
+            callback((tsCount / titles.length >= 0.5) ? 'TS' : best.q);  
+        };  
+        const tryRequest = () => {  
+            if (serverIndex >= SERVERS.length) return analyzeResults();  
+            const url = SERVERS[serverIndex] + '/api/v2.0/indexers/all/results?apikey=&Query=' + encodeURIComponent(title) + (targetYear ? '&year=' + targetYear : '');  
+            net.silent(url, (res) => {  
+                try {  
+                    const results = res.Results || [];  
+                    for (const r of results) {  
+                        const relYear = parseInt(r.info?.released || r.year);  
+                        if (!targetYear || !relYear || Math.abs(relYear - targetYear) <= 1) titles.push(r.Title);  
+                    }  
+                } catch(e) {}  
                 serverIndex++;  
                 tryRequest();  
-            }, () => { serverIndex++; tryRequest(); }, false, { timeout: 10000, cache: { life: 1440 } });  
+            }, () => { serverIndex++; tryRequest(); });  
         };  
         tryRequest();  
     }  
     function addBadge(card, q) {  
-        const view = card.querySelector('.card__view');  
-        if (!view) return;  
-        let badge = card.querySelector('.card__quality-custom');  
-        if (!badge) {  
-            badge = document.createElement('div');  
-            badge.className = 'card__quality card__quality-custom';  
-            badge.style.cssText = 'position:absolute;left:-0.8em;bottom:3em;padding:0.4em;background:#ffe216;color:#000;font-size:0.8em;border-radius:0.3em;text-transform:uppercase;z-index:1';  
-            view.appendChild(badge);  
-        }  
+        card.querySelectorAll('.card__quality-custom').forEach(el => el.remove());  
+        const badge = document.createElement('div');  
+        badge.className = 'card__quality card__quality-custom';  
         badge.textContent = q;  
+        const view = card.querySelector('.card__view');  
+        if (view) view.appendChild(badge);  
     }  
     const intersectionObserver = new IntersectionObserver((entries) => {  
         for (const entry of entries) {  
