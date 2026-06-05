@@ -1,29 +1,60 @@
 (function() {  
     'use strict';  
-    if (window.watchButtons) return;  
-    window.watchButtons = true;  
-    const BUTTONS = [  
-        {  
-            selector: '.view--torrent',  
-            svg: `<svg width="24" height="24" viewBox="0 0 48 48"><path fill="#4caf50" d="M23.501,44.125c11.016,0,20-8.984,20-20c0-11.015-8.984-20-20-20c-11.016,0-20,8.985-20,20C3.501,35.141,12.485,44.125,23.501,44.125z"/><path fill="#fff" d="M43.252,27.114C39.718,25.992,38.055,19.625,34,11l-7,1.077c1.615,4.905,8.781,16.872,0.728,18.853C20.825,32.722,17.573,20.519,15,14l-8,2l10.178,27.081c1.991,0.67,4.112,1.044,6.323,1.044c0.982,0,1.941-0.094,2.885-0.232l-4.443-8.376c6.868,1.552,12.308-0.869,12.962-6.203c1.727,2.29,4.089,3.183,6.734,3.172C42.419,30.807,42.965,29.006,43.252,27.114z"/></svg><span>Торренты</span>`  
-        },  
-        {  
-            selector: '.view--trailer',  
-            svg: `<svg width="24" height="24" viewBox="0 0 48 48"><path d="M47.044 12.3709C46.7726 11.3497 46.2378 10.4178 45.493 9.66822C44.7483 8.91869 43.8197 8.37791 42.8003 8.1C39.0476 7.09091 24.0476 7.09091 24.0476 7.09091C24.0476 7.09091 9.04761 7.09091 5.29488 8.1C4.27547 8.37791 3.34693 8.91869 2.60218 9.66822C1.85744 10.4178 1.32262 11.3497 1.05124 12.3709C0.0476075 16.14 0.0476074 24 0.0476074 24C0.0476074 24 0.0476075 31.86 1.05124 35.6291C1.32262 36.6503 1.85744 37.5822 2.60218 38.3318C3.34693 39.0813 4.27547 39.6221 5.29488 39.9C9.04761 40.9091 24.0476 40.9091 24.0476 40.9091C24.0476 40.9091 39.0476 40.9091 42.8003 39.9C43.8197 39.6221 44.7483 39.0813 45.493 38.3318C46.2378 37.5822 46.7726 36.6503 47.044 35.6291C48.0476 31.86 48.0476 24 48.0476 24C48.0476 24 48.0476 16.14 47.044 12.3709Z" fill="#FF0302"/><path d="M19.1385 31.1373V16.8628L31.684 24.0001L19.1385 31.1373Z" fill="#FEFEFE"/></svg><span>Трейлеры</span>`  
+    if (window.contentLabels) return;  
+    window.contentLabels = true;  
+    document.head.insertAdjacentHTML('beforeend', '<style>.card__type--movie{background:#1565C0!important;color:#fff!important}</style>');  
+    const allGenres = {  
+        28:'Боевик',12:'Приключения',35:'Комедия',80:'Криминал',  
+        18:'Драма',10751:'Семейный',14:'Фэнтези',36:'История',  
+        27:'Ужасы',10402:'Музыка',9648:'Детектив',10749:'Мелодрама',  
+        878:'Фантастика',10770:'Телефильм',53:'Триллер',10752:'Военный',  
+        37:'Вестерн',10759:'Экшен',10762:'Детский',10765:'НФ и Фэнтези',  
+        10768:'Война и Политика'  
+    };  
+    function getLabel(d) {  
+        if (!d || d.profile_path !== undefined || d.known_for_department) return '';  
+        const isTv = !!d.name;  
+        const ids = Array.isArray(d.genres) ? d.genres.map(g => g?.id ?? g) : (d.genre_ids || []);  
+        if (ids.includes(16) && d.original_language === 'ja') return 'Аниме';  
+        if (ids.includes(10763)) return 'Новости';  
+        if (ids.includes(10767)) return 'Ток-шоу';  
+        if (ids.includes(10764)) return 'Реалити-шоу';  
+        if (ids.includes(99)) return 'Документальный';  
+        if (ids.includes(10766)) return 'Мыльная опера';  
+        if (ids.includes(16)) return isTv ? 'Мультсериал' : 'Мультфильм';  
+        return allGenres[ids[0]] || (isTv ? 'Сериал' : 'Фильм');  
+    }  
+    function createLabel(label, isTv) {  
+        const el = document.createElement('div');  
+        el.className = 'card__type ' + (isTv ? 'card__type--tv' : 'card__type--movie');  
+        el.textContent = label;  
+        return el;  
+    }  
+    function processCard(card) {  
+        if (!card.card_data) return;  
+        card.querySelectorAll('.card__type').forEach(el => { if (el.textContent === 'TV') el.remove(); });  
+        if (card.querySelector('.card__type')) return;  
+        const view = card.querySelector('.card__view');  
+        if (!view) return;  
+        const label = getLabel(card.card_data);  
+        if (label) view.appendChild(createLabel(label, !!card.card_data.name));  
+    }  
+    new MutationObserver((mutations) => {  
+        for (const m of mutations) {  
+            for (const node of m.addedNodes) {  
+                if (node.nodeType !== 1) continue;  
+                if (node.classList?.contains('card')) processCard(node);  
+                node.querySelectorAll?.('.card').forEach(processCard);  
+            }  
         }  
-    ];  
-    Lampa.Listener.follow('full', (e) => {  
-        if (e.type !== 'complite') return;  
-        const $container = e.body.find('.buttons--container');  
-        const $target = e.body.find('.full-start-new__buttons');  
-        BUTTONS.forEach(({selector, svg}) => $container.find(selector).html(svg));  
-        const $moved = $container.children();  
-        $moved.prependTo($target);  
-        if (e.link && e.link.items && e.link.items[0]) {  
-            const start = e.link.items[0];  
-            $moved.filter('.selector').on('hover:focus hover:enter hover:hover hover:touch', (ev) => {  
-                start.last = ev.target;  
-            });  
-        }  
+    }).observe(document.body, { childList: true, subtree: true });  
+    document.querySelectorAll('.card').forEach(processCard);  
+    Lampa.Listener.follow('full', e => {  
+        if (e.type !== 'complite' || !e.data?.movie) return;  
+        const poster = document.querySelector('.full-start-new__poster, .full-start__poster');  
+        if (!poster) return;  
+        poster.querySelector('.card__type')?.remove();  
+        const label = getLabel(e.data.movie);  
+        if (label) poster.appendChild(createLabel(label, !!e.data.movie.name));  
     });  
 })();
