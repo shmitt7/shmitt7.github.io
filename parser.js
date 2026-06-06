@@ -57,26 +57,26 @@
             onBack: () => Lampa.Controller.toggle('head')  
         });  
     };  
-    Lampa.Listener.follow('activity', function(e) {  
+    Lampa.Listener.follow('activity', (e) => {  
         if (e.component !== 'bookmarks' || e.type !== 'start') return;  
-        setTimeout(function() {  
-            var line = document.querySelector('.activity--active .items-line');  
+        setTimeout(() => {  
+            const line = document.querySelector('.activity--active .items-line');  
             if (!line) return;  
-            var body = line.querySelector('.scroll__body');  
+            const body = line.querySelector('.scroll__body');  
             if (body.querySelector('.torrents-btn')) return;  
-            var btn = document.createElement('div');  
+            const btn = document.createElement('div');  
             btn.className = 'register layer--render layer--visible register--line selector torrents-btn';  
             btn.setAttribute('data-action', 'mytorrents');  
-            var name = document.createElement('div');  
+            const name = document.createElement('div');  
             name.className = 'register__name';  
             name.textContent = 'Торренты';  
             btn.appendChild(name);  
-            var counter = document.createElement('div');  
+            const counter = document.createElement('div');  
             counter.className = 'register__counter';  
             btn.appendChild(counter);  
-            btn.addEventListener('hover:enter', () => Lampa.Router.call('mytorrents', { title: 'Торренты' }));  
+            $(btn).on('hover:enter', () => Lampa.Router.call('mytorrents', { title: 'Торренты' }));  
             body.appendChild(btn);  
-            Lampa.Controller.collectionAppend(btn);  
+            Lampa.Controller.collectionAppend($(btn));  
             Lampa.Torserver.my(r => counter.textContent = r.length, () => counter.textContent = 0);  
         }, 0);  
     });  
