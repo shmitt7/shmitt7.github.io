@@ -35,13 +35,11 @@
             if (serverIndex >= SERVERS.length) return analyzeResults();  
             const url = SERVERS[serverIndex] + '/api/v2.0/indexers/all/results?apikey=&Query=' + encodeURIComponent(title) + (targetYear ? '&year=' + targetYear : '');  
             net.silent(url, (res) => {  
-                try {  
-                    const results = res.Results || [];  
-                    for (const r of results) {  
-                        const relYear = parseInt(r.info?.released || r.year);  
-                        if (!targetYear || !relYear || Math.abs(relYear - targetYear) <= 1) titles.push(r.Title);  
-                    }  
-                } catch(e) {}  
+                const results = res?.Results || [];  
+                for (const r of results) {  
+                    const relYear = parseInt(r.info?.released || r.year);  
+                    if (!targetYear || !relYear || Math.abs(relYear - targetYear) <= 1) titles.push(r.Title);  
+                }  
                 serverIndex++;  
                 tryRequest();  
             }, () => { serverIndex++; tryRequest(); });  
