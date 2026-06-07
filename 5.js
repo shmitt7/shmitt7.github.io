@@ -187,10 +187,6 @@
         var qualityObserver = null;
         var kpObserver = null;
         var currentFullComp = null;
-
-        // Map: fullComp -> { metaBox, rateAnchor }
-        // Нужен для корректного удаления элементов при destroy
-        // и восстановления ссылок при archive (возврат назад)
         var _compData = new Map();
 
         Lampa.Listener.follow('full', function (e) {
@@ -202,6 +198,9 @@
             var movie = e.data.movie;
             var fullComp = e.link;
             currentFullComp = fullComp;
+
+            // Сохраняем эпизоды из e.data — они доступны только здесь, до setTimeout
+            var episodesList = e.data.episodes && e.data.episodes.episodes;
 
             $('body').addClass('fsc--open').removeClass('fsc--scrolled');
             if (!Lampa.Storage.field('card_interfice_cover')) $('body').removeClass('card--no-cover');
@@ -272,26 +271,38 @@
                         if (totEps)  sp.push(Lampa.Lang.translate('title_episodes') + ': ' + totEps);
                     }
 
-                    // ── ИСПРАВЛЕНИЕ 1: обрабатываем next_episode_to_air с датой и без ──
-                    if (movie.next_episode_to_air) {
-                        var nextEp  = movie.next_episode_to_air;
-                        var airStr  = nextEp.air_date;
-                        if (airStr) {
-                            var airDate  = Lampa.Utils.parseTime(airStr).short;
-                            var daysLeft = Math.ceil((Lampa.Utils.parseToDate(airStr).getTime() - Date.now()) / 86400000);
-                            if (daysLeft > 0) {
-                                hasNextEp = true;
-                                sp.push(
-                                    Lampa.Lang.translate('full_next_episode') + ': ' + airDate +
-                                    ' / ' + Lampa.Lang.translate('full_episode_days_left') + ': ' + daysLeft
-                                );
-                            }
-                        } else if (nextEp.episode_number) {
-                            // Дата ещё не объявлена, но эпизод известен
+                    // ── Следующий эпизод: сначала next_episode_to_air, потом из списка эпизодов ──
+                    var now = Date.now();
+
+                    if (movie.next_episode_to_air && movie.next_episode_to_air.air_date) {
+                        var airStr   = movie.next_episode_to_air.air_date;
+                        var daysLeft = Math.ceil((Lampa.Utils.parseToDate(airStr).getTime() - now) / 86400000);
+                        if (daysLeft > 0) {
                             hasNextEp = true;
                             sp.push(
-                                Lampa.Lang.translate('full_next_episode') + ': ' +
-                                'S' + (nextEp.season_number || '?') + 'E' + nextEp.episode_number
+                                Lampa.Lang.translate('full_next_episode') + ': ' + Lampa.Utils.parseTime(airStr).short +
+                                ' / ' + Lampa.Lang.translate('full_episode_days_left') + ': ' + daysLeft
+                            );
+                        }
+                    }
+
+                    // Запасной источник: эпизоды из e.data.episodes.episodes
+                    // (те же данные, что Lampa показывает в секции эпизодов ниже)
+                    if (!hasNextEp && episodesList && episodesList.length) {
+                        var nextEpFromList = null;
+                        for (var i = 0; i < episodesList.length; i++) {
+                            if (episodesList[i].air_date && Lampa.Utils.parseToDate(episodesList[i].air_date).getTime() > now) {
+                                nextEpFromList = episodesList[i];
+                                break;
+                            }
+                        }
+                        if (nextEpFromList) {
+                            var airStr2   = nextEpFromList.air_date;
+                            var daysLeft2 = Math.ceil((Lampa.Utils.parseToDate(airStr2).getTime() - now) / 86400000);
+                            hasNextEp = true;
+                            sp.push(
+                                Lampa.Lang.translate('full_next_episode') + ': ' + Lampa.Utils.parseTime(airStr2).short +
+                                ' / ' + Lampa.Lang.translate('full_episode_days_left') + ': ' + daysLeft2
                             );
                         }
                     }
@@ -339,7 +350,6 @@
                 var rateAnchor = $('<div class="full-start-new__rate-line fsc-rate-anchor" style="display:none"></div>');
                 render.find('.full-start-new').append(rateAnchor);
 
-                // Сохраняем ссылки на элементы этого компонента
                 _compData.set(fullComp, { metaBox: metaBox, rateAnchor: rateAnchor });
 
                 qualityObserver = new MutationObserver(function (mutations) {
@@ -413,10 +423,12 @@
                     if (cacheKey in _logoCache) {
                         if (_logoCache[cacheKey]) applyLogo(_logoCache[cacheKey]);
                     } else {
+                        // api_key добавляется вручную — TMDB.api() его НЕ добавляет автоматически
                         $.get(
                             Lampa.TMDB.api(
                                 mediaType + '/' + movie.id +
-                                '/images?language=' + lang +
+                                '/images?api_key=' + Lampa.TMDB.key() +
+                                '&language=' + lang +
                                 '&include_image_language=' + lang + ',en'
                             ),
                             function (data) {
@@ -448,11 +460,9 @@
         });
 
         Lampa.Listener.follow('activity', function (e) {
-            // ── ИСПРАВЛЕНИЕ 2: восстанавливаем вид при возврате назад ──
             if (e.type === 'archive' && e.component === 'full') {
                 $('body').addClass('fsc--open').removeClass('fsc--scrolled');
                 if (!Lampa.Storage.field('card_interfice_cover')) $('body').removeClass('card--no-cover');
-                // Обновляем currentFullComp на восстановленный компонент
                 currentFullComp = e.object.activity.component;
             }
 
@@ -463,15 +473,10 @@
                 var destroyedComp = e.object && e.object.activity && e.object.activity.component;
 
                 if (destroyedComp) {
-                    // Сбрасываем флаг скролла уничтожаемого компонента
-                    // (после destroy все функции обнулены, но свойства ещё доступны)
                     if (destroyedComp.scroll) destroyedComp.scroll._fscWrapped = false;
-                    // Удаляем запись из Map
                     _compData.delete(destroyedComp);
                 }
 
-                // Убираем fsc--open только если уничтожается ТЕКУЩАЯ активная карточка,
-                // а не предыдущая (при возврате назад destroy приходит через 200мс после archive)
                 if (destroyedComp === currentFullComp) {
                     currentToken = null;
                     currentFullComp = null;
