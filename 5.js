@@ -2,6 +2,7 @@
     'use strict';
 
     var _logoCache = {};
+    var CACHE_MAX = 200;
 
     var style = document.createElement('style');
     style.textContent = [
@@ -182,14 +183,22 @@
     }
 
     function init() {
-        var destroyed = false;
+        var currentToken = null;
         var qualityObserver = null;
         var kpObserver = null;
         var currentFullComp = null;
 
+        // Map: fullComp -> { metaBox, rateAnchor }
+        // Нужен для корректного удаления элементов при destroy
+        // и восстановления ссылок при archive (возврат назад)
+        var _compData = new Map();
+
         Lampa.Listener.follow('full', function (e) {
             if (e.type !== 'complite') return;
-            destroyed = false;
+
+            var token = {};
+            currentToken = token;
+
             var movie = e.data.movie;
             var fullComp = e.link;
             currentFullComp = fullComp;
@@ -198,8 +207,9 @@
             if (!Lampa.Storage.field('card_interfice_cover')) $('body').removeClass('card--no-cover');
 
             setTimeout(function () {
-                if (destroyed) return;
-                var render = fullComp.render ? fullComp.render() : e.body;
+                if (currentToken !== token) return;
+
+                var render = fullComp.render();
                 var right = render.find('.full-start-new__right');
                 if (!right.length) return;
 
@@ -231,7 +241,7 @@
                 var hasKP = !!(movie.kp_rating && parseFloat(movie.kp_rating) > 0);
                 if (hasKP) rateEls.filter('.rate--tmdb').addClass('hide');
 
-                // ── Строка сериала (рабочая логика через last_episode_to_air) ──
+                // ── Строка сериала ──
                 var serialEl  = null;
                 var hasNextEp = false;
 
@@ -262,16 +272,26 @@
                         if (totEps)  sp.push(Lampa.Lang.translate('title_episodes') + ': ' + totEps);
                     }
 
-                    if (movie.next_episode_to_air && movie.next_episode_to_air.air_date) {
-                        var airStr   = movie.next_episode_to_air.air_date;
-                        var airDate  = Lampa.Utils.parseTime(airStr).short;
-                        var ap       = airStr.split('-');
-                        var daysLeft = Math.ceil((new Date(+ap[0], +ap[1] - 1, +ap[2]).getTime() - Date.now()) / 86400000);
-                        if (daysLeft > 0) {
+                    // ── ИСПРАВЛЕНИЕ 1: обрабатываем next_episode_to_air с датой и без ──
+                    if (movie.next_episode_to_air) {
+                        var nextEp  = movie.next_episode_to_air;
+                        var airStr  = nextEp.air_date;
+                        if (airStr) {
+                            var airDate  = Lampa.Utils.parseTime(airStr).short;
+                            var daysLeft = Math.ceil((Lampa.Utils.parseToDate(airStr).getTime() - Date.now()) / 86400000);
+                            if (daysLeft > 0) {
+                                hasNextEp = true;
+                                sp.push(
+                                    Lampa.Lang.translate('full_next_episode') + ': ' + airDate +
+                                    ' / ' + Lampa.Lang.translate('full_episode_days_left') + ': ' + daysLeft
+                                );
+                            }
+                        } else if (nextEp.episode_number) {
+                            // Дата ещё не объявлена, но эпизод известен
                             hasNextEp = true;
                             sp.push(
-                                Lampa.Lang.translate('full_next_episode') + ': ' + airDate +
-                                ' / ' + Lampa.Lang.translate('full_episode_days_left') + ': ' + daysLeft
+                                Lampa.Lang.translate('full_next_episode') + ': ' +
+                                'S' + (nextEp.season_number || '?') + 'E' + nextEp.episode_number
                             );
                         }
                     }
@@ -282,7 +302,9 @@
                 }
 
                 // ── Мета-бокс ──
-                $('.fsc-meta-box', render).remove();
+                var existingData = _compData.get(fullComp);
+                if (existingData) { existingData.metaBox.remove(); existingData.rateAnchor.remove(); }
+
                 var metaBox = $('<div class="fsc-meta-box"></div>');
 
                 if (!movie.first_air_date && showStatus) {
@@ -317,6 +339,9 @@
                 var rateAnchor = $('<div class="full-start-new__rate-line fsc-rate-anchor" style="display:none"></div>');
                 render.find('.full-start-new').append(rateAnchor);
 
+                // Сохраняем ссылки на элементы этого компонента
+                _compData.set(fullComp, { metaBox: metaBox, rateAnchor: rateAnchor });
+
                 qualityObserver = new MutationObserver(function (mutations) {
                     mutations.forEach(function (m) {
                         m.addedNodes.forEach(function (node) {
@@ -324,7 +349,7 @@
                                 node.style.cssText = '';
                                 row3.find('.quality-badge-custom').remove();
                                 row3.append(node);
-                                if (!metaBox.find(row3).length) metaBox.append(row3);
+                                if (!$.contains(metaBox[0], row3[0])) metaBox.append(row3);
                             }
                         });
                     });
@@ -332,13 +357,13 @@
                 qualityObserver.observe(rateAnchor[0], { childList: true });
 
                 setTimeout(function () {
-                    if (destroyed) return;
+                    if (currentToken !== token) return;
                     render.find('.quality-badge-custom').each(function () {
                         if (!$(this).closest('.fsc-meta-box').length) {
                             this.style.cssText = '';
                             row3.find('.quality-badge-custom').remove();
                             row3.append(this);
-                            if (!metaBox.find(row3).length) metaBox.append(row3);
+                            if (!$.contains(metaBox[0], row3[0])) metaBox.append(row3);
                         }
                     });
                 }, 100);
@@ -375,6 +400,7 @@
                     var origHtml  = title.html();
                     var mediaType = movie.name ? 'tv' : 'movie';
                     var cacheKey  = mediaType + '_' + movie.id;
+                    var lang      = Lampa.Storage.field('tmdb_lang') || 'ru';
 
                     var applyLogo = function (src) {
                         var img = document.createElement('img');
@@ -388,12 +414,18 @@
                         if (_logoCache[cacheKey]) applyLogo(_logoCache[cacheKey]);
                     } else {
                         $.get(
-                            Lampa.TMDB.api(mediaType + '/' + movie.id + '/images?api_key=' + Lampa.TMDB.key() + '&language=ru&include_image_language=ru'),
+                            Lampa.TMDB.api(
+                                mediaType + '/' + movie.id +
+                                '/images?language=' + lang +
+                                '&include_image_language=' + lang + ',en'
+                            ),
                             function (data) {
-                                if (destroyed) return;
+                                if (currentToken !== token) return;
                                 var logos = (data.logos || []).filter(function (l) {
                                     return l.file_path && !l.file_path.endsWith('.svg');
                                 });
+                                logos.sort(function (a, b) { return b.vote_average - a.vote_average; });
+                                if (Object.keys(_logoCache).length > CACHE_MAX) _logoCache = {};
                                 _logoCache[cacheKey] = logos.length
                                     ? Lampa.TMDB.image('t/p/w500' + logos[0].file_path)
                                     : null;
@@ -416,16 +448,36 @@
         });
 
         Lampa.Listener.follow('activity', function (e) {
+            // ── ИСПРАВЛЕНИЕ 2: восстанавливаем вид при возврате назад ──
+            if (e.type === 'archive' && e.component === 'full') {
+                $('body').addClass('fsc--open').removeClass('fsc--scrolled');
+                if (!Lampa.Storage.field('card_interfice_cover')) $('body').removeClass('card--no-cover');
+                // Обновляем currentFullComp на восстановленный компонент
+                currentFullComp = e.object.activity.component;
+            }
+
             if (e.type === 'destroy' && e.component === 'full') {
-                destroyed = true;
                 if (qualityObserver) { qualityObserver.disconnect(); qualityObserver = null; }
                 if (kpObserver) { kpObserver.disconnect(); kpObserver = null; }
-                if (currentFullComp && currentFullComp.scroll) currentFullComp.scroll._fscWrapped = false;
-                currentFullComp = null;
-                $('body').removeClass('fsc--open fsc--scrolled');
-                $('.fsc-meta-box').remove();
-                $('.fsc-rate-anchor').remove();
-                if (!Lampa.Storage.field('card_interfice_cover')) $('body').addClass('card--no-cover');
+
+                var destroyedComp = e.object && e.object.activity && e.object.activity.component;
+
+                if (destroyedComp) {
+                    // Сбрасываем флаг скролла уничтожаемого компонента
+                    // (после destroy все функции обнулены, но свойства ещё доступны)
+                    if (destroyedComp.scroll) destroyedComp.scroll._fscWrapped = false;
+                    // Удаляем запись из Map
+                    _compData.delete(destroyedComp);
+                }
+
+                // Убираем fsc--open только если уничтожается ТЕКУЩАЯ активная карточка,
+                // а не предыдущая (при возврате назад destroy приходит через 200мс после archive)
+                if (destroyedComp === currentFullComp) {
+                    currentToken = null;
+                    currentFullComp = null;
+                    $('body').removeClass('fsc--open fsc--scrolled');
+                    if (!Lampa.Storage.field('card_interfice_cover')) $('body').addClass('card--no-cover');
+                }
             }
         });
     }
