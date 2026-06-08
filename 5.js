@@ -1,5 +1,9 @@
 (function () {
 'use strict';
+var fontLink = document.createElement('link');  
+fontLink.rel = 'stylesheet';  
+fontLink.href = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap';  
+document.head.appendChild(fontLink);
 var _logoCache = {};
 var CACHE_MAX = 200;
 var style = document.createElement('style');
@@ -29,7 +33,7 @@ style.textContent = [
 '.fsc-center-row { display: flex !important; flex-wrap: wrap !important; align-items: center !important; justify-content: center !important; gap: 0.35em !important; margin-bottom: 0.2em !important; }',
 '.fsc-serial-badge { display: inline-flex !important; align-items: center !important; height: 1.5em !important; padding: 0 0.5em !important; background: rgba(0,0,0,0.6) !important; color: #fff !important; font-size: 1.25em !important; font-weight: 550 !important; border-radius: 0.35em !important; white-space: nowrap !important; box-sizing: border-box !important; backdrop-filter: blur(20px) saturate(180%) !important; -webkit-backdrop-filter: blur(20px) saturate(180%) !important; border: 1px solid rgba(255,255,255,0.25) !important; margin: 0 !important; margin-bottom: 0.3em !important; text-shadow: none !important; }',
 '.fsc-meta-box { position: absolute !important; bottom: 5em !important; left: 1.5em !important; z-index: 10 !important; display: flex !important; flex-direction: column !important; align-items: flex-start !important; gap: 0.3em !important; }',
-'.fsc-meta-label { background: none !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; border: none !important; padding: 0 !important; display: flex !important; flex-direction: column !important; align-items: flex-start !important; gap: 0.25em !important; font-size: 1em !important; font-weight: 600 !important; color: #fff !important; text-shadow: 0 1px 4px rgba(0,0,0,0.95), 0 0 12px rgba(0,0,0,0.85), 0 2px 8px rgba(0,0,0,0.9) !important; max-width: 40vw !important; }',
+'.fsc-meta-label { background: none !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; border: none !important; padding: 0 !important; display: flex !important; flex-direction: column !important; align-items: flex-start !important; gap: 0.25em !important; font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important; font-size: 1em !important; font-weight: 600 !important; color: #fff !important; text-shadow: 0 1px 4px rgba(0,0,0,0.95), 0 0 12px rgba(0,0,0,0.85), 0 2px 8px rgba(0,0,0,0.9) !important; max-width: 40vw !important; }',
 '.fsc-meta-line { display: flex !important; align-items: center !important; white-space: nowrap !important; text-shadow: inherit !important; }',
 '.fsc-sep { opacity: 0.65 !important; padding: 0 0.3em !important; }',
 '.fsc-meta-box .full-start__rate { display: inline-flex !important; align-items: center !important; height: auto !important; padding: 0 !important; background: none !important; border: none !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; color: #fff !important; font-size: 1em !important; font-weight: 600 !important; border-radius: 0 !important; white-space: nowrap !important; margin: 0 !important; text-shadow: inherit !important; gap: 0.25em !important; }',
