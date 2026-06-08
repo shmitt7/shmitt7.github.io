@@ -4,7 +4,15 @@ var _logoCache = {};
 var CACHE_MAX = 200;
 var style = document.createElement('style');
 style.textContent = [
-'body.fsc--open .full-start__background { position: fixed !important; inset: 0 !important; width: 100vw !important; height: 100vh !important; z-index: 0 !important; object-fit: cover !important; mask-image: none !important; -webkit-mask-image: none !important; pointer-events: none !important; filter: brightness(0.7) !important; opacity: 0; transition: opacity 0.5s ease-in-out; }',
+'body.fsc--open .full-start__background {',
+'  position: fixed !important; inset: 0 !important;',
+'  width: 100vw !important; height: 100vh !important;',
+'  z-index: 0 !important; object-fit: cover !important;',
+'  mask-image: none !important; -webkit-mask-image: none !important;',
+'  pointer-events: none !important;',
+'  filter: brightness(0.7) !important;',
+'  opacity: 0; transition: opacity 0.5s ease-in-out;',
+'}',
 'body.fsc--open .full-start__background.loaded { opacity: 1 !important; }',
 'body.fsc--open .full-start__background.dim { opacity: 0 !important; transition: opacity 0s !important; }',
 'body.fsc--open:not(.fsc--scrolled) .background { opacity: 0 !important; transition: none !important; }',
@@ -19,46 +27,36 @@ style.textContent = [
 'body.fsc--open .full-start-new__title { text-align: center !important; max-width: 100% !important; text-shadow: 0 2px 12px rgba(0,0,0,0.95) !important; margin-bottom: 0.15em !important; display: block !important; overflow: visible !important; -webkit-line-clamp: unset !important; line-clamp: unset !important; }',
 '.fsc-logo { max-width: 18em !important; max-height: 5em !important; object-fit: contain !important; margin-bottom: 0.15em !important; }',
 '.fsc-center-row { display: flex !important; flex-wrap: wrap !important; align-items: center !important; justify-content: center !important; gap: 0.35em !important; margin-bottom: 0.2em !important; }',
-'.fsc-serial-badge { display: inline-flex !important; align-items: center !important; height: 1.5em !important; padding: 0 0.5em !important; background: rgba(0,0,0,0.6) !important; color: #fff !important; font-size: 1.25em !important; font-weight: 550 !important; border-radius: 0.35em !important; white-space: nowrap !important; box-sizing: border-box !important; backdrop-filter: blur(20px) saturate(180%) !important; -webkit-backdrop-filter: blur(20px) saturate(180%) !important; border: 1px solid rgba(255,255,255,0.25) !important; margin: 0 0 0.3em 0 !important; text-shadow: none !important; }',
-'body.fsc--open .full-start-new__buttons .full-start__button { height: 2.2em !important; }',
-'.fsc-meta-box { position: absolute !important; bottom: 5em !important; left: 1.5em !important; z-index: 10 !important; }',
-'.fsc-meta-label { background: rgba(0,0,0,0.6) !important; backdrop-filter: blur(20px) saturate(180%) !important; -webkit-backdrop-filter: blur(20px) saturate(180%) !important; border: 1px solid rgba(255,255,255,0.25) !important; border-radius: 0.5em !important; padding: 0.4em 0.7em !important; display: flex !important; flex-direction: column !important; gap: 0.25em !important; font-size: 1em !important; font-weight: 550 !important; color: #fff !important; max-width: 40vw !important; }',
-'.fsc-meta-line { display: flex !important; align-items: center !important; gap: 0.35em !important; white-space: nowrap !important; }',
-'.fsc-sep { opacity: 0.5 !important; }',
-'.fsc-meta-label .full-start__rate { display: inline-flex !important; align-items: center !important; height: auto !important; background: none !important; border: none !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; padding: 0 !important; font-size: 1em !important; font-weight: 600 !important; color: #fff !important; gap: 0.2em !important; box-shadow: none !important; }',
-'.fsc-meta-label .full-start__rate.hide { display: none !important; }',
-'.fsc-meta-label .full-start__rate > div { display: inline-flex !important; align-items: center !important; height: auto !important; width: auto !important; background: none !important; border-radius: 0 !important; font-size: 1em !important; font-weight: 600 !important; color: #fff !important; padding: 0 !important; }',
-'.fsc-meta-label .full-start__pg { display: inline-flex !important; align-items: center !important; height: auto !important; background: none !important; border: none !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; padding: 0 !important; font-size: 1em !important; font-weight: 600 !important; color: #fff !important; }',
-'.fsc-meta-label .quality-badge-custom { display: inline-flex !important; align-items: center !important; height: auto !important; background: none !important; border: none !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; padding: 0 !important; font-size: 1em !important; font-weight: 600 !important; color: #fff !important; }',
-'.fsc-meta-label .reaction { display: inline-flex !important; flex-direction: row !important; align-items: center !important; height: auto !important; background: none !important; border: none !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; padding: 0 !important; font-size: 1em !important; font-weight: 600 !important; color: #fff !important; gap: 0.2em !important; }',
-'.fsc-meta-label .reaction__icon { width: 1.1em !important; height: 1.1em !important; }',
-'.fsc-meta-label .reaction__count { font-size: 1em !important; font-weight: 600 !important; color: #fff !important; padding: 0 !important; }',
-'.fsc-meta-label .reaction__name { display: none !important; }',
+'.fsc-serial-badge { display: inline-flex !important; align-items: center !important; height: 1.5em !important; padding: 0 0.5em !important; background: rgba(0,0,0,0.6) !important; color: #fff !important; font-size: 1.25em !important; font-weight: 550 !important; border-radius: 0.35em !important; white-space: nowrap !important; box-sizing: border-box !important; backdrop-filter: blur(20px) saturate(180%) !important; -webkit-backdrop-filter: blur(20px) saturate(180%) !important; border: 1px solid rgba(255,255,255,0.25) !important; margin: 0 !important; margin-bottom: 0.3em !important; text-shadow: none !important; }',
+'.fsc-meta-box { position: absolute !important; bottom: 5em !important; left: 1.5em !important; z-index: 10 !important; display: flex !important; flex-direction: column !important; align-items: flex-start !important; gap: 0.3em !important; }',
+'.fsc-meta-label { background: none !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; border: none !important; padding: 0 !important; display: flex !important; flex-direction: column !important; align-items: flex-start !important; gap: 0.25em !important; font-size: 1em !important; font-weight: 600 !important; color: #fff !important; text-shadow: 0 1px 4px rgba(0,0,0,0.95), 0 0 12px rgba(0,0,0,0.85), 0 2px 8px rgba(0,0,0,0.9) !important; max-width: 40vw !important; }',
+'.fsc-meta-line { display: flex !important; align-items: center !important; white-space: nowrap !important; text-shadow: inherit !important; }',
+'.fsc-sep { opacity: 0.65 !important; padding: 0 0.3em !important; }',
+'.fsc-meta-box .full-start__rate { display: inline-flex !important; align-items: center !important; height: auto !important; padding: 0 !important; background: none !important; border: none !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; color: #fff !important; font-size: 1em !important; font-weight: 600 !important; border-radius: 0 !important; white-space: nowrap !important; margin: 0 !important; text-shadow: inherit !important; gap: 0.25em !important; }',
+'.fsc-meta-box .full-start__rate.hide { display: none !important; }',
+'.fsc-meta-box .full-start__rate > div:first-child, .fsc-meta-box .full-start__rate > div:last-child { display: inline-flex !important; align-items: center !important; height: auto !important; width: auto !important; background: none !important; border-radius: 0 !important; font-size: 1em !important; font-weight: 600 !important; color: #fff !important; padding: 0 !important; }',
+'.fsc-meta-box .full-start__pg, .fsc-meta-box .full-start__status, .fsc-meta-box .quality-badge-custom { display: inline-flex !important; align-items: center !important; height: auto !important; padding: 0 !important; background: none !important; border: none !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; color: #fff !important; font-size: 1em !important; font-weight: 600 !important; border-radius: 0 !important; white-space: nowrap !important; margin: 0 !important; text-shadow: inherit !important; }',
+'.fsc-meta-box .reaction { display: inline-flex !important; align-items: center !important; height: auto !important; padding: 0 !important; background: none !important; border: none !important; color: #fff !important; font-size: 1em !important; text-shadow: inherit !important; gap: 0.2em !important; }',
+'body.fsc--open .full-start-new__buttons .full-start__button { height: 2.2em !important; }'
 ].join('\n');
 document.head.appendChild(style);
-var GENRE_BY_ID = {
-28:'Боевик',12:'Приключения',16:'Мультфильм',35:'Комедия',80:'Криминал',
-99:'Документальный',18:'Драма',10751:'Семейный',14:'Фэнтези',36:'История',
-27:'Ужасы',10402:'Музыка',9648:'Детектив',10749:'Мелодрама',878:'Фантастика',
-10770:'ТВ-фильм',53:'Триллер',10752:'Военный',37:'Вестерн',
-10759:'Боевик и приключения',10762:'Детский',10763:'Новости',10764:'Реалити-шоу',
-10765:'Фантастика и фэнтези',10766:'Мыльная опера',10767:'Ток-шоу',10768:'Война и политика'
+var GENRE_NAMES = {
+28:'Экшен',12:'Приключ.',16:'Мультфильм',35:'Комедия',
+80:'Криминал',99:'Докум.',18:'Драма',10751:'Семейный',
+14:'Фэнтези',36:'История',27:'Ужасы',10402:'Музыка',
+9648:'Детектив',10749:'Мелодрама',878:'Фантастика',10770:'ТВ-фильм',
+53:'Триллер',10752:'Военный',37:'Вестерн',
+10759:'Экшен',10762:'Детский',10763:'Новости',10764:'Реалити',
+10765:'Фантастика',10766:'Мыльная',10767:'Ток-шоу',10768:'Военный'
 };
 function getGenreLabels(movie, max) {
 var genres = movie.genres || [];
-var genreIds = genres.map(function (g) { return typeof g === 'object' ? g.id : g; });
-var isTv = !!movie.name;
-if (genreIds.indexOf(16) !== -1 && movie.original_language === 'ja') return ['Аниме'];
-if (genreIds.indexOf(10763) !== -1) return ['Новости'];
-if (genreIds.indexOf(10767) !== -1) return ['Ток-шоу'];
-if (genreIds.indexOf(10764) !== -1) return ['Реалити-шоу'];
-if (genreIds.indexOf(99) !== -1) return ['Документальный'];
-if (genreIds.indexOf(10766) !== -1) return ['Мыльная опера'];
-if (genreIds[0] === 16) return [isTv ? 'Мультсериал' : 'Мультфильм'];
 var result = [];
-for (var i = 0; i < genreIds.length && result.length < (max || 2); i++) {
-var label = GENRE_BY_ID[genreIds[i]];
-if (!label) { var n = genres[i] && (genres[i].name || ''); label = n ? (n.charAt(0).toUpperCase() + n.slice(1)) : null; }
+for (var i = 0; i < genres.length && result.length < (max || 2); i++) {
+var g = genres[i];
+var id = typeof g === 'object' ? g.id : g;
+var label = GENRE_NAMES[id];
+if (!label && typeof g === 'object' && g.name) label = g.name.charAt(0).toUpperCase() + g.name.slice(1);
 if (label) result.push(label);
 }
 return result;
@@ -66,20 +64,16 @@ return result;
 function fmtTime(mins) {
 if (!mins || mins <= 0) return '';
 var h = Math.floor(mins / 60), m = mins % 60;
-return h ? (h + 'ч' + (m ? ' ' + m + 'м' : '')) : (m + 'м');
+return h ? h + 'ч' + (m ? ' ' + m + 'м' : '') : m + 'м';
 }
-function parseCountry(code) {
-var map = {RU:'Россия',US:'США',GB:'Великобритания',FR:'Франция',DE:'Германия',IT:'Италия',ES:'Испания',JP:'Япония',KR:'Корея',CN:'Китай',IN:'Индия',CA:'Канада',AU:'Австралия',BR:'Бразилия',MX:'Мексика',SE:'Швеция',NO:'Норвегия',DK:'Дания',FI:'Финляндия',PL:'Польша',CZ:'Чехия',HU:'Венгрия',UA:'Украина',TR:'Турция',IR:'Иран',TH:'Таиланд',HK:'Гонконг',TW:'Тайвань',NZ:'Новая Зеландия',ZA:'ЮАР',AR:'Аргентина',BE:'Бельгия',NL:'Нидерланды',CH:'Швейцария',AT:'Австрия',PT:'Португалия',GR:'Греция',RO:'Румыния',BG:'Болгария',HR:'Хорватия',SK:'Словакия',RS:'Сербия',IL:'Израиль',EG:'Египет',NG:'Нигерия'};
-return map[code] || code;
-}
+function sep() { return $('<span class="fsc-sep"> • </span>'); }
 function parseCount(str) {
 if (!str) return 0;
-str = str.trim();
-if (str.indexOf('K') !== -1 || str.indexOf('k') !== -1) return parseFloat(str) * 1000;
-if (str.indexOf('M') !== -1 || str.indexOf('m') !== -1) return parseFloat(str) * 1000000;
-return parseFloat(str) || 0;
+str = (str + '').trim();
+if (/[Kk]/.test(str)) return parseFloat(str) * 1000;
+if (/[Mm]/.test(str)) return parseFloat(str) * 1000000;
+return parseInt(str) || 0;
 }
-function sep() { return $('<span class="fsc-sep">•</span>'); }
 function init() {
 var qualityObserver = null;
 var kpObserver = null;
@@ -92,67 +86,52 @@ var fullComp = e.link;
 var token = {};
 currentToken = token;
 currentFullComp = fullComp;
-var episodesList = (e.data && e.data.episodes && e.data.episodes.episodes) || [];
+var episodesList = e.data && e.data.episodes && e.data.episodes.episodes || [];
 $('body').addClass('fsc--open');
 if (!Lampa.Storage.field('card_interfice_cover')) $('body').removeClass('card--no-cover');
 setTimeout(function () {
 if (currentToken !== token) return;
 var render = $(fullComp.render());
-var movie = e.object.movie || e.object.card || {};
+var movie = e.data.movie;
 var right = render.find('.full-start-new__right');
 var title = render.find('.full-start-new__title');
 var buttons = render.find('.full-start-new__buttons');
-var statusEl = render.find('.full-start__status');
-var pgEl = render.find('.full-start__pg:not(.hide)');
-var rateEls = render.find('.full-start__rate:not(.hide)');
-var showStatus = !!(movie.status && movie.status !== 'Released' && movie.status !== 'Ended');
-var hasKP = !!(movie.kp_rating && parseFloat(movie.kp_rating) > 0);
-var relDate = movie.release_date || movie.first_air_date || '';
-var year = relDate ? relDate.slice(0, 4) : '';
-var countriesText = (movie.production_countries || []).slice(0, 2).map(function (c) {
-return parseCountry(c.iso_3166_1 || c.name || '');
-}).filter(Boolean).join(', ');
-var genreLabels = getGenreLabels(movie, 2);
-var runtime = fmtTime(movie.runtime);
-var reactionItems = render.find('.full-start-new__reactions .reaction').toArray();
-reactionItems.sort(function (a, b) {
-return parseCount($(b).find('.reaction__count').text()) - parseCount($(a).find('.reaction__count').text());
-});
-var reactions = reactionItems.slice(0, 4).map(function (el) { el.style.cssText = ''; return el; });
 var serialEl = null;
+var hasKP = render.find('.rate--kp:not(.hide)').length > 0;
+var rateEls = render.find('.full-start__rate').filter(':not(.hide)');
+var pgEl = render.find('.full-start__pg:not(.hide)');
+var statusEl = render.find('.full-start__status');
+var showStatus = statusEl.length && !statusEl.hasClass('hide') && movie.status !== 'Released' && movie.status !== 'Ended';
+var reactionItems = render.find('.full-start-new__reactions .reaction').toArray();
+reactionItems.sort(function (a, b) { return parseCount($(b).find('.reaction__count').text()) - parseCount($(a).find('.reaction__count').text()); });
+var reactions = reactionItems.slice(0, 4).map(function (el) { el.style.cssText = ''; return el; });
 if (movie.first_air_date) {
 var sp = [];
 var last = movie.last_episode_to_air;
+var curSeas = last ? last.season_number : 0;
 var totSeas = movie.number_of_seasons || 0;
 var totEps = movie.number_of_episodes || 0;
+var curEps = last ? last.episode_number : 0;
+var airedEps = 0;
+if (movie.seasons) {
+movie.seasons.forEach(function (s) {
+if (s.season_number > 0 && s.season_number < curSeas) airedEps += s.episode_count || 0;
+});
+}
+airedEps += curEps;
+if (curSeas) sp.push(Lampa.Lang.translate('title_seasons') + ': ' + (curSeas < totSeas ? curSeas + '/' + totSeas : totSeas));
+if (totEps) sp.push(Lampa.Lang.translate('title_episodes') + ': ' + (curSeas < totSeas ? airedEps + '/' + totEps : totEps));
 var hasNextEp = false;
-if (last) {
-var curSeas = last.season_number || 0;
-var totalAired = last.episode_number || 0;
-if (curSeas && totSeas) {
-var seasStr = Lampa.Lang.translate('title_seasons') + ': ';
-seasStr += (curSeas < totSeas) ? curSeas + '/' + totSeas : totSeas;
-sp.push(seasStr);
-if (totalAired > 0 && totEps > 0) sp.push(Lampa.Lang.translate('title_episodes') + ': ' + totalAired + '/' + totEps);
-else if (totEps > 0) sp.push(Lampa.Lang.translate('title_episodes') + ': ' + totEps);
-} else {
-if (totSeas) sp.push(Lampa.Lang.translate('title_seasons') + ': ' + totSeas);
-if (totEps) sp.push(Lampa.Lang.translate('title_episodes') + ': ' + totEps);
-}
-} else {
-if (totSeas) sp.push(Lampa.Lang.translate('title_seasons') + ': ' + totSeas);
-if (totEps) sp.push(Lampa.Lang.translate('title_episodes') + ': ' + totEps);
-}
-var now = Date.now();
 if (movie.next_episode_to_air && movie.next_episode_to_air.air_date) {
 var airStr = movie.next_episode_to_air.air_date;
-var daysLeft = Math.ceil((Lampa.Utils.parseToDate(airStr).getTime() - now) / 86400000);
+var daysLeft = Math.ceil((Lampa.Utils.parseToDate(airStr).getTime() - Date.now()) / 86400000);
 if (daysLeft > 0) {
 hasNextEp = true;
 sp.push(Lampa.Lang.translate('full_next_episode') + ': ' + Lampa.Utils.parseTime(airStr).short + ' / ' + Lampa.Lang.translate('full_episode_days_left') + ': ' + daysLeft);
 }
 }
 if (!hasNextEp && episodesList.length) {
+var now = Date.now();
 for (var i = 0; i < episodesList.length; i++) {
 if (episodesList[i].air_date && Lampa.Utils.parseToDate(episodesList[i].air_date).getTime() > now) {
 var airStr2 = episodesList[i].air_date;
@@ -166,22 +145,34 @@ break;
 if (!hasNextEp && showStatus) sp.unshift(statusEl.text());
 if (sp.length) serialEl = $('<span class="fsc-serial-badge"></span>').text(sp.join(' · '));
 }
+var relDate = movie.release_date || movie.first_air_date || '';
+var year = relDate ? relDate.slice(0, 4) : '';
+var countries = Lampa.Api.sources.tmdb.parseCountries(movie);
+var countriesText = countries.slice(0, 2).join(', ');
+var genreLabels = getGenreLabels(movie, 2);
+var runtime = fmtTime(movie.runtime);
 var existingData = _compData.get(fullComp);
 if (existingData) { existingData.metaBox.remove(); existingData.rateAnchor.remove(); }
 var metaBox = $('<div class="fsc-meta-box"></div>');
 var metaLabel = $('<div class="fsc-meta-label"></div>');
 var line1 = $('<div class="fsc-meta-line"></div>');
-if (year) line1.append($('<span></span>').text(year));
-if (countriesText) { if (line1.children().length) line1.append(sep()); line1.append($('<span></span>').text(countriesText)); }
-if (line1.children(':not(.fsc-sep)').length) metaLabel.append(line1);
+var line1Items = [];
+if (year) line1Items.push(year);
+if (countriesText) line1Items.push(countriesText);
+line1Items.forEach(function (t, i) { if (i > 0) line1.append(sep()); line1.append(document.createTextNode(t)); });
+if (line1Items.length) metaLabel.append(line1);
 var line2 = $('<div class="fsc-meta-line"></div>');
-if (runtime) line2.append($('<span></span>').text(runtime));
-genreLabels.forEach(function (g) { if (line2.children(':not(.fsc-sep)').length) line2.append(sep()); line2.append($('<span></span>').text(g)); });
-if (line2.children(':not(.fsc-sep)').length) metaLabel.append(line2);
+var line2Items = [];
+if (runtime) line2Items.push(runtime);
+genreLabels.forEach(function (g) { line2Items.push(g); });
+line2Items.forEach(function (t, i) { if (i > 0) line2.append(sep()); line2.append(document.createTextNode(t)); });
+if (line2Items.length) metaLabel.append(line2);
 var line3 = $('<div class="fsc-meta-line fsc-rate-line"></div>');
-rateEls.each(function (i) { if (i > 0) line3.append(sep()); line3.append(this); });
-if (pgEl.length && pgEl.text().trim()) { if (line3.children(':not(.fsc-sep)').length) line3.append(sep()); line3.append(pgEl); }
-if (line3.children(':not(.fsc-sep)').length) metaLabel.append(line3);
+var line3HasItems = false;
+rateEls.each(function (i) { if (i > 0) line3.append(sep()); line3.append(this); line3HasItems = true; });
+if (pgEl.length && pgEl.text().trim()) { if (line3HasItems) line3.append(sep()); line3.append(pgEl); line3HasItems = true; }
+if (!movie.first_air_date && showStatus) { if (line3HasItems) line3.append(sep()); line3.append(statusEl); }
+if (line3HasItems) metaLabel.append(line3);
 if (reactions.length) {
 var line4 = $('<div class="fsc-meta-line"></div>');
 reactions.forEach(function (r, i) { if (i > 0) line4.append(sep()); line4.append(r); });
@@ -223,16 +214,16 @@ if (!$.contains(metaLabel[0], line3[0])) metaLabel.append(line3);
 }, 100);
 if (kpObserver) { kpObserver.disconnect(); kpObserver = null; }
 if (!hasKP) {
-var kpEl = line3.find('.rate--kp')[0];
-if (kpEl) {
+var kpEl2 = line3.find('.rate--kp')[0];
+if (kpEl2) {
 kpObserver = new MutationObserver(function () {
-if (!$(kpEl).hasClass('hide')) {
+if (!$(kpEl2).hasClass('hide')) {
 line3.find('.rate--tmdb').addClass('hide');
 kpObserver.disconnect();
 kpObserver = null;
 }
 });
-kpObserver.observe(kpEl, { attributes: true, attributeFilter: ['class'] });
+kpObserver.observe(kpEl2, { attributes: true, attributeFilter: ['class'] });
 }
 }
 var main = $('<div class="fsc-main"></div>');
