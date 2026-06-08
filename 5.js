@@ -159,7 +159,9 @@
                     : fmtTime(movie.runtime);
 
                 // Исправление 2: страны через Lampa.TMDB.parseCountries
-                var countries = Lampa.TMDB.parseCountries(movie) || [];
+                var countries = (movie.production_countries || [])  
+    .map(function(c) { return c.name || c.iso_3166_1 || ''; })  
+    .filter(Boolean);
 
                 var genreLabels = getGenreLabels(movie, 2);
 
@@ -167,7 +169,7 @@
                 var kpRating = movie.kp_rating ? parseFloat(movie.kp_rating) : 0;
                 var tmdbRating = movie.vote_average ? parseFloat(movie.vote_average) : 0;
 
-                var pg = Lampa.TMDB.parsePG(movie);
+                var pg = render.find('.full-start__pg').not('.hide').text().trim();
 
                 var infoParts = [];
                 if (year) infoParts.push(year);
