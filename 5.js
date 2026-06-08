@@ -65,10 +65,10 @@ style.textContent = [
 '.fsc-main .full-start__status,',
 '.fsc-meta-box .quality-badge-custom {',
 '  display: inline-flex !important; align-items: center !important;',
-'  height: 1.5em !important; padding: 0 0.5em !important;',
+'  height: 1.4em !important; padding: 0 0.45em !important;',
 '  background: rgba(0,0,0,0.6) !important;',
 '  color: #fff !important;',
-'  font-size: 1.25em !important; font-weight: 550 !important;',
+'  font-size: 1em !important; font-weight: 550 !important;',
 '  border-radius: 0.35em !important; white-space: nowrap !important;',
 '  box-sizing: border-box !important;',
 '  backdrop-filter: blur(20px) saturate(180%) !important;',
@@ -100,30 +100,31 @@ style.textContent = [
 '  z-index: 10 !important;',
 '  display: flex !important; flex-direction: column !important;',
 '  align-items: flex-start !important;',
-'  gap: 0.35em !important;',
+'  gap: 0.3em !important;',
 '}',
-'.fsc-meta-row {',
+'.fsc-meta-label {',
 '  display: flex !important; flex-wrap: wrap !important;',
 '  align-items: center !important;',
-'  gap: 0.35em !important;',
+'  gap: 0.3em !important;',
+'  max-width: 42vw !important;',
 '}',
 'body.fsc--open .full-start-new__buttons .full-start__button { height: 2.2em !important; }',
 '.fsc-reactions-row { flex-wrap: wrap !important; }',
 '.fsc-reactions-row .reaction {',
 '  display: inline-flex !important; flex-direction: row !important;',
 '  align-items: center !important;',
-'  height: 1.5em !important;',
-'  padding: 0 0.5em !important;',
+'  height: 1.4em !important;',
+'  padding: 0 0.45em !important;',
 '  gap: 0 !important;',
 '  background: rgba(0,0,0,0.6) !important;',
 '  border: 1px solid rgba(255,255,255,0.25) !important;',
 '  backdrop-filter: blur(20px) saturate(180%) !important;',
 '  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;',
 '  border-radius: 0.35em !important;',
-'  font-size: 1.25em !important; font-weight: 600 !important; color: #fff !important;',
+'  font-size: 1em !important; font-weight: 600 !important; color: #fff !important;',
 '}',
-'.fsc-reactions-row .reaction__icon { width: 1.2em !important; height: 1.2em !important; }',
-'.fsc-reactions-row .reaction__count { padding: 0 0 0 0.3em !important; font-size: 1em !important; font-weight: 600 !important; color: #fff !important; }',
+'.fsc-reactions-row .reaction__icon { width: 1.1em !important; height: 1.1em !important; }',
+'.fsc-reactions-row .reaction__count { padding: 0 0 0 0.25em !important; font-size: 1em !important; font-weight: 600 !important; color: #fff !important; }',
 '.fsc-reactions-row .reaction__name { display: none !important; }',
 '.fsc-reactions-row .reaction:focus { background: rgba(255,255,255,0.15) !important; }',
 ].join('\n');
@@ -136,20 +137,27 @@ var GENRE_BY_ID = {
 37: 'Вестерн', 10759: 'Экшен', 10762: 'Детский', 10765: 'НФ и Фэнтези',
 10768: 'Война и Политика'
 };
-function getGenreLabel(movie) {
+function getGenreLabels(movie, max) {
 var genres = movie.genres || [];
 var genreIds = genres.map(function (g) { return typeof g === 'object' ? g.id : g; });
 var isTv = !!movie.name;
-if (genreIds.indexOf(16) !== -1 && movie.original_language === 'ja') return 'Аниме';
-if (genreIds.indexOf(10763) !== -1) return 'Новости';
-if (genreIds.indexOf(10767) !== -1) return 'Ток-шоу';
-if (genreIds.indexOf(10764) !== -1) return 'Реалити-шоу';
-if (genreIds.indexOf(99) !== -1) return 'Документальный';
-if (genreIds.indexOf(10766) !== -1) return 'Мыльная опера';
-if (genreIds[0] === 16) return isTv ? 'Мультсериал' : 'Мультфильм';
-if (GENRE_BY_ID[genreIds[0]]) return GENRE_BY_ID[genreIds[0]];
-var n = genres[0] && (genres[0].name || '');
-return n ? (n.charAt(0).toUpperCase() + n.slice(1)) : '';
+if (genreIds.indexOf(16) !== -1 && movie.original_language === 'ja') return ['Аниме'];
+if (genreIds.indexOf(10763) !== -1) return ['Новости'];
+if (genreIds.indexOf(10767) !== -1) return ['Ток-шоу'];
+if (genreIds.indexOf(10764) !== -1) return ['Реалити-шоу'];
+if (genreIds.indexOf(99) !== -1) return ['Документальный'];
+if (genreIds.indexOf(10766) !== -1) return ['Мыльная опера'];
+if (genreIds[0] === 16) return [isTv ? 'Мультсериал' : 'Мультфильм'];
+var result = [];
+for (var i = 0; i < Math.min(genreIds.length, max || 2); i++) {
+var label = GENRE_BY_ID[genreIds[i]];
+if (!label) {
+var n = genres[i] && (genres[i].name || '');
+label = n ? (n.charAt(0).toUpperCase() + n.slice(1)) : null;
+}
+if (label) result.push(label);
+}
+return result;
 }
 function fmtTime(mins) {
 if (!mins) return '';
@@ -204,14 +212,14 @@ var reactionItems = render.find('.full-start-new__reactions .reaction').toArray(
 reactionItems.sort(function (a, b) {
 return parseCount($(b).find('.reaction__count').text()) - parseCount($(a).find('.reaction__count').text());
 });
-var reactions = reactionItems.slice(0, 3).map(function (el) {
+var reactions = reactionItems.slice(0, 4).map(function (el) {
 el.style.cssText = '';
 return el;
 });
-var genresStr = getGenreLabel(movie);
-var countriesText = (movie.production_countries || []).slice(0, 1).map(function (c) {
+var genreLabels = getGenreLabels(movie, 2);
+var countriesText = (movie.production_countries || []).slice(0, 2).map(function (c) {
 return parseCountry(c.iso_3166_1 || c.name || '');
-}).filter(Boolean).join('');
+}).filter(Boolean).join(', ');
 var showStatus = statusEl.length && movie.status && movie.status !== 'Released';
 var hasKP = !!(movie.kp_rating && parseFloat(movie.kp_rating) > 0);
 if (hasKP) rateEls.filter('.rate--tmdb').addClass('hide');
@@ -270,26 +278,18 @@ if (sp.length) serialEl = $('<span class="fsc-serial-badge"></span>').text(sp.jo
 var existingData = _compData.get(fullComp);
 if (existingData) { existingData.metaBox.remove(); existingData.rateAnchor.remove(); }
 var metaBox = $('<div class="fsc-meta-box"></div>');
-if (!movie.first_air_date && showStatus) {
-metaBox.append($('<div class="fsc-meta-row"></div>').append(statusEl));
-}
-var relDate = movie.release_date || movie.first_air_date || '';
-var year = relDate ? relDate.slice(0, 4) : '';
-var row1 = $('<div class="fsc-meta-row"></div>');
-if (year) row1.append(badge(year));
-if (countriesText) row1.append(badge(countriesText));
-if (row1.children().length) metaBox.append(row1);
+var metaLabel = $('<div class="fsc-meta-label"></div>');
+rateEls.each(function () { metaLabel.append(this); });
+if (pgEl.length && pgEl.text().trim()) metaLabel.append(pgEl);
+if (year) metaLabel.append(badge(year));
+if (countriesText) metaLabel.append(badge(countriesText));
+genreLabels.forEach(function (g) { metaLabel.append(badge(g)); });
 var runtime = fmtTime(movie.runtime);
-var row2 = $('<div class="fsc-meta-row"></div>');
-if (runtime) row2.append(badge(runtime));
-if (genresStr) row2.append(badge(genresStr));
-if (row2.children().length) metaBox.append(row2);
-var row3 = $('<div class="fsc-meta-row fsc-rate-row"></div>');
-rateEls.each(function () { row3.append(this); });
-if (pgEl.length && pgEl.text().trim()) row3.append(pgEl);
-if (row3.children().length) metaBox.append(row3);
+if (runtime) metaLabel.append(badge(runtime));
+if (!movie.first_air_date && showStatus) metaLabel.append(statusEl);
+metaBox.append(metaLabel);
 if (reactions.length) {
-metaBox.append($('<div class="fsc-meta-row fsc-reactions-row"></div>').append(reactions));
+metaBox.append($('<div class="fsc-meta-label fsc-reactions-row"></div>').append(reactions));
 }
 render.find('.full-start-new').append(metaBox);
 if (qualityObserver) { qualityObserver.disconnect(); qualityObserver = null; }
@@ -301,9 +301,8 @@ mutations.forEach(function (m) {
 m.addedNodes.forEach(function (node) {
 if (node.nodeType === 1 && $(node).hasClass('quality-badge-custom')) {
 node.style.cssText = '';
-row3.find('.quality-badge-custom').remove();
-row3.append(node);
-if (!$.contains(metaBox[0], row3[0])) metaBox.append(row3);
+metaLabel.find('.quality-badge-custom').remove();
+metaLabel.append(node);
 }
 });
 });
@@ -314,19 +313,18 @@ if (currentToken !== token) return;
 render.find('.quality-badge-custom').each(function () {
 if (!$(this).closest('.fsc-meta-box').length) {
 this.style.cssText = '';
-row3.find('.quality-badge-custom').remove();
-row3.append(this);
-if (!$.contains(metaBox[0], row3[0])) metaBox.append(row3);
+metaLabel.find('.quality-badge-custom').remove();
+metaLabel.append(this);
 }
 });
 }, 100);
 if (kpObserver) { kpObserver.disconnect(); kpObserver = null; }
 if (!hasKP) {
-var kpEl = row3.find('.rate--kp')[0];
+var kpEl = metaLabel.find('.rate--kp')[0];
 if (kpEl) {
 kpObserver = new MutationObserver(function () {
 if (!$(kpEl).hasClass('hide')) {
-row3.find('.rate--tmdb').addClass('hide');
+metaLabel.find('.rate--tmdb').addClass('hide');
 kpObserver.disconnect();
 kpObserver = null;
 }
