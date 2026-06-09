@@ -1,13 +1,16 @@
 (function () {  
     'use strict';  
   
-    // Regex: все нелатинские скрипты — иероглифы, индийские письмена, арабский, тайский и т.д.  
-    var NON_LATIN_SCRIPT = /[\u0600-\u06FF\u0900-\u0DFF\u0E00-\u0EFF\u1000-\u109F\u1780-\u17FF\u3040-\u30FF\u31F0-\u31FF\u4E00-\u9FFF\uAC00-\uD7AF\uFF66-\uFF9F]/;  
+    // Символы нелатинских/некириллических скриптов:  
+    // CJK (китайский, японский), Хангыль (корейский),  
+    // Деванагари + индийские письмена, Арабский,  
+    // Тайский, Лаосский, Бирманский, Кхмерский  
+    var NON_RU_EN = /[\u0600-\u06FF\u0900-\u0DFF\u0E00-\u0EFF\u1000-\u109F\u1780-\u17FF\u3040-\u30FF\u31F0-\u31FF\u4E00-\u9FFF\uAC00-\uD7AF\uFF66-\uFF9F]/;  
   
-    function hasNonLatinTitle(item) {  
-        // Проверяем оригинальное название (то, что хранит TMDB на языке страны производства)  
-        var title = item.original_title || item.original_name || '';  
-        return NON_LATIN_SCRIPT.test(title);  
+    function hasUntranslatedTitle(item) {  
+        // Берём отображаемое название (локализованное), а не оригинальное  
+        var title = item.title || item.name || '';  
+        return NON_RU_EN.test(title);  
     }  
   
     function shouldApplyFilter(url) {  
@@ -16,8 +19,8 @@
     }  
   
     function initPlugin() {  
-        if (window._cf_script_plugin_loaded) return;  
-        window._cf_script_plugin_loaded = true;  
+        if (window._cf_title_plugin_loaded) return;  
+        window._cf_title_plugin_loaded = true;  
   
         Lampa.SettingsApi.addComponent({  
             component: 'content_filter',  
@@ -27,10 +30,10 @@
   
         Lampa.SettingsApi.addParam({  
             component: 'content_filter',  
-            param: { name: 'cf_hide_nonlatin', type: 'trigger', default: false },  
+            param: { name: 'cf_hide_untranslated', type: 'trigger', default: false },  
             field: {  
-                name: 'Скрыть карточки с иероглифами',  
-                description: 'Скрывает карточки, оригинальное название которых написано нелатинскими символами (китайские, японские, корейские, индийские, арабские и другие)'  
+                name: 'Скрыть непереведённые карточки',  
+                description: 'Скрывает карточки, название которых не переведено на русский или английский (написано иероглифами, арабским, деванагари и т.д.)'  
             }  
         });  
   
@@ -38,10 +41,10 @@
             if (!req.params || !req.params.url) return;  
             if (!req.data || !Array.isArray(req.data.results)) return;  
             if (!shouldApplyFilter(req.params.url)) return;  
-            if (!Lampa.Storage.field('cf_hide_nonlatin')) return;  
+            if (!Lampa.Storage.field('cf_hide_untranslated')) return;  
   
             req.data.results = req.data.results.filter(function (item) {  
-                return !hasNonLatinTitle(item);  
+                return !hasUntranslatedTitle(item);  
             });  
         });  
     }  
