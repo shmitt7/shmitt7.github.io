@@ -1,16 +1,16 @@
- (function () {
+(function () {
     'use strict';
 
     var _logoCache = {};
     var CACHE_MAX = 200;
 
     var GENRE_LABELS = {
-        28:'Боевик', 12:'Приключения', 35:'Комедия', 80:'Криминал',
-        18:'Драма', 10751:'Семейный', 14:'Фэнтези', 36:'История',
-        27:'Ужасы', 10402:'Музыка', 9648:'Детектив', 10749:'Мелодрама',
-        878:'Фантастика', 10770:'Телефильм', 53:'Триллер', 10752:'Военный',
-        37:'Вестерн', 10759:'Экшен', 10762:'Детский', 10765:'НФ и Фэнтези',
-        10768:'Война и Политика'
+        28: 'Боевик', 12: 'Приключения', 35: 'Комедия', 80: 'Криминал',
+        18: 'Драма', 10751: 'Семейный', 14: 'Фэнтези', 36: 'История',
+        27: 'Ужасы', 10402: 'Музыка', 9648: 'Детектив', 10749: 'Мелодрама',
+        878: 'Фантастика', 10770: 'Телефильм', 53: 'Триллер', 10752: 'Военный',
+        37: 'Вестерн', 10759: 'Экшен', 10762: 'Детский', 10765: 'НФ и Фэнтези',
+        10768: 'Война и Политика'
     };
 
     function fmtTime(mins) {
@@ -19,25 +19,18 @@
         return h > 0 ? (h + 'ч' + (m > 0 ? ' ' + m + 'м' : '')) : (m + 'м');
     }
 
-    function parseCountry(iso) {
-        if (!iso) return '';
-        var key = 'country_' + iso.toLowerCase();
-        var t = Lampa.Lang.translate(key);
-        return (t && t !== key) ? t : iso;
-    }
-
     function getGenreLabels(movie, max) {
         var isTv = !!movie.name;
         var genres = movie.genres || [];
-        var ids = genres.map(function(g) { return typeof g === 'object' ? g.id : g; });
+        var ids = genres.map(function (g) { return typeof g === 'object' ? g.id : g; });
         var priority = null;
         if (ids.indexOf(16) !== -1 && movie.original_language === 'ja') priority = 'Аниме';
         else if (ids.indexOf(10763) !== -1) priority = 'Новости';
         else if (ids.indexOf(10767) !== -1) priority = 'Ток-шоу';
         else if (ids.indexOf(10764) !== -1) priority = 'Реалити-шоу';
-        else if (ids.indexOf(99)    !== -1) priority = 'Документальный';
+        else if (ids.indexOf(99) !== -1) priority = 'Документальный';
         else if (ids.indexOf(10766) !== -1) priority = 'Мыльная опера';
-        else if (ids.indexOf(16)    !== -1) priority = isTv ? 'Мультсериал' : 'Мультфильм';
+        else if (ids.indexOf(16) !== -1) priority = isTv ? 'Мультсериал' : 'Мультфильм';
         var result = [];
         if (priority) result.push(priority);
         for (var i = 0; i < ids.length && result.length < (max || 2); i++) {
@@ -49,6 +42,13 @@
             if (label && result.indexOf(label) === -1) result.push(label);
         }
         return result;
+    }
+
+    function parseCountry(iso) {
+        if (!iso) return '';
+        var key = 'country_' + iso.toLowerCase();
+        var t = Lampa.Lang.translate(key);
+        return (t && t !== key) ? t : iso;
     }
 
     var style = document.createElement('style');
@@ -70,7 +70,8 @@
         'body.fsc--open .full-start-new { position: relative !important; }',
         'body.fsc--open .full-start-new__body {',
         '  min-height: calc(100vh - 6em) !important;',
-        '  align-items: stretch !important; justify-content: center !important;',
+        '  align-items: stretch !important;',
+        '  justify-content: center !important;',
         '}',
         'body.fsc--open .full-start-new__right {',
         '  display: flex !important; flex-direction: column !important;',
@@ -89,13 +90,16 @@
         'body.fsc--open .full-start-new__title {',
         '  text-align: center !important; max-width: 100% !important;',
         '  text-shadow: 0 2px 12px rgba(0,0,0,0.95) !important;',
-        '  margin-bottom: 0.15em !important; display: block !important;',
+        '  margin-bottom: 0.15em !important;',
+        '  display: block !important;',
         '  overflow: visible !important;',
-        '  -webkit-line-clamp: unset !important; line-clamp: unset !important;',
+        '  -webkit-line-clamp: unset !important;',
+        '  line-clamp: unset !important;',
         '}',
         '.fsc-logo {',
         '  max-width: 18em !important; max-height: 5em !important;',
-        '  object-fit: contain !important; margin-bottom: 0.15em !important;',
+        '  object-fit: contain !important;',
+        '  margin-bottom: 0.15em !important;',
         '}',
         '.fsc-center-row {',
         '  display: flex !important; flex-wrap: wrap !important;',
@@ -105,14 +109,16 @@
         '.fsc-serial-badge {',
         '  display: inline-flex !important; align-items: center !important;',
         '  height: 1.5em !important; padding: 0 0.5em !important;',
-        '  background: rgba(0,0,0,0.6) !important; color: #fff !important;',
+        '  background: rgba(0,0,0,0.6) !important;',
+        '  color: #fff !important;',
         '  font-size: 1.25em !important; font-weight: 550 !important;',
         '  border-radius: 0.35em !important; white-space: nowrap !important;',
         '  box-sizing: border-box !important;',
         '  backdrop-filter: blur(20px) saturate(180%) !important;',
         '  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;',
         '  border: 1px solid rgba(255,255,255,0.25) !important;',
-        '  margin: 0 !important; text-shadow: none !important;',
+        '  margin: 0 !important;',
+        '  text-shadow: none !important;',
         '}'
     ].join('\n');
     document.head.appendChild(style);
@@ -120,23 +126,17 @@
     function init() {
         var currentToken = null;
         var currentFullComp = null;
-        var kpObs = null;
-        var qualObs = null;
-
-        function disconnectObservers() {
-            if (kpObs)   { kpObs.disconnect();   kpObs   = null; }
-            if (qualObs) { qualObs.disconnect();  qualObs = null; }
-        }
 
         Lampa.Listener.follow('full', function (e) {
             if (e.type !== 'complite') return;
-
-            disconnectObservers();
 
             var fullComp = e.link;
             var token = {};
             currentToken = token;
             currentFullComp = fullComp;
+
+            var movie = e.data && e.data.movie;
+            if (!movie) return;
 
             var episodesList = (e.data && e.data.episodes && e.data.episodes.episodes) || null;
 
@@ -147,118 +147,104 @@
                 if (currentToken !== token) return;
 
                 var render = $(fullComp.render());
-                var movie  = (e.data && e.data.movie) || (e.object && (e.object.movie || e.object.card)) || {};
-                var right  = render.find('.full-start-new__right');
-                if (!right.length) return;
-
+                var right   = render.find('.full-start-new__right');
                 var title   = render.find('.full-start-new__title');
                 var buttons = render.find('.full-start-new__buttons');
 
                 // ── Строка инфы ──
-                var relDate  = movie.release_date || movie.first_air_date || '';
-                var year     = relDate ? relDate.slice(0, 4) : '';
-                var runtime  = movie.first_air_date
+                var year = (movie.release_date || movie.first_air_date || '').slice(0, 4);
+                var runtime = movie.first_air_date
                     ? fmtTime((movie.episode_run_time || [])[0])
                     : fmtTime(movie.runtime);
                 var countries = (movie.production_countries || []).slice(0, 2)
-                    .map(function(c) { return parseCountry(c.iso_3166_1 || '') || c.name || ''; })
+                    .map(function (c) { return parseCountry(c.iso_3166_1 || ''); })
                     .filter(Boolean);
                 var genreLabels = getGenreLabels(movie, 2);
-                var tmdbRating  = movie.vote_average ? parseFloat(movie.vote_average) : 0;
                 var pg = render.find('.full-start__pg').not('.hide').text().trim();
 
                 var infoParts = [];
-                if (year)            infoParts.push(year);
-                if (runtime)         infoParts.push(runtime);
+                if (year) infoParts.push(year);
+                if (runtime) infoParts.push(runtime);
                 if (countries.length) infoParts.push(countries.join(', '));
                 if (genreLabels.length) infoParts.push(genreLabels.join(', '));
+                if (pg) infoParts.push(pg);
 
-                // Рейтинг: изначально TMDB, заменяется на KP через observer
-                var currentRating  = tmdbRating > 0 ? tmdbRating.toFixed(1) + ' TMDB' : '';
+                var currentKP = movie.kp_rating ? parseFloat(movie.kp_rating) : 0;
+                var currentTMDB = movie.vote_average ? parseFloat(movie.vote_average) : 0;
                 var currentQuality = '';
+
                 var infoEl = $('<span class="fsc-serial-badge"></span>');
 
                 function rebuildInfo() {
                     var p = infoParts.slice();
-                    if (currentRating)  p.push(currentRating);
-                    if (pg)             p.push(pg);
+                    if (currentKP > 0) p.push(currentKP.toFixed(1) + ' KP');
+                    else if (currentTMDB > 0) p.push(currentTMDB.toFixed(1) + ' TMDB');
                     if (currentQuality) p.push(currentQuality);
                     infoEl.text(p.join(' • '));
                 }
                 rebuildInfo();
 
-                // Observer на .rate--kp (плагин kpRating убирает класс hide)
-                var kpDomEl = render.find('.rate--kp')[0];
-                if (kpDomEl) {
-                    var checkKP = function () {
-                        if (!$(kpDomEl).hasClass('hide')) {
-                            var v = parseFloat($(kpDomEl).find('> div').eq(0).text().trim());
-                            if (v > 0) { currentRating = v.toFixed(1) + ' KP'; rebuildInfo(); }
-                            if (kpObs) { kpObs.disconnect(); kpObs = null; }
+                // ── Polling KP рейтинга ──
+                var kpEl = render.find('.rate--kp')[0];
+                if (kpEl && !$(kpEl).hasClass('hide')) {
+                    var v = parseFloat($(kpEl).find('> div').eq(0).text());
+                    if (v > 0 && v !== currentKP) { currentKP = v; rebuildInfo(); }
+                } else if (kpEl && currentKP <= 0) {
+                    var checkKP = function (attempt) {
+                        if (currentToken !== token || attempt > 12) return;
+                        if (!$(kpEl).hasClass('hide')) {
+                            var v2 = parseFloat($(kpEl).find('> div').eq(0).text());
+                            if (v2 > 0) { currentKP = v2; rebuildInfo(); }
+                        } else {
+                            setTimeout(function () { checkKP(attempt + 1); }, 500);
                         }
                     };
-                    checkKP(); // сразу — вдруг KP уже в кэше
-                    if ($(kpDomEl).hasClass('hide')) {
-                        kpObs = new MutationObserver(checkKP);
-                        kpObs.observe(kpDomEl, { attributes: true, attributeFilter: ['class'] });
-                    }
+                    setTimeout(function () { checkKP(0); }, 500);
                 }
 
-                // Observer на .full-start-new__rate-line (плагин качества добавляет .quality-badge-custom)
-                var rateLine = render.find('.full-start-new__rate-line')[0];
-                if (rateLine) {
-                    var existingBadge = rateLine.querySelector('.quality-badge-custom');
-                    if (existingBadge) {
-                        currentQuality = existingBadge.textContent.trim();
-                        rebuildInfo();
+                // ── Polling качества ──
+                var checkQual = function (attempt) {
+                    if (currentToken !== token || attempt > 12) return;
+                    var qb = render.find('.quality-badge-custom').first();
+                    if (qb.length) {
+                        var q = qb.text().trim();
+                        if (q && q !== currentQuality) { currentQuality = q; rebuildInfo(); }
                     } else {
-                        qualObs = new MutationObserver(function (mutations) {
-                            for (var i = 0; i < mutations.length; i++) {
-                                for (var j = 0; j < mutations[i].addedNodes.length; j++) {
-                                    var node = mutations[i].addedNodes[j];
-                                    if (node.nodeType === 1 && node.classList &&
-                                        node.classList.contains('quality-badge-custom')) {
-                                        currentQuality = node.textContent.trim();
-                                        rebuildInfo();
-                                        qualObs.disconnect(); qualObs = null;
-                                        return;
-                                    }
-                                }
-                            }
-                        });
-                        qualObs.observe(rateLine, { childList: true });
+                        setTimeout(function () { checkQual(attempt + 1); }, 500);
                     }
-                }
+                };
+                setTimeout(function () { checkQual(0); }, 300);
 
                 // ── Строка статуса сериала ──
                 var serialEl = null;
                 if (movie.first_air_date) {
-                    var last    = movie.last_episode_to_air;
+                    var sp = [];
+                    var last = movie.last_episode_to_air;
                     var curSeas = last ? last.season_number : 0;
-                    var totSeas = movie.number_of_seasons  || 0;
+                    var totSeas = movie.number_of_seasons || 0;
                     var totEps  = movie.number_of_episodes || 0;
                     var curEps  = last ? last.episode_number : 0;
 
-                    // Считаем вышедшие серии: завершённые сезоны + серии текущего сезона
-                    var airedTotal = curEps;
-                    if (movie.seasons) {
+                    var airedTotal = 0;
+                    if (movie.seasons && last) {
                         for (var i = 0; i < movie.seasons.length; i++) {
                             var s = movie.seasons[i];
                             if (s.season_number > 0 && s.season_number < curSeas) {
                                 airedTotal += s.episode_count || 0;
                             }
                         }
+                        airedTotal += curEps;
                     }
-
-                    var sp = [];
 
                     if (totSeas > 0) {
                         sp.push(Lampa.Lang.translate('title_seasons') + ': ' +
                             (curSeas > 0 && curSeas < totSeas ? curSeas + '/' + totSeas : totSeas));
                     }
                     if (totEps > 0) {
-                        sp.push(Lampa.Lang.translate('title_episodes') + ': ' +
-                            (airedTotal > 0 && airedTotal < totEps ? airedTotal + '/' + totEps : String(totEps)));
+                        var epsStr = (airedTotal > 0 && airedTotal < totEps)
+                            ? airedTotal + '/' + totEps
+                            : totEps;
+                        sp.push(Lampa.Lang.translate('title_episodes') + ': ' + epsStr);
                     }
 
                     var hasNextEp = false;
@@ -278,15 +264,12 @@
                                 );
                             }
                         }
-                        // Запасной поиск в episodesList
-                        if (!hasNextEp && nextEpData.episode_number) {
+                        if (!hasNextEp && nextEpData.episode_number && episodesList) {
                             var found = null;
-                            if (episodesList) {
-                                for (var j = 0; j < episodesList.length; j++) {
-                                    if (episodesList[j].season_number === nextEpData.season_number &&
-                                        episodesList[j].episode_number === nextEpData.episode_number) {
-                                        found = episodesList[j]; break;
-                                    }
+                            for (var j = 0; j < episodesList.length; j++) {
+                                if (episodesList[j].season_number === nextEpData.season_number &&
+                                    episodesList[j].episode_number === nextEpData.episode_number) {
+                                    found = episodesList[j]; break;
                                 }
                             }
                             if (found && found.air_date) {
@@ -305,10 +288,9 @@
                         }
                     }
 
-                    // Статус: Онгоинг скрывается если есть следующий эпизод, остальные всегда
                     var tvStatus = movie.status || '';
                     if (tvStatus) {
-                        var isOngoing = tvStatus === 'Returning Series';
+                        var isOngoing = (tvStatus === 'Returning Series');
                         if (!isOngoing || !hasNextEp) {
                             sp.unshift(Lampa.Lang.translate(
                                 'tv_status_' + tvStatus.toLowerCase().replace(/ /g, '_')
@@ -336,17 +318,15 @@
                 var main = $('<div class="fsc-main"></div>');
                 main.append(title);
 
-                // 1. Строка статуса — ПЕРВАЯ
                 if (movie.first_air_date && serialEl) {
                     main.append($('<div class="fsc-center-row"></div>').append(serialEl));
                 } else if (!movie.first_air_date && movieStatusEl) {
                     main.append($('<div class="fsc-center-row"></div>').append(movieStatusEl));
                 }
 
-                // 2. Строка инфы — ВТОРАЯ
                 main.append($('<div class="fsc-center-row"></div>').append(infoEl));
-
                 main.append(buttons);
+
                 right.empty();
                 right.append(main);
 
@@ -405,7 +385,6 @@
                 currentFullComp = e.object.activity.component;
             }
             if (e.type === 'destroy' && e.component === 'full') {
-                disconnectObservers();
                 var destroyedComp = e.object && e.object.activity && e.object.activity.component;
                 if (destroyedComp && destroyedComp.scroll) destroyedComp.scroll._fscWrapped = false;
                 if (destroyedComp === currentFullComp) {
