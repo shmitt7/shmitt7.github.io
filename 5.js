@@ -136,7 +136,7 @@ if(movie.first_air_date&&serialEl)main.append($('<div class="fsc-center-row"></d
 else if(!movie.first_air_date&&movieStatusEl)main.append($('<div class="fsc-center-row"></div>').append(movieStatusEl));
 main.append($('<div class="fsc-center-row"></div>').append(infoEl));
 main.append(buttons);
-right.find('.fsc-main').remove(){
+right.find('.fsc-main').remove()
 var bgImg = render.find('.full-start__background');  
 if(bgImg.length && bgImg[0].src && bgImg[0].src.indexOf('/w1280/') !== -1){  
     var origSrc = bgImg[0].src.replace('/w1280/', '/original/');  
