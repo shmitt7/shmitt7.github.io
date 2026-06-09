@@ -1,45 +1,23 @@
 (function () {  
     'use strict';  
   
-    function isAnime(item) {  
-        var ids = item.genre_ids  
-            || (item.genres ? item.genres.map(function (g) { return g.id; }) : []);  
-        return item.original_language === 'ja' && ids.indexOf(16) >= 0;  
-    }  
+    // Regex: все нелатинские скрипты — иероглифы, индийские письмена, арабский, тайский и т.д.  
+    var NON_LATIN_SCRIPT = /[\u0600-\u06FF\u0900-\u0DFF\u0E00-\u0EFF\u1000-\u109F\u1780-\u17FF\u3040-\u30FF\u31F0-\u31FF\u4E00-\u9FFF\uAC00-\uD7AF\uFF66-\uFF9F]/;  
   
-    var FILTERS = [  
-        { key: 'cf_indian',   langs: ['hi','ta','te','ml','kn','bn','ur','pa','gu','mr','si'] },  
-        { key: 'cf_chinese',  langs: ['zh'] },  
-        { key: 'cf_japanese', langs: ['ja'] },  
-        { key: 'cf_korean',   langs: ['ko'] },  
-        { key: 'cf_turkish',  langs: ['tr'] },  
-        { key: 'cf_asian',    langs: ['th','vi','id','ms','tl','my','km','lo','mn','ne'] }  
-    ];  
-  
-    function isFiltered(item) {  
-        if (!item || !item.original_language) return false;  
-  
-        // Storage.field() возвращает boolean, не строку — сравниваем напрямую  
-        if (Lampa.Storage.field('cf_anime') && isAnime(item)) return true;  
-  
-        var lang = item.original_language;  
-        for (var i = 0; i < FILTERS.length; i++) {  
-            var f = FILTERS[i];  
-            if (Lampa.Storage.field(f.key) && f.langs.indexOf(lang) >= 0) return true;  
-        }  
-        return false;  
+    function hasNonLatinTitle(item) {  
+        // Проверяем оригинальное название (то, что хранит TMDB на языке страны производства)  
+        var title = item.original_title || item.original_name || '';  
+        return NON_LATIN_SCRIPT.test(title);  
     }  
   
     function shouldApplyFilter(url) {  
-        // Исключаем только поиск и страницы персон  
-        // НЕ фильтруем по домену — работает и с TMDB, и с CUB  
         return url.indexOf('/search') === -1  
             && url.indexOf('/person/') === -1;  
     }  
   
     function initPlugin() {  
-        if (window._cf_plugin_loaded) return;  
-        window._cf_plugin_loaded = true;  
+        if (window._cf_script_plugin_loaded) return;  
+        window._cf_script_plugin_loaded = true;  
   
         Lampa.SettingsApi.addComponent({  
             component: 'content_filter',  
@@ -47,30 +25,23 @@
             name: 'Фильтр контента'  
         });  
   
-        var items = [  
-            { key: 'cf_indian',   name: 'Индийское кино и сериалы',     desc: 'Хинди, тамильский, телугу и другие языки Индии' },  
-            { key: 'cf_chinese',  name: 'Китайское кино и сериалы',      desc: 'Контент на китайском языке' },  
-            { key: 'cf_japanese', name: 'Японское кино и сериалы',       desc: 'Весь японский контент (включая аниме)' },  
-            { key: 'cf_korean',   name: 'Южнокорейское кино и сериалы',  desc: 'Контент на корейском языке' },  
-            { key: 'cf_turkish',  name: 'Турецкое кино и сериалы',       desc: 'Контент на турецком языке' },  
-            { key: 'cf_asian',    name: 'Прочий азиатский контент',      desc: 'Тайский, вьетнамский, индонезийский и другие' },  
-            { key: 'cf_anime',    name: 'Аниме',                         desc: 'Только японская анимация (жанр Анимация + японский язык)' }  
-        ];  
-  
-        items.forEach(function (item) {  
-            Lampa.SettingsApi.addParam({  
-                component: 'content_filter',  
-                param: { name: item.key, type: 'trigger', default: false },  
-                field: { name: item.name, description: item.desc }  
-            });  
+        Lampa.SettingsApi.addParam({  
+            component: 'content_filter',  
+            param: { name: 'cf_hide_nonlatin', type: 'trigger', default: false },  
+            field: {  
+                name: 'Скрыть карточки с иероглифами',  
+                description: 'Скрывает карточки, оригинальное название которых написано нелатинскими символами (китайские, японские, корейские, индийские, арабские и другие)'  
+            }  
         });  
   
         Lampa.Listener.follow('request_secuses', function (req) {  
+            if (!req.params || !req.params.url) return;  
             if (!req.data || !Array.isArray(req.data.results)) return;  
             if (!shouldApplyFilter(req.params.url)) return;  
+            if (!Lampa.Storage.field('cf_hide_nonlatin')) return;  
   
             req.data.results = req.data.results.filter(function (item) {  
-                return !isFiltered(item);  
+                return !hasNonLatinTitle(item);  
             });  
         });  
     }  
