@@ -20,6 +20,7 @@
         { url: 'https://shmitt7.github.io/torrserver.js', name: 'TorrServer Free', description: 'Просмотр торрентов через общедоступные сервера. Работает при включённом встроенном клиенте и дополнительной ссылки. Сервер автоматически переподключается при входе в торренты и в шапке появляется кнопка' },  
         { url: 'https://shmitt7.github.io/russkoe.js', name: 'Русский контент', description: 'Добавляет категорию Русское: новинки, популярное, фильмы, сериалы, мультфильмы, реалити...' },  
         { url: 'https://shmitt7.github.io/buttons.js', name: 'Цветные кнопки просмотра', description: 'Раздельные цветные кнопки для источников просмотра в карточке фильма' },  
+        { url: 'https://shmitt7.github.io/filter.js', name: 'Фильтр контента', description: 'Скрывает карточки, название которых не переведено на русский или английский язык' },
         { url: 'https://shmitt7.github.io/tweaks.js', name: 'Улучшения и отключения', description: 'Отключает ненужные функции и блокировки, убирает лишние кнопки' }  
     ];  
     const getKey = name => 'my_plugin_' + name.toLowerCase().replace(/\s+/g, '_');  
