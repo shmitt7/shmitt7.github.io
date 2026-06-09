@@ -4,7 +4,6 @@
     var _logoCache = {};
     var CACHE_MAX = 200;
 
-    // Жанры из contentLabels (приоритетная логика)
     var GENRE_LABELS = {
         28:'Боевик', 12:'Приключения', 35:'Комедия', 80:'Криминал',
         18:'Драма', 10751:'Семейный', 14:'Фэнтези', 36:'История',
@@ -20,7 +19,14 @@
         return h > 0 ? (h + 'ч' + (m > 0 ? ' ' + m + 'м' : '')) : (m + 'м');
     }
 
-    // Исправление 4: логика жанров из contentLabels с приоритетами
+    // Исправление 1: перевод стран через Lampa.Lang
+    function parseCountry(iso) {
+        if (!iso) return '';
+        var key = 'country_' + iso.toLowerCase();
+        var t = Lampa.Lang.translate(key);
+        return (t && t !== key) ? t : iso;
+    }
+
     function getGenreLabels(movie, max) {
         var isTv = !!movie.name;
         var genres = movie.genres || [];
@@ -40,7 +46,6 @@
         var result = [];
         if (priority) result.push(priority);
 
-        // Второй жанр из обычного списка, без дублирования приоритетного
         for (var i = 0; i < ids.length && result.length < (max || 2); i++) {
             var label = GENRE_LABELS[ids[i]];
             if (!label) {
@@ -128,6 +133,7 @@
     function init() {
         var currentToken = null;
         var currentFullComp = null;
+        var kpObs = null;
 
         Lampa.Listener.follow('full', function (e) {
             if (e.type !== 'complite') return;
@@ -145,6 +151,9 @@
             setTimeout(function () {
                 if (currentToken !== token) return;
 
+                // Сбрасываем предыдущий KP observer
+                if (kpObs) { kpObs.disconnect(); kpObs = null; }
+
                 var render = $(fullComp.render());
                 var movie = (e.data && e.data.movie) || (e.object && (e.object.movie || e.object.card)) || {};
                 var right = render.find('.full-start-new__right');
@@ -158,37 +167,54 @@
                     ? fmtTime((movie.episode_run_time || [])[0])
                     : fmtTime(movie.runtime);
 
-                // Исправление 2: страны через Lampa.TMDB.parseCountries
-                var countries = (movie.production_countries || [])  
-    .map(function(c) { return c.name || c.iso_3166_1 || ''; })  
-    .filter(Boolean);
+                // Исправление 1: страны через Lampa.Lang.translate('country_XX')
+                var countries = (movie.production_countries || []).slice(0, 2).map(function(c) {
+                    return parseCountry(c.iso_3166_1 || '') || c.name || '';
+                }).filter(Boolean);
 
                 var genreLabels = getGenreLabels(movie, 2);
-
-                // Исправление 3: приоритет KP над TMDB
-                var kpRating = movie.kp_rating ? parseFloat(movie.kp_rating) : 0;
                 var tmdbRating = movie.vote_average ? parseFloat(movie.vote_average) : 0;
-
                 var pg = render.find('.full-start__pg').not('.hide').text().trim();
 
                 var infoParts = [];
                 if (year) infoParts.push(year);
                 if (runtime) infoParts.push(runtime);
-                if (countries.length) infoParts.push(countries.slice(0, 2).join(', '));
+                if (countries.length) infoParts.push(countries.join(', '));
                 if (genreLabels.length) infoParts.push(genreLabels.join(', '));
-                if (kpRating > 0) infoParts.push('KP ' + kpRating.toFixed(1));
-                else if (tmdbRating > 0) infoParts.push('TMDB ' + tmdbRating.toFixed(1));
-                if (pg) infoParts.push(pg);
 
+                // Исправление 2: рейтинг — изначально TMDB, заменяется на KP через observer
+                var currentRating = tmdbRating > 0 ? 'TMDB ' + tmdbRating.toFixed(1) : '';
                 var currentQuality = '';
                 var infoEl = $('<span class="fsc-serial-badge"></span>');
 
                 function rebuildInfo() {
                     var p = infoParts.slice();
+                    if (currentRating) p.push(currentRating);
+                    if (pg) p.push(pg);
                     if (currentQuality) p.push(currentQuality);
                     infoEl.text(p.join(' • '));
                 }
                 rebuildInfo();
+
+                // Наблюдаем за DOM-элементом .rate--kp (обновляется плагином kpRating)
+                var kpDomEl = render.find('.rate--kp')[0];
+                if (kpDomEl) {
+                    var checkKP = function() {
+                        if (!$(kpDomEl).hasClass('hide')) {
+                            var kpVal = parseFloat($(kpDomEl).find('> div').eq(0).text().trim());
+                            if (kpVal > 0) {
+                                currentRating = 'KP ' + kpVal.toFixed(1);
+                                rebuildInfo();
+                            }
+                            if (kpObs) { kpObs.disconnect(); kpObs = null; }
+                        }
+                    };
+                    checkKP(); // Проверяем сразу (если KP уже был загружен из кэша)
+                    if ($(kpDomEl).hasClass('hide')) {
+                        kpObs = new MutationObserver(checkKP);
+                        kpObs.observe(kpDomEl, { attributes: true, attributeFilter: ['class'] });
+                    }
+                }
 
                 // Качество ищем с задержкой
                 setTimeout(function () {
@@ -209,7 +235,6 @@
                     var totEps = movie.number_of_episodes || 0;
                     var curEps = last ? last.episode_number : 0;
 
-                    // Считаем вышедшие серии по всем сезонам до текущего
                     var airedTotal = 0;
                     if (movie.seasons) {
                         for (var i = 0; i < movie.seasons.length; i++) {
@@ -223,13 +248,11 @@
 
                     var sp = [];
 
-                    // Сезоны
                     if (totSeas > 0) {
                         sp.push(Lampa.Lang.translate('title_seasons') + ': ' +
                             (curSeas < totSeas ? curSeas + '/' + totSeas : totSeas));
                     }
 
-                    // Исправление 6: серии — дробь когда не все вышли
                     if (totEps > 0) {
                         var epsStr = (airedTotal > 0 && airedTotal < totEps)
                             ? airedTotal + '/' + totEps
@@ -237,7 +260,6 @@
                         sp.push(Lampa.Lang.translate('title_episodes') + ': ' + epsStr);
                     }
 
-                    // Следующий эпизод
                     var hasNextEp = false;
                     var nextEpData = movie.next_episode_to_air;
                     if (nextEpData) {
@@ -255,7 +277,6 @@
                                 );
                             }
                         }
-                        // Запасной поиск даты в episodesList
                         if (!hasNextEp && nextEpData.episode_number) {
                             var epNum = nextEpData.episode_number;
                             var seasNum = nextEpData.season_number;
@@ -285,17 +306,13 @@
                         }
                     }
 
-                    // Исправления 5 и 7: статус в начало строки, Онгоинг скрывается если есть следующий эпизод
                     var status = movie.status || '';
-                    // Показываем все статусы кроме Released (фильм уже вышел — не интересно)
                     var showStatus = status && status.toLowerCase() !== 'released';
-                    // Онгоинг скрываем если уже показываем дату следующей серии
                     var hideOngoing = hasNextEp && status === 'Returning Series';
 
                     if (showStatus && !hideOngoing) {
                         var statusKey = 'tv_status_' + status.toLowerCase().replace(/ /g, '_');
-                        var statusText = Lampa.Lang.translate(statusKey);
-                        sp.unshift(statusText); // статус в начало строки
+                        sp.unshift(Lampa.Lang.translate(statusKey));
                     }
 
                     if (sp.length) {
@@ -307,14 +324,12 @@
                 var main = $('<div class="fsc-main"></div>');
                 main.append(title);
 
-                // Исправление 1: сначала строка о сериале, потом строка инфы
+                // 1. Строка о сериале — ПЕРВАЯ (статус + сезоны/серии/следующий эпизод)
                 if (movie.first_air_date && serialEl) {
                     main.append($('<div class="fsc-center-row"></div>').append(serialEl));
                 }
 
-                main.append($('<div class="fsc-center-row"></div>').append(infoEl));
-
-                // Строка "Скоро" для фильмов
+                // Исправление 3: для фильмов "Скоро" тоже идёт ПЕРЕД строкой инфы
                 if (!movie.first_air_date && movie.release_date) {
                     var releaseTs = Lampa.Utils.parseToDate(movie.release_date).getTime();
                     if (releaseTs > Date.now()) {
@@ -325,6 +340,9 @@
                         ));
                     }
                 }
+
+                // 2. Строка инфы — ВТОРАЯ
+                main.append($('<div class="fsc-center-row"></div>').append(infoEl));
 
                 main.append(buttons);
 
@@ -389,6 +407,7 @@
                 currentFullComp = e.object.activity.component;
             }
             if (e.type === 'destroy' && e.component === 'full') {
+                if (kpObs) { kpObs.disconnect(); kpObs = null; }
                 var destroyedComp = e.object && e.object.activity && e.object.activity.component;
                 if (destroyedComp && destroyedComp.scroll) destroyedComp.scroll._fscWrapped = false;
                 if (destroyedComp === currentFullComp) {
