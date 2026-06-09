@@ -1,14 +1,9 @@
 (function () {  
     'use strict';  
   
-    // Символы нелатинских/некириллических скриптов:  
-    // CJK (китайский, японский), Хангыль (корейский),  
-    // Деванагари + индийские письмена, Арабский,  
-    // Тайский, Лаосский, Бирманский, Кхмерский  
-    var NON_RU_EN = /[\u0600-\u06FF\u0900-\u0DFF\u0E00-\u0EFF\u1000-\u109F\u1780-\u17FF\u3040-\u30FF\u31F0-\u31FF\u4E00-\u9FFF\uAC00-\uD7AF\uFF66-\uFF9F]/;  
+    var NON_RU_EN = /[\u0530-\u06FF\u0900-\u0FFF\u1000-\u11FF\u1780-\u18AF\u3040-\u30FF\u31F0-\u31FF\u4E00-\u9FFF\uA960-\uA97F\uAC00-\uD7FF\uFF66-\uFF9F]/;  
   
     function hasUntranslatedTitle(item) {  
-        // Берём отображаемое название (локализованное), а не оригинальное  
         var title = item.title || item.name || '';  
         return NON_RU_EN.test(title);  
     }  
@@ -33,7 +28,7 @@
             param: { name: 'cf_hide_untranslated', type: 'trigger', default: false },  
             field: {  
                 name: 'Скрыть непереведённые карточки',  
-                description: 'Скрывает карточки, название которых не переведено на русский или английский (написано иероглифами, арабским, деванагари и т.д.)'  
+                description: 'Скрывает карточки, название которых не переведено на русский или английский'  
             }  
         });  
   
@@ -43,9 +38,34 @@
             if (!shouldApplyFilter(req.params.url)) return;  
             if (!Lampa.Storage.field('cf_hide_untranslated')) return;  
   
+            var before = req.data.results.length;  
+            var hidden = [];  
+  
             req.data.results = req.data.results.filter(function (item) {  
-                return !hasUntranslatedTitle(item);  
+                if (hasUntranslatedTitle(item)) {  
+                    hidden.push({  
+                        title:          item.title || item.name || '—',  
+                        original_title: item.original_title || item.original_name || '—',  
+                        lang:           item.original_language || '—',  
+                        id:             item.id  
+                    });  
+                    return false;  
+                }  
+                return true;  
             });  
+  
+            if (hidden.length > 0) {  
+                console.group('[ContentFilter] Скрыто ' + hidden.length + ' из ' + before + ' | ' + req.params.url);  
+                hidden.forEach(function (c) {  
+                    console.log(  
+                        'id=' + c.id +  
+                        ' | lang=' + c.lang +  
+                        ' | title="' + c.title + '"' +  
+                        ' | original="' + c.original_title + '"'  
+                    );  
+                });  
+                console.groupEnd();  
+            }  
         });  
     }  
   
