@@ -136,7 +136,12 @@ if(movie.first_air_date&&serialEl)main.append($('<div class="fsc-center-row"></d
 else if(!movie.first_air_date&&movieStatusEl)main.append($('<div class="fsc-center-row"></div>').append(movieStatusEl));
 main.append($('<div class="fsc-center-row"></div>').append(infoEl));
 main.append(buttons);
-right.find('.fsc-main').remove();
+right.find('.fsc-main').remove(){
+var bgImg = render.find('.full-start__background');  
+if(bgImg.length && bgImg[0].src && bgImg[0].src.indexOf('/w1280/') !== -1){  
+    var origSrc = bgImg[0].src.replace('/w1280/', '/original/');  
+    bgImg[0].src = origSrc;  
+};
 right.append(main);
 if(movie.id){
 var origHtml=title.html();
@@ -159,7 +164,7 @@ if(currentToken!==token)return;
 var logos=(data.logos||[]).filter(function(l){return l.file_path&&!l.file_path.endsWith('.svg')&&l.iso_639_1==='ru';});
 logos.sort(function(a,b){return b.vote_average-a.vote_average;});
 if(Object.keys(_logoCache).length>200)_logoCache={};
-_logoCache[cacheKey]=logos.length?Lampa.TMDB.image('t/p/w500'+logos[0].file_path):null;
+_logoCache[cacheKey]=logos.length?Lampa.TMDB.image('t/p/original'+logos[0].file_path):null;
 if(_logoCache[cacheKey])applyLogo(_logoCache[cacheKey]);
 }
 );
