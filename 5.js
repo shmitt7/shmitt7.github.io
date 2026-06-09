@@ -327,7 +327,7 @@
                 main.append($('<div class="fsc-center-row"></div>').append(infoEl));
                 main.append(buttons);
 
-                right.empty();
+                right.find('.fsc-main').remove();
                 right.append(main);
 
                 // ── Логотип ──
