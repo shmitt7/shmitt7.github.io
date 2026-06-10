@@ -2,25 +2,8 @@
     'use strict';
     if (window.fscPlugin) return;
     window.fscPlugin = true;
-
     let logoCache = {};
     let logoCacheSize = 0;
-
-    const GENRE_LABELS = {
-        28:'Боевик', 12:'Приключения', 35:'Комедия', 80:'Криминал', 18:'Драма',
-        10751:'Семейный', 14:'Фэнтези', 36:'История', 27:'Ужасы', 10402:'Музыка',
-        9648:'Детектив', 10749:'Мелодрама', 878:'Фантастика', 10770:'Телефильм',
-        53:'Триллер', 10752:'Военный', 37:'Вестерн', 10759:'Экшен', 10762:'Детский',
-        10765:'НФ и Фэнтези', 10768:'Война и Политика'
-    };
-
-    function formatTime(minutes) {
-        if (!minutes || minutes <= 0) return '';
-        const hours = Math.floor(minutes / 60);
-        const mins = minutes % 60;
-        return hours > 0 ? (hours + 'ч' + (mins > 0 ? ' ' + mins + 'м' : '')) : mins + 'м';
-    }
-
     function getGenreLabels(movie, max) {
         const isTv = !!movie.name;
         const genres = movie.genres || [];
@@ -35,32 +18,18 @@
         else if (ids.indexOf(16) !== -1) priority = isTv ? 'Мультсериал' : 'Мультфильм';
         const result = [];
         if (priority) result.push(priority);
-        for (let i = 0; i < ids.length && result.length < (max || 2); i++) {
-            let label = GENRE_LABELS[ids[i]];
-            if (!label) {
-                const genreName = genres[i] && (genres[i].name || '');
-                label = genreName ? (genreName.charAt(0).toUpperCase() + genreName.slice(1)) : null;
-            }
-            if (label && result.indexOf(label) === -1) result.push(label);
+        for (let i = 0; i < genres.length && result.length < (max || 2); i++) {
+            const name = genres[i] && genres[i].name;
+            if (name && result.indexOf(name) === -1) result.push(name);
         }
         return result;
     }
-
-    function parseCountry(iso) {
-        if (!iso) return '';
-        const key = 'country_' + iso.toLowerCase();
-        const translated = Lampa.Lang.translate(key);
-        return (translated && translated !== key) ? translated : iso;
-    }
-
-    const style = document.createElement('style');
-    style.textContent = 'body.fsc--open .full-start__background{position:fixed!important;inset:0!important;width:100vw!important;height:100vh!important;z-index:0!important;object-fit:cover!important;mask-image:none!important;-webkit-mask-image:none!important;pointer-events:none!important;filter:none!important;opacity:0;transition:opacity 0.5s ease-in-out;}body.fsc--open .full-start__background.loaded{opacity:0.8!important;}body.fsc--open .full-start__background.dim{opacity:0!important;transition:opacity 0s!important;}body.fsc--open:not(.fsc--scrolled) .background{opacity:0!important;transition:none!important;}body.fsc--open.fsc--scrolled .background{opacity:1!important;transition:opacity 0.4s!important;}body.fsc--open:not(.fsc--scrolled) .head{background:transparent!important;}body.fsc--open .full-start-new{position:relative!important;}body.fsc--open .full-start-new__body{min-height:calc(100vh - 6em)!important;align-items:stretch!important;justify-content:center!important;}body.fsc--open .full-start-new__right{display:flex!important;flex-direction:column!important;min-height:calc(100vh - 6em)!important;justify-content:flex-end!important;align-items:center!important;text-align:center!important;padding-bottom:0.8em!important;}body.fsc--open .full-start-new__left{display:none!important;}body.fsc--open .full-start-new__right>*:not(.fsc-main){display:none!important;}.fsc-main{display:flex!important;flex-direction:column!important;align-items:center!important;text-align:center!important;margin-bottom:0.2em!important;}body.fsc--open .full-start-new__title{text-align:center!important;max-width:100%!important;text-shadow:0 2px 12px rgba(0,0,0,0.95)!important;margin-bottom:0.15em!important;display:block!important;overflow:visible!important;-webkit-line-clamp:unset!important;line-clamp:unset!important;}.fsc-logo{max-width:18em!important;max-height:5em!important;object-fit:contain!important;}.fsc-center-row{display:flex!important;flex-wrap:wrap!important;align-items:center!important;justify-content:center!important;gap:0.35em!important;margin-bottom:0.2em!important;}.fsc-serial-badge{display:inline-flex!important;align-items:center!important;height:1.5em!important;padding:0 0.5em!important;background:rgba(0,0,0,0.65)!important;color:#fff!important;font-size:1.25em!important;font-weight:550!important;border-radius:0.35em!important;white-space:nowrap!important;box-sizing:border-box!important;border:1px solid rgba(255,255,255,0.2)!important;margin:0!important;text-shadow:none!important;}';
-    document.head.appendChild(style);
-
     function init() {
+        const style = document.createElement('style');
+        style.textContent = 'body.fsc--open .full-start__background{position:fixed!important;inset:0!important;width:100vw!important;height:100vh!important;z-index:0!important;object-fit:cover!important;mask-image:none!important;-webkit-mask-image:none!important;pointer-events:none!important;filter:none!important;opacity:0;transition:opacity 0.5s ease-in-out;}body.fsc--open .full-start__background.loaded{opacity:0.8!important;}body.fsc--open .full-start__background.dim{opacity:0!important;transition:opacity 0s!important;}body.fsc--open:not(.fsc--scrolled) .background{opacity:0!important;transition:none!important;}body.fsc--open.fsc--scrolled .background{opacity:1!important;transition:opacity 0.4s!important;}body.fsc--open:not(.fsc--scrolled) .head{background:transparent!important;}body.fsc--open .full-start-new{position:relative!important;}body.fsc--open .full-start-new__body{min-height:calc(100vh - 6em)!important;align-items:stretch!important;justify-content:center!important;}body.fsc--open .full-start-new__right{display:flex!important;flex-direction:column!important;min-height:calc(100vh - 6em)!important;justify-content:flex-end!important;align-items:center!important;text-align:center!important;padding-bottom:0.8em!important;}body.fsc--open .full-start-new__left{display:none!important;}body.fsc--open .full-start-new__right>*:not(.fsc-main){display:none!important;}.fsc-main{display:flex!important;flex-direction:column!important;align-items:center!important;text-align:center!important;margin-bottom:0.2em!important;}body.fsc--open .full-start-new__title{text-align:center!important;max-width:100%!important;text-shadow:0 2px 12px rgba(0,0,0,0.95)!important;margin-bottom:0.15em!important;display:block!important;overflow:visible!important;-webkit-line-clamp:unset!important;line-clamp:unset!important;}.fsc-logo{max-width:18em!important;max-height:5em!important;object-fit:contain!important;}.fsc-center-row{display:flex!important;flex-wrap:wrap!important;align-items:center!important;justify-content:center!important;gap:0.35em!important;margin-bottom:0.2em!important;}.fsc-serial-badge{display:inline-flex!important;align-items:center!important;height:1.5em!important;padding:0 0.5em!important;background:rgba(0,0,0,0.65)!important;color:#fff!important;font-size:1.25em!important;font-weight:550!important;border-radius:0.35em!important;white-space:nowrap!important;box-sizing:border-box!important;border:1px solid rgba(255,255,255,0.2)!important;margin:0!important;text-shadow:none!important;}';
+        document.head.appendChild(style);
         let currentToken = null;
         let currentFullComp = null;
-
         Lampa.Listener.follow('full', (e) => {
             if (e.type !== 'complite') return;
             const fullComp = e.link;
@@ -79,14 +48,16 @@
                 const buttons = render.find('.full-start-new__buttons');
                 const relDate = movie.release_date || movie.first_air_date || '';
                 const year = relDate ? relDate.slice(0, 4) : '';
-                const runtime = movie.first_air_date
-                    ? formatTime((movie.episode_run_time || [])[0])
-                    : formatTime(movie.runtime);
-                const countries = (movie.production_countries || []).slice(0, 2)
-                    .map(c => parseCountry(c.iso_3166_1 || ''))
-                    .filter(Boolean);
+                const runtimeMin = movie.first_air_date ? (movie.episode_run_time || [])[0] : movie.runtime;
+                const runtime = runtimeMin > 0 ? Lampa.Utils.secondsToTimeHuman(runtimeMin * 60) : '';
+                const countries = (movie.production_countries || []).slice(0, 2).map(c => {
+                    const k = 'country_' + (c.iso_3166_1 || '').toLowerCase();
+                    const t = Lampa.Lang.translate(k);
+                    return (t && t !== k) ? t : (c.iso_3166_1 || '');
+                }).filter(Boolean);
                 const genreLabels = getGenreLabels(movie, 2);
                 const tmdbRating = movie.vote_average ? parseFloat(movie.vote_average) : 0;
+                const kp = parseFloat(movie.kp_rating) || 0;
                 const pg = render.find('.full-start__pg').not('.hide').text().trim();
                 const infoParts = [];
                 if (year) infoParts.push(year);
@@ -94,28 +65,16 @@
                 if (countries.length) infoParts.push(countries.join(', '));
                 if (genreLabels.length) infoParts.push(genreLabels.join(', '));
                 if (pg) infoParts.push(pg);
-                let currentKP = 0;
                 let currentQuality = '';
                 const infoEl = $('<span class="fsc-serial-badge"></span>');
                 function rebuildInfo() {
                     const parts = infoParts.slice();
-                    if (currentKP > 0) parts.push(currentKP.toFixed(1) + ' KP');
+                    if (kp > 0) parts.push((kp >= 10 ? 10 : kp).toFixed(1) + ' KP');
                     else if (tmdbRating > 0) parts.push(tmdbRating.toFixed(1) + ' TMDB');
                     if (currentQuality) parts.push(currentQuality);
                     infoEl.text(parts.join(' \u2022 '));
                 }
                 rebuildInfo();
-                const kpEl = render.find('.rate--kp')[0];
-                function checkKP(attempt) {
-                    if (currentToken !== token || attempt > 12) return;
-                    if (kpEl && !$(kpEl).hasClass('hide')) {
-                        const kpValue = parseFloat($(kpEl).find('> div').eq(0).text());
-                        if (kpValue > 0) { currentKP = kpValue; rebuildInfo(); }
-                    } else {
-                        setTimeout(() => checkKP(attempt + 1), 500);
-                    }
-                }
-                checkKP(0);
                 function checkQual(attempt) {
                     if (currentToken !== token || attempt > 12) return;
                     const qualBadge = render.find('.quality-badge-custom').first();
@@ -222,7 +181,6 @@
                 }
             }, 0);
         });
-
         Lampa.Listener.follow('activity', (e) => {
             if (e.type === 'archive' && e.component === 'full') {
                 $('body').addClass('fsc--open').removeClass('fsc--scrolled');
@@ -241,7 +199,6 @@
             }
         });
     }
-
     if (window.appready) init();
     else Lampa.Listener.follow('app', (e) => { if (e.type === 'ready') init(); });
 })();
