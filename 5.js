@@ -28,12 +28,6 @@
         }  
         return result;  
     }  
-    function parseCountry(iso) {  
-        if (!iso) return '';  
-        const key = 'country_' + iso.toLowerCase();  
-        const translated = Lampa.Lang.translate(key);  
-        return (translated && translated !== key) ? translated : iso;  
-    }  
     function init() {  
         const style = document.createElement('style');  
         style.textContent = 'body.fsc--open .full-start__background{position:fixed!important;inset:0!important;width:100vw!important;height:100vh!important;z-index:0!important;object-fit:cover!important;mask-image:none!important;-webkit-mask-image:none!important;pointer-events:none!important;filter:none!important;opacity:0;transition:opacity 0.5s ease-in-out;}body.fsc--open .full-start__background.loaded{opacity:0.8!important;}body.fsc--open .full-start__background.dim{opacity:0!important;transition:opacity 0s!important;}body.fsc--open:not(.fsc--scrolled) .background{opacity:0!important;transition:none!important;}body.fsc--open.fsc--scrolled .background{opacity:1!important;transition:opacity 0.4s!important;}body.fsc--open:not(.fsc--scrolled) .head{background:transparent!important;}body.fsc--open .full-start-new{position:relative!important;}body.fsc--open .full-start-new__body{min-height:calc(100vh - 6em)!important;align-items:stretch!important;justify-content:center!important;}body.fsc--open .full-start-new__right{display:flex!important;flex-direction:column!important;min-height:calc(100vh - 6em)!important;justify-content:flex-end!important;align-items:center!important;text-align:center!important;padding-bottom:0.8em!important;}body.fsc--open .full-start-new__left{display:none!important;}body.fsc--open .full-start-new__right>*:not(.fsc-main){display:none!important;}.fsc-main{display:flex!important;flex-direction:column!important;align-items:center!important;text-align:center!important;margin-bottom:0.2em!important;}body.fsc--open .full-start-new__title{text-align:center!important;max-width:100%!important;text-shadow:0 2px 12px rgba(0,0,0,0.95)!important;margin-bottom:0.15em!important;display:block!important;overflow:visible!important;-webkit-line-clamp:unset!important;line-clamp:unset!important;}.fsc-logo{max-width:18em!important;max-height:5em!important;object-fit:contain!important;}.fsc-center-row{display:flex!important;flex-wrap:wrap!important;align-items:center!important;justify-content:center!important;gap:0.35em!important;margin-bottom:0.2em!important;}.fsc-serial-badge{display:inline-flex!important;align-items:center!important;height:1.5em!important;padding:0 0.5em!important;background:rgba(0,0,0,0.65)!important;color:#fff!important;font-size:1.25em!important;font-weight:550!important;border-radius:0.35em!important;white-space:nowrap!important;box-sizing:border-box!important;border:1px solid rgba(255,255,255,0.2)!important;margin:0!important;text-shadow:none!important;}';  
@@ -60,67 +54,81 @@
                 const year = relDate ? relDate.slice(0, 4) : '';  
                 const runtimeMin = movie.first_air_date ? (movie.episode_run_time || [])[0] : movie.runtime;  
                 const runtime = runtimeMin > 0 ? Lampa.Utils.secondsToTimeHuman(runtimeMin * 60) : '';  
-                const countries = (movie.production_countries || []).slice(0, 2).map(c => parseCountry(c.iso_3166_1)).filter(Boolean);  
-                const genres = getGenreLabels(movie, 2);  
+                const countries = (movie.production_countries || []).slice(0, 2).map(c => {  
+                    const k = 'country_' + (c.iso_3166_1 || '').toLowerCase();  
+                    const t = Lampa.Lang.translate(k);  
+                    return (t && t !== k) ? t : (c.iso_3166_1 || '');  
+                }).filter(Boolean);  
+                const genreLabels = getGenreLabels(movie, 2);  
+                const tmdbRating = movie.vote_average ? parseFloat(movie.vote_average) : 0;  
+                const pg = render.find('.full-start__pg').not('.hide').text().trim();  
                 const infoParts = [];  
                 if (year) infoParts.push(year);  
                 if (runtime) infoParts.push(runtime);  
                 if (countries.length) infoParts.push(countries.join(', '));  
-                if (genres.length) infoParts.push(genres.join(', '));  
+                if (genreLabels.length) infoParts.push(genreLabels.join(', '));  
+                if (pg) infoParts.push(pg);  
+                let currentKP = 0;  
+                let currentQuality = '';  
                 const infoEl = $('<span class="fsc-serial-badge"></span>');  
-                let currentQuality = null;  
                 function rebuildInfo() {  
                     const parts = infoParts.slice();  
-                    const kpEl = render.find('.rate--kp');  
-                    const tmdbEl = render.find('.rate--tmdb');  
-                    const kpVal = !kpEl.hasClass('hide') ? parseFloat(kpEl.find('> div').eq(0).text()) || 0 : 0;  
-                    const tmdbVal = !tmdbEl.hasClass('hide') ? parseFloat(tmdbEl.find('> div').eq(0).text()) || 0 : 0;  
-                    if (kpVal > 0) parts.push(kpVal.toFixed(1) + ' KP');  
-                    else if (tmdbVal > 0) parts.push(tmdbVal.toFixed(1) + ' TMDB');  
+                    if (currentKP > 0) parts.push(currentKP.toFixed(1) + ' KP');  
+                    else if (tmdbRating > 0) parts.push(tmdbRating.toFixed(1) + ' TMDB');  
                     if (currentQuality) parts.push(currentQuality);  
                     infoEl.text(parts.join(' \u2022 '));  
                 }  
                 rebuildInfo();  
-                function checkQual(attempt) {  
-                    if (currentToken !== token || attempt > 10) return;  
-                    const qual = render.find('.full-start__quality').text().trim();  
-                    if (qual && qual !== currentQuality) {  
-                        currentQuality = qual;  
-                        rebuildInfo();  
+                const kpEl = render.find('.rate--kp')[0];  
+                function checkKP(attempt) {  
+                    if (currentToken !== token || attempt > 12) return;  
+                    if (kpEl && !$(kpEl).hasClass('hide')) {  
+                        const kpValue = parseFloat($(kpEl).find('> div').eq(0).text());  
+                        if (kpValue > 0) { currentKP = kpValue; rebuildInfo(); }  
                     } else {  
-                        setTimeout(() => checkQual(attempt + 1), 300);  
+                        setTimeout(() => checkKP(attempt + 1), 500);  
                     }  
+                }  
+                checkKP(0);  
+                function checkQual(attempt) {  
+                    if (currentToken !== token || attempt > 12) return;  
+                    const qualBadge = render.find('.quality-badge-custom').first();  
+                    if (qualBadge.length) { currentQuality = qualBadge.text().trim(); rebuildInfo(); }  
+                    else setTimeout(() => checkQual(attempt + 1), 500);  
                 }  
                 setTimeout(() => checkQual(0), 300);  
-                function checkKp(attempt) {  
-                    if (currentToken !== token || attempt > 20) return;  
-                    if (!render.find('.rate--kp').hasClass('hide')) {  
-                        rebuildInfo();  
-                    } else {  
-                        setTimeout(() => checkKp(attempt + 1), 500);  
-                    }  
-                }  
-                if (render.find('.rate--kp').hasClass('hide')) {  
-                    setTimeout(() => checkKp(0), 500);  
-                }  
                 let serialEl = null;  
                 if (movie.first_air_date) {  
-                    const seasons = movie.seasons || [];  
-                    const realSeasons = seasons.filter(s => s.season_number > 0);  
-                    const totalSeasons = movie.number_of_seasons || realSeasons.length || 0;  
+                    const lastEpisode = movie.last_episode_to_air;  
+                    const currentSeason = lastEpisode ? lastEpisode.season_number : 0;  
+                    const totalSeasons = movie.number_of_seasons || 0;  
                     const totalEpisodes = movie.number_of_episodes || 0;  
-                    const currentSeason = realSeasons.length || 0;  
-                    const airedTotal = realSeasons.reduce((sum, s) => sum + (s.episode_count || 0), 0);  
-                    const nextEp = movie.next_episode_to_air;  
-                    const hasNextEpisode = !!(nextEp && nextEp.air_date);  
+                    const currentEpisode = lastEpisode ? lastEpisode.episode_number : 0;  
+                    let airedTotal = 0;  
+                    if (movie.seasons && lastEpisode) {  
+                        for (let si = 0; si < movie.seasons.length; si++) {  
+                            const season = movie.seasons[si];  
+                            if (season.season_number > 0 && season.season_number < currentSeason)  
+                                airedTotal += season.episode_count || 0;  
+                        }  
+                        airedTotal += currentEpisode;  
+                    }  
+                    const tvStatus = movie.status || '';  
+                    let hasNextEpisode = false;  
                     let nextEpisodeText = '';  
-                    if (hasNextEpisode) {  
-                        const parsed = Lampa.Utils.parseTime(nextEp.air_date);  
-                        nextEpisodeText = Lampa.Lang.translate('title_episode') + ' ' + nextEp.episode_number  
-                            + (nextEp.season_number ? ' (' + Lampa.Lang.translate('title_season') + ' ' + nextEp.season_number + ')' : '')  
-                            + ': ' + (parsed && parsed.short ? parsed.short : nextEp.air_date);  
+                    const nextEpisode = movie.next_episode_to_air;  
+                    if (nextEpisode && nextEpisode.air_date) {  
+                        const daysLeft = Math.ceil((Lampa.Utils.parseToDate(nextEpisode.air_date).getTime() - Date.now()) / 86400000);  
+                        if (daysLeft > 0) {  
+                            hasNextEpisode = true;  
+                            nextEpisodeText = Lampa.Lang.translate('full_next_episode') + ': '  
+                                + Lampa.Utils.parseTime(nextEpisode.air_date).short + ' / '  
+                                + Lampa.Lang.translate('full_episode_days_left') + ': ' + daysLeft;  
+                        }  
                     }  
                     const serialParts = [];  
+                    if (tvStatus && !(tvStatus === 'Returning Series' && hasNextEpisode))  
+                        serialParts.push(Lampa.Lang.translate('tv_status_' + tvStatus.toLowerCase().replace(/ /g, '_')));  
                     if (totalSeasons > 0)  
                         serialParts.push(Lampa.Lang.translate('title_seasons') + ': '  
                             + (currentSeason < totalSeasons ? currentSeason + '/' + totalSeasons : totalSeasons));  
