@@ -23,12 +23,8 @@
     }  
     function showFullRating(kp, tmdb, render) {  
         $('.wait_rating', render).remove();  
-        if (kp > 0) {  
-            $('.rate--kp', render).removeClass('hide').find('> div').eq(0).text(kp.toFixed(1));  
-            $('.rate--tmdb', render).addClass('hide');  
-        } else if (tmdb > 0) {  
-            $('.rate--tmdb', render).removeClass('hide').find('> div').eq(0).text(tmdb.toFixed(1));  
-        }  
+        if (kp > 0) $('.rate--kp', render).removeClass('hide').find('> div').eq(0).text(kp.toFixed(1));  
+        if (tmdb > 0) $('.rate--tmdb', render).removeClass('hide').find('> div').eq(0).text(tmdb.toFixed(1));  
     }  
     function updateCardVote(card, kp, tmdb) {  
         let el = card.querySelector('.card__vote');  
