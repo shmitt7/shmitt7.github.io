@@ -19,7 +19,7 @@
         const result = [];
         if (priority) result.push(priority);
         for (let i = 0; i < genres.length && result.length < (max || 2); i++) {
-            const name = genres[i] && genres[i].name;
+            const name = genres[i] && Lampa.Utils.capitalizeFirstLetter(genres[i].name);
             if (name && result.indexOf(name) === -1) result.push(name);
         }
         return result;
