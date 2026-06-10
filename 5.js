@@ -5,7 +5,7 @@
     let logoCache = {};  
     let logoCacheSize = 0;  
     const nameMap = {  
-        'Боевик и приключения': 'Экшен',  
+        'Боевик и Приключения': 'Экшен',  
     };  
     function getGenreLabels(movie, max) {  
         const isTv = !!movie.name;  
