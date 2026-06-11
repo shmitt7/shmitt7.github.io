@@ -44,7 +44,11 @@
                 const results = res?.Results || [];  
                 for (const r of results) {  
                     const relYear = parseInt(r.info?.released || r.year);  
-                    const yearInTitle = !targetYear || (r.Title && r.Title.includes(String(targetYear)));  
+                    const yearInTitle = !targetYear || (r.Title && (  
+                        r.Title.includes(String(targetYear)) ||  
+                        r.Title.includes(String(targetYear - 1)) ||  
+                        r.Title.includes(String(targetYear + 1))  
+                    ));  
                     if (!targetYear || (relYear && Math.abs(relYear - targetYear) <= 1) || (!relYear && yearInTitle)) {  
                         titles.push(r.Title);  
                     }  
