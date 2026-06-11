@@ -2,51 +2,45 @@
     'use strict';  
     if (window.qualityPlugin) return;  
     window.qualityPlugin = true;  
-  
     document.head.insertAdjacentHTML('beforeend', '<style>.card__quality:not(.card__quality-custom),.tag--quality:not(.quality-badge-custom){display:none!important}</style>');  
-  
     const SERVERS = ['https://jac.red', 'https://jr.maxvol.pro'];  
-    const QUALITY_SCORE = { '4K': 3, 'HD': 2, 'TS': 1 };  
+    const RE_TS = /\b(ts|telesync|telecine|cam|camrip|workprint|wp|scr|screener|dvdscr)\b/i;  
+    const RE_TS2 = /звук\s*с\s*ts|sound\s*ts|audio\s*ts|dub\s*ts/i;  
+    const RE_4K = /\b(2160p|2160р|4k|uhd|4к)\b/i;  
+    const RE_HD = /\b(1080p|1080р|720p|720р|blu\-ray|bdrip|bdremux|web\-dl|webdl|web\-dlrip|webrip|hdtv|hdtvrip|hddvd|hddvdrip|fullhd|fhd|hd|hdrip)\b/i;  
     const net = new Lampa.Reguest();  
-  
-    function getQuality(title) {  
-        if (!title) return null;  
-        if (/\b(ts|telesync|telecine|cam|camrip|workprint|wp|scr|screener|dvdscr)\b/i.test(title) || /звук\s*с\s*ts|sound\s*ts|audio\s*ts|dub\s*ts/i.test(title)) return 'TS';  
-        if (/\b(2160p|2160р|4k|uhd|4к)\b/i.test(title)) return '4K';  
-        if (/\b(1080p|1080р|720p|720р|blu\-ray|bdrip|bdremux|web\-dl|webdl|web\-dlrip|webrip|hdtv|hdtvrip|hddvd|hddvdrip|fullhd|fhd|hd|hdrip)\b/i.test(title)) return 'HD';  
+    const cache = {};  
+    function getQuality(t) {  
+        if (!t) return null;  
+        if (RE_TS.test(t) || RE_TS2.test(t)) return 'TS';  
+        if (RE_4K.test(t)) return '4K';  
+        if (RE_HD.test(t)) return 'HD';  
         return null;  
     }  
-  
     function fetchQuality(data, callback) {  
+        const key = data.id;  
+        if (key && cache[key] !== undefined) return callback(cache[key]);  
         const title = data.title || data.name;  
-        const yearStr = (data.release_date || data.first_air_date || '').substring(0, 4);  
-        const targetYear = parseInt(yearStr) || null;  
-        let serverIndex = 0;  
-        let titles = [];  
-  
+        const targetYear = parseInt((data.release_date || data.first_air_date || '').substring(0, 4)) || null;  
+        let serverIndex = 0, titles = [];  
         const analyzeResults = () => {  
-            console.log('[quality] Итого прошло фильтр:', titles.length, 'заголовков');  
-            if (!titles.length) return callback(null);  
-            let tsCount = 0;  
-            let best = { q: null, s: -1 };  
+            if (!titles.length) { if (key) cache[key] = null; return callback(null); }  
+            let tsCount = 0, has4K = false, hasHD = false;  
             for (const t of titles) {  
                 const q = getQuality(t);  
-                console.log('[quality]', JSON.stringify(t), '->', q);  
                 if (q === 'TS') tsCount++;  
-                const s = q ? QUALITY_SCORE[q] : -1;  
-                if (s > best.s) best = { q, s };  
+                else if (q === '4K') has4K = true;  
+                else if (q === 'HD') hasHD = true;  
             }  
-            console.log('[quality] tsCount:', tsCount, '/', titles.length, '| best:', best.q);  
-            callback((tsCount / titles.length >= 0.5) ? 'TS' : best.q);  
+            const result = tsCount / titles.length >= 0.5 ? 'TS' : has4K ? '4K' : hasHD ? 'HD' : null;  
+            if (key) cache[key] = result;  
+            callback(result);  
         };  
-  
         const tryRequest = () => {  
             if (serverIndex >= SERVERS.length) return analyzeResults();  
             const url = SERVERS[serverIndex] + '/api/v2.0/indexers/all/results?apikey=&Query=' + encodeURIComponent(title) + (targetYear ? '&year=' + targetYear : '');  
-            console.log('[quality] Запрос к серверу', serverIndex, ':', url);  
-            net.silent(url, (res) => {  
+            net.quiet(url, (res) => {  
                 const results = res?.Results || [];  
-                console.log('[quality] Сервер', serverIndex, 'вернул', results.length, 'результатов');  
                 for (const r of results) {  
                     const relYear = parseInt(r.info?.released || r.year);  
                     const yearInTitle = !targetYear || (r.Title && (  
@@ -54,22 +48,14 @@
                         r.Title.includes(String(targetYear - 1)) ||  
                         r.Title.includes(String(targetYear + 1))  
                     ));  
-                    const pass = !targetYear || (relYear && Math.abs(relYear - targetYear) <= 1) || (!relYear && yearInTitle);  
-                    console.log('[quality] relYear:', relYear, '| yearInTitle:', yearInTitle, '| pass:', pass, '|', r.Title);  
-                    if (pass) titles.push(r.Title);  
+                    if (!targetYear || (relYear && Math.abs(relYear - targetYear) <= 1) || (!relYear && yearInTitle)) titles.push(r.Title);  
                 }  
                 serverIndex++;  
                 tryRequest();  
-            }, (jqXHR, exception) => {  
-                console.log('[quality] Сервер', serverIndex, 'ошибка — статус:', jqXHR?.status, '| текст:', jqXHR?.responseText || jqXHR?.statusText || exception);  
-                serverIndex++;  
-                tryRequest();  
-            });  
+            }, () => { serverIndex++; tryRequest(); });  
         };  
-  
         tryRequest();  
     }  
-  
     function addBadge(card, q) {  
         card.querySelectorAll('.card__quality-custom').forEach(el => el.remove());  
         const badge = document.createElement('div');  
@@ -78,7 +64,6 @@
         const view = card.querySelector('.card__view');  
         if (view) view.appendChild(badge);  
     }  
-  
     const intersectionObserver = new IntersectionObserver((entries) => {  
         for (const entry of entries) {  
             if (!entry.isIntersecting) continue;  
@@ -87,23 +72,20 @@
             if (cardData?.id) fetchQuality(cardData, (q) => { if (q) addBadge(entry.target, q); });  
         }  
     }, { rootMargin: '100px' });  
-  
     function observeCard(card) {  
         if (!card.card_data?.id || card.dataset.qlty) return;  
         card.dataset.qlty = 'true';  
         intersectionObserver.observe(card);  
     }  
-  
     new MutationObserver((mutations) => {  
         for (const m of mutations) {  
             for (const node of m.addedNodes) {  
                 if (node.nodeType !== 1) continue;  
                 if (node.classList?.contains('card')) observeCard(node);  
-                node.querySelectorAll?.('.card').forEach(observeCard);  
+                node.querySelectorAll('.card').forEach(observeCard);  
             }  
         }  
     }).observe(document.body, { childList: true, subtree: true });  
-  
     Lampa.Listener.follow('full', (e) => {  
         if (e.type !== 'complite' || !e.data?.movie) return;  
         fetchQuality(e.data.movie, (q) => {  
@@ -118,7 +100,6 @@
             cont[0].appendChild(badge);  
         });  
     });  
-  
     if (window.appready) document.querySelectorAll('.card').forEach(observeCard);  
     else Lampa.Listener.follow('app', (e) => { if (e.type === 'ready') document.querySelectorAll('.card').forEach(observeCard); });  
 })();
