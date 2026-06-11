@@ -25,23 +25,28 @@
         let titles = [];  
   
         const analyzeResults = () => {  
+            console.log('[quality] Итого прошло фильтр:', titles.length, 'заголовков');  
             if (!titles.length) return callback(null);  
             let tsCount = 0;  
             let best = { q: null, s: -1 };  
             for (const t of titles) {  
                 const q = getQuality(t);  
+                console.log('[quality]', JSON.stringify(t), '->', q);  
                 if (q === 'TS') tsCount++;  
                 const s = q ? QUALITY_SCORE[q] : -1;  
                 if (s > best.s) best = { q, s };  
             }  
+            console.log('[quality] tsCount:', tsCount, '/', titles.length, '| best:', best.q);  
             callback((tsCount / titles.length >= 0.5) ? 'TS' : best.q);  
         };  
   
         const tryRequest = () => {  
             if (serverIndex >= SERVERS.length) return analyzeResults();  
             const url = SERVERS[serverIndex] + '/api/v2.0/indexers/all/results?apikey=&Query=' + encodeURIComponent(title) + (targetYear ? '&year=' + targetYear : '');  
+            console.log('[quality] Запрос:', url);  
             net.silent(url, (res) => {  
                 const results = res?.Results || [];  
+                console.log('[quality] Сервер', serverIndex, 'вернул', results.length, 'результатов');  
                 for (const r of results) {  
                     const relYear = parseInt(r.info?.released || r.year);  
                     const yearInTitle = !targetYear || (r.Title && (  
@@ -49,13 +54,17 @@
                         r.Title.includes(String(targetYear - 1)) ||  
                         r.Title.includes(String(targetYear + 1))  
                     ));  
-                    if (!targetYear || (relYear && Math.abs(relYear - targetYear) <= 1) || (!relYear && yearInTitle)) {  
-                        titles.push(r.Title);  
-                    }  
+                    const pass = !targetYear || (relYear && Math.abs(relYear - targetYear) <= 1) || (!relYear && yearInTitle);  
+                    console.log('[quality] relYear:', relYear, '| yearInTitle:', yearInTitle, '| pass:', pass, '|', r.Title);  
+                    if (pass) titles.push(r.Title);  
                 }  
                 serverIndex++;  
                 tryRequest();  
-            }, () => { serverIndex++; tryRequest(); });  
+            }, () => {  
+                console.log('[quality] Сервер', serverIndex, 'недоступен');  
+                serverIndex++;  
+                tryRequest();  
+            });  
         };  
   
         tryRequest();  
