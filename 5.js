@@ -43,7 +43,7 @@
         const tryRequest = () => {  
             if (serverIndex >= SERVERS.length) return analyzeResults();  
             const url = SERVERS[serverIndex] + '/api/v2.0/indexers/all/results?apikey=&Query=' + encodeURIComponent(title) + (targetYear ? '&year=' + targetYear : '');  
-            console.log('[quality] Запрос:', url);  
+            console.log('[quality] Запрос к серверу', serverIndex, ':', url);  
             net.silent(url, (res) => {  
                 const results = res?.Results || [];  
                 console.log('[quality] Сервер', serverIndex, 'вернул', results.length, 'результатов');  
@@ -60,8 +60,8 @@
                 }  
                 serverIndex++;  
                 tryRequest();  
-            }, () => {  
-                console.log('[quality] Сервер', serverIndex, 'недоступен');  
+            }, (jqXHR, exception) => {  
+                console.log('[quality] Сервер', serverIndex, 'ошибка — статус:', jqXHR?.status, '| текст:', jqXHR?.responseText || jqXHR?.statusText || exception);  
                 serverIndex++;  
                 tryRequest();  
             });  
