@@ -44,8 +44,10 @@
                 const results = res?.Results || [];  
                 for (const r of results) {  
                     const relYear = parseInt(r.info?.released || r.year);  
-                    // Исправление: если есть целевой год, пропускаем результаты без года  
-                    if (!targetYear || (relYear && Math.abs(relYear - targetYear) <= 1)) titles.push(r.Title);  
+                    const yearInTitle = !targetYear || (r.Title && r.Title.includes(String(targetYear)));  
+                    if (!targetYear || (relYear && Math.abs(relYear - targetYear) <= 1) || (!relYear && yearInTitle)) {  
+                        titles.push(r.Title);  
+                    }  
                 }  
                 serverIndex++;  
                 tryRequest();  
