@@ -25,42 +25,31 @@
         let titles = [];  
   
         const analyzeResults = () => {  
-            if (!titles.length) {  
-                console.log('[quality] Нет результатов для:', title);  
-                return callback(null);  
-            }  
+            if (!titles.length) return callback(null);  
             let tsCount = 0;  
             let best = { q: null, s: -1 };  
-            console.log('[quality] Всего заголовков:', titles.length, 'для:', title);  
             for (const t of titles) {  
                 const q = getQuality(t);  
-                console.log('[quality]', JSON.stringify(t), '->', q);  
                 if (q === 'TS') tsCount++;  
                 const s = q ? QUALITY_SCORE[q] : -1;  
                 if (s > best.s) best = { q, s };  
             }  
-            console.log('[quality] tsCount:', tsCount, '/', titles.length, '| best:', best.q);  
             callback((tsCount / titles.length >= 0.5) ? 'TS' : best.q);  
         };  
   
         const tryRequest = () => {  
             if (serverIndex >= SERVERS.length) return analyzeResults();  
             const url = SERVERS[serverIndex] + '/api/v2.0/indexers/all/results?apikey=&Query=' + encodeURIComponent(title) + (targetYear ? '&year=' + targetYear : '');  
-            console.log('[quality] Запрос к серверу', serverIndex, ':', url);  
             net.silent(url, (res) => {  
                 const results = res?.Results || [];  
-                console.log('[quality] Сервер', serverIndex, 'вернул', results.length, 'результатов');  
                 for (const r of results) {  
                     const relYear = parseInt(r.info?.released || r.year);  
-                    if (!targetYear || !relYear || Math.abs(relYear - targetYear) <= 1) titles.push(r.Title);  
+                    // Исправление: если есть целевой год, пропускаем результаты без года  
+                    if (!targetYear || (relYear && Math.abs(relYear - targetYear) <= 1)) titles.push(r.Title);  
                 }  
                 serverIndex++;  
                 tryRequest();  
-            }, () => {  
-                console.log('[quality] Сервер', serverIndex, 'недоступен');  
-                serverIndex++;  
-                tryRequest();  
-            });  
+            }, () => { serverIndex++; tryRequest(); });  
         };  
   
         tryRequest();  
