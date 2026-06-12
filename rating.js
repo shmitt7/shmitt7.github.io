@@ -54,7 +54,7 @@
     function getRatingById(id, card, callback) {  
         const tmdb = card.vote_average || 0;  
         net.timeout(1000);  
-        net.native('https://rating.kinopoisk.ru/' + id + '.xml',  
+        net.silent('https://rating.kinopoisk.ru/' + id + '.xml',  
             (str) => {  
                 if (str?.includes('<rating>')) {  
                     try {  
