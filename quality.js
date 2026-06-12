@@ -37,7 +37,7 @@
         const next = () => {  
             if (i >= SERVERS.length) return done();  
             const url = SERVERS[i] + '/api/v2.0/indexers/all/results?apikey=&Query=' + encodeURIComponent(title) + (targetYear ? '&year=' + targetYear : '');  
-            net.native(url, (res) => {  
+            net.silent(url, (res) => {  
                 for (const r of (res?.Results || [])) {  
                     const y = parseInt(r.info?.released || r.year);  
                     const inTitle = !targetYear || (r.Title && (r.Title.includes(String(targetYear)) || r.Title.includes(String(targetYear - 1)) || r.Title.includes(String(targetYear + 1))));  
