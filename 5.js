@@ -91,7 +91,7 @@
             'body.fsc--open .full-start-new__reactions{position:fixed!important;bottom:2em!important;right:2em!important;margin:0!important;min-height:0!important;flex-wrap:wrap!important;justify-content:flex-end!important;align-items:center!important;z-index:2!important;max-width:20em!important;transition:opacity 0.3s ease-in-out!important;}',
             // скрыть если нет ни одной реакции (только placeholder)
             // скрыть при скролле вниз
-            'body.fsc--open.fsc--scrolled .full-start-new__reactions{opacity:0!important;pointer-events:none!important;}',
+            
             // чуть компактнее иконки
             'body.fsc--open .full-start-new__reactions .reaction{font-size:0.85em!important;}',
         ].join('');
