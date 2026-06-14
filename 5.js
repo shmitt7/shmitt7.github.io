@@ -59,10 +59,48 @@
 
     function init() {
         const style = document.createElement('style');
-        style.textContent = 'body.fsc--open .full-start__background{position:fixed!important;inset:0!important;width:100vw!important;height:100vh!important;z-index:0!important;object-fit:cover!important;mask-image:none!important;-webkit-mask-image:none!important;pointer-events:none!important;filter:none!important;opacity:0;transition:opacity 0.5s ease-in-out;}body.fsc--open .full-start__background.loaded{opacity:0.8!important;}body.fsc--open .full-start__background.dim{opacity:0!important;transition:opacity 0s!important;}body.fsc--open:not(.fsc--scrolled) .background{opacity:0!important;transition:none!important;}body.fsc--open.fsc--scrolled .background{opacity:1!important;transition:opacity 0.4s!important;}body.fsc--open:not(.fsc--scrolled) .head{background:transparent!important;}body.fsc--open .full-start-new{position:relative!important;overflow:visible!important;}body.fsc--open .full-start-new__body{min-height:calc(100vh - 6em)!important;align-items:stretch!important;justify-content:center!important;overflow:visible!important;}body.fsc--open .full-start-new__right{display:flex!important;flex-direction:column!important;min-height:calc(100vh - 6em)!important;justify-content:flex-end!important;align-items:center!important;text-align:center!important;padding-bottom:0.8em!important;overflow:visible!important;}body.fsc--open .full-start-new__left{display:none!important;}body.fsc--open .full-start-new__right>*:not(.fsc-main):not(.fsc-poster-fallback){display:none!important;}.fsc-main{display:flex!important;flex-direction:column!important;align-items:center!important;text-align:center!important;margin-bottom:0.2em!important;width:100%!important;}body.fsc--open .full-start-new__title{text-align:center!important;max-width:100%!important;text-shadow:0 2px 12px rgba(0,0,0,0.95)!important;margin-bottom:0.15em!important;display:block!important;overflow:hidden!important;white-space:nowrap!important;text-overflow:ellipsis!important;-webkit-line-clamp:unset!important;line-clamp:unset!important;}body.fsc--open .full-start-new__title.fsc-title-split{white-space:normal!important;text-overflow:clip!important;display:-webkit-box!important;-webkit-box-orient:vertical!important;-webkit-line-clamp:2!important;line-clamp:2!important;}.fsc-logo{max-width:18em!important;max-height:5em!important;object-fit:contain!important;}.fsc-center-row{display:flex!important;flex-wrap:wrap!important;align-items:center!important;justify-content:center!important;gap:0.35em!important;margin-bottom:0.2em!important;}.fsc-serial-badge{display:inline-flex!important;align-items:center!important;height:1.5em!important;padding:0 0.5em!important;background:rgba(0,0,0,0.65)!important;color:#fff!important;font-size:1.25em!important;font-weight:550!important;border-radius:0.35em!important;white-space:nowrap!important;box-sizing:border-box!important;border:1px solid rgba(255,255,255,0.2)!important;margin:0!important;text-shadow:none!important;}.fsc-poster-fallback{flex:1 1 0!important;min-height:0!important;max-width:60%!important;object-fit:cover!important;object-position:center top!important;margin-bottom:0.5em!important;border-radius:1em!important;}';
+        style.textContent = [
+            // фоновое изображение
+            'body.fsc--open .full-start__background{position:fixed!important;inset:0!important;width:100vw!important;height:100vh!important;z-index:0!important;object-fit:cover!important;mask-image:none!important;-webkit-mask-image:none!important;pointer-events:none!important;filter:none!important;opacity:0;transition:opacity 0.5s ease-in-out;}',
+            'body.fsc--open .full-start__background.loaded{opacity:0.8!important;}',
+            'body.fsc--open .full-start__background.dim{opacity:0!important;transition:opacity 0s!important;}',
+            // фон страницы и шапка
+            'body.fsc--open:not(.fsc--scrolled) .background{opacity:0!important;transition:none!important;}',
+            'body.fsc--open.fsc--scrolled .background{opacity:1!important;transition:opacity 0.4s!important;}',
+            'body.fsc--open:not(.fsc--scrolled) .head{background:transparent!important;}',
+            // контейнер
+            'body.fsc--open .full-start-new{position:relative!important;overflow:visible!important;}',
+            'body.fsc--open .full-start-new__body{min-height:calc(100vh - 6em)!important;align-items:stretch!important;justify-content:center!important;overflow:visible!important;}',
+            'body.fsc--open .full-start-new__right{display:flex!important;flex-direction:column!important;min-height:calc(100vh - 6em)!important;justify-content:flex-end!important;align-items:center!important;text-align:center!important;padding-bottom:0.8em!important;overflow:visible!important;}',
+            'body.fsc--open .full-start-new__left{display:none!important;}',
+            // скрыть всё кроме fsc-main, постера и реакций
+            'body.fsc--open .full-start-new__right>*:not(.fsc-main):not(.fsc-poster-fallback):not(.full-start-new__reactions){display:none!important;}',
+            // fsc-main
+            '.fsc-main{display:flex!important;flex-direction:column!important;align-items:center!important;text-align:center!important;margin-bottom:0.2em!important;width:100%!important;}',
+            // заголовок
+            'body.fsc--open .full-start-new__title{text-align:center!important;max-width:100%!important;text-shadow:0 2px 12px rgba(0,0,0,0.95)!important;margin-bottom:0.15em!important;display:block!important;overflow:hidden!important;white-space:nowrap!important;text-overflow:ellipsis!important;-webkit-line-clamp:unset!important;line-clamp:unset!important;}',
+            'body.fsc--open .full-start-new__title.fsc-title-split{white-space:normal!important;text-overflow:clip!important;display:-webkit-box!important;-webkit-box-orient:vertical!important;-webkit-line-clamp:2!important;line-clamp:2!important;}',
+            // логотип
+            '.fsc-logo{max-width:18em!important;max-height:5em!important;object-fit:contain!important;}',
+            // строки с бейджами
+            '.fsc-center-row{display:flex!important;flex-wrap:wrap!important;align-items:center!important;justify-content:center!important;gap:0.35em!important;margin-bottom:0.2em!important;}',
+            '.fsc-serial-badge{display:inline-flex!important;align-items:center!important;height:1.5em!important;padding:0 0.5em!important;background:rgba(0,0,0,0.65)!important;color:#fff!important;font-size:1.25em!important;font-weight:550!important;border-radius:0.35em!important;white-space:nowrap!important;box-sizing:border-box!important;border:1px solid rgba(255,255,255,0.2)!important;margin:0!important;text-shadow:none!important;}',
+            // постер-заглушка
+            '.fsc-poster-fallback{flex:1 1 0!important;min-height:0!important;max-width:60%!important;object-fit:cover!important;object-position:center top!important;margin-bottom:0.5em!important;border-radius:1em!important;}',
+            // реакции — правый нижний угол, fixed, компактно
+            'body.fsc--open .full-start-new__reactions{position:fixed!important;bottom:2em!important;right:2em!important;margin:0!important;min-height:0!important;flex-wrap:wrap!important;justify-content:flex-end!important;align-items:center!important;z-index:2!important;max-width:20em!important;transition:opacity 0.3s ease-in-out!important;}',
+            // скрыть если нет ни одной реакции (только placeholder)
+            'body.fsc--open .full-start-new__reactions:not(:has(.reaction)){opacity:0!important;pointer-events:none!important;}',
+            // скрыть при скролле вниз
+            'body.fsc--open.fsc--scrolled .full-start-new__reactions{opacity:0!important;pointer-events:none!important;}',
+            // чуть компактнее иконки
+            'body.fsc--open .full-start-new__reactions .reaction{font-size:0.85em!important;}',
+        ].join('');
         document.head.appendChild(style);
+
         let currentToken = null;
         let currentFullComp = null;
+
         Lampa.Listener.follow('full', (e) => {
             if (e.type !== 'complite') return;
             const fullComp = e.link;
@@ -245,6 +283,7 @@
                 }
             }, 0);
         });
+
         Lampa.Listener.follow('activity', (e) => {
             if (e.type === 'archive' && e.component === 'full') {
                 $('body').addClass('fsc--open').removeClass('fsc--scrolled');
@@ -263,6 +302,7 @@
             }
         });
     }
+
     if (window.appready) init();
     else Lampa.Listener.follow('app', (e) => { if (e.type === 'ready') init(); });
 })();
