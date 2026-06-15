@@ -3,41 +3,60 @@
     if (window.fscPlugin) return;
     window.fscPlugin = true;
     let logoCache = {};
+    let logoCacheSize = 0;
+
+    function escapeHtml(s) {
+        return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
     function formatTitle(text) {
         if (!text || text.length <= 30) return null;
-        const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-        for (const {sep, keep} of [{sep:': ',keep:1},{sep:' - ',keep:2},{sep:' \u2013 ',keep:2},{sep:' \u2014 ',keep:2}]) {
+        const patterns = [
+            { sep: ': ', keep: 1 },
+            { sep: ' - ', keep: 2 },
+            { sep: ' \u2013 ', keep: 2 },
+            { sep: ' \u2014 ', keep: 2 },
+        ];
+        for (let pi = 0; pi < patterns.length; pi++) {
+            const sep = patterns[pi].sep;
+            const keep = patterns[pi].keep;
             const idx = text.indexOf(sep);
             if (idx > 2 && idx + sep.length < text.length - 2) {
-                const part2 = text.slice(idx + keep).replace(/^\s+/,'');
-                if (part2.length >= 3) return esc(text.slice(0, idx + keep)) + '<br>' + esc(part2);
+                const part1 = text.slice(0, idx + keep);
+                const part2 = text.slice(idx + keep).replace(/^\s+/, '');
+                if (part2.length >= 3) {
+                    return escapeHtml(part1) + '<br>' + escapeHtml(part2);
+                }
             }
         }
         return null;
     }
+
     function getGenreLabels(movie, max) {
         const isTv = !!movie.name;
         const genres = movie.genres || [];
-        const ids = genres.map(g => g?.id ?? g);
+        const ids = genres.map(g => typeof g === 'object' ? g.id : g);
         let priority = null;
-        if (ids.includes(16) && movie.original_language === 'ja') priority = 'Аниме';
-        else if (ids.includes(10763)) priority = 'Новости';
-        else if (ids.includes(10767)) priority = 'Ток-шоу';
-        else if (ids.includes(10764)) priority = 'Реалити-шоу';
-        else if (ids.includes(99)) priority = 'Документальный';
-        else if (ids.includes(10766)) priority = 'Мыльная опера';
-        else if (ids.includes(16)) priority = isTv ? 'Мультсериал' : 'Мультфильм';
-        const result = priority ? [priority] : [];
-        for (const g of genres) {
-            if (result.length >= (max || 2)) break;
+        if (ids.indexOf(16) !== -1 && movie.original_language === 'ja') priority = 'Аниме';
+        else if (ids.indexOf(10763) !== -1) priority = 'Новости';
+        else if (ids.indexOf(10767) !== -1) priority = 'Ток-шоу';
+        else if (ids.indexOf(10764) !== -1) priority = 'Реалити-шоу';
+        else if (ids.indexOf(99) !== -1) priority = 'Документальный';
+        else if (ids.indexOf(10766) !== -1) priority = 'Мыльная опера';
+        else if (ids.indexOf(16) !== -1) priority = isTv ? 'Мультсериал' : 'Мультфильм';
+        const result = [];
+        if (priority) result.push(priority);
+        for (let i = 0; i < genres.length && result.length < (max || 2); i++) {
+            const g = genres[i];
             if (!g) continue;
-            const gId = g?.id ?? g;
+            const gId = typeof g === 'object' ? g.id : g;
             if ((priority === 'Аниме' || priority === 'Мультсериал' || priority === 'Мультфильм') && gId === 16) continue;
             const name = Lampa.Utils.capitalizeFirstLetter(g.name);
-            if (name && !result.includes(name)) result.push(name);
+            if (name && result.indexOf(name) === -1) result.push(name);
         }
         return result;
     }
+
     function init() {
         const style = document.createElement('style');
         style.textContent = [
@@ -59,31 +78,29 @@
             '.fsc-center-row{display:flex!important;flex-wrap:wrap!important;align-items:center!important;justify-content:center!important;gap:0.35em!important;margin-bottom:0.2em!important;}',
             '.fsc-serial-badge{display:inline-flex!important;align-items:center!important;height:1.5em!important;padding:0 0.5em!important;background:rgba(0,0,0,0.65)!important;color:#fff!important;font-size:1.25em!important;font-weight:550!important;border-radius:0.35em!important;white-space:nowrap!important;box-sizing:border-box!important;border:1px solid rgba(255,255,255,0.2)!important;margin:0!important;text-shadow:none!important;}',
             '.fsc-poster-fallback{flex:1 1 0!important;min-height:0!important;max-width:60%!important;object-fit:cover!important;object-position:center top!important;margin-bottom:0.5em!important;border-radius:1em!important;}',
-            'body.fsc--open .full-start-new__buttons .full-start-new__reactions{display:flex!important;flex-wrap:nowrap!important;margin:0!important;min-height:0!important;flex-shrink:0!important;align-items:center!important;margin-left:0.5em!important;}',
-            'body.fsc--open .full-start-new__buttons .full-start-new__reactions>div{padding:0!important;}',
-            'body.fsc--open .full-start-new__buttons .full-start-new__reactions>div:not(:first-child){display:none!important;}',
-            'body.fsc--open .full-start-new__buttons .full-start-new__reactions .reaction{position:relative!important;}',
-            'body.fsc--open .full-start-new__buttons .full-start-new__reactions .reaction__count{position:absolute!important;top:28%!important;left:95%!important;font-size:1.2em!important;font-weight:500!important;}',
-            'body.fsc--open .full-start-new__buttons .button--reaction{display:none!important;}'
+            /* реакции после кнопок — компактно, только первая (самая популярная) видна */
+            'body.fsc--open .fsc-main .full-start-new__reactions{justify-content:center!important;min-height:0!important;margin:0.4em 0 0!important;}',
+            'body.fsc--open .fsc-main .full-start-new__reactions>div:not(:first-child){display:none!important;}',
+            'body.fsc--open .fsc-main .full-start-new__reactions .reaction{position:relative!important;}',
+            'body.fsc--open .fsc-main .full-start-new__reactions .reaction__count{position:absolute!important;top:28%!important;left:95%!important;font-size:1.2em!important;font-weight:500!important;}',
         ].join('');
         document.head.appendChild(style);
+
         let currentToken = null;
         let currentFullComp = null;
-        const openFsc = () => {
-            $('body').addClass('fsc--open').removeClass('fsc--scrolled');
-            if (!Lampa.Storage.field('card_interfice_cover')) $('body').removeClass('card--no-cover');
-        };
+
         Lampa.Listener.follow('full', (e) => {
             if (e.type !== 'complite') return;
             const fullComp = e.link;
             const token = {};
             currentToken = token;
             currentFullComp = fullComp;
-            openFsc();
+            $('body').addClass('fsc--open').removeClass('fsc--scrolled');
+            if (!Lampa.Storage.field('card_interfice_cover')) $('body').removeClass('card--no-cover');
             setTimeout(() => {
                 if (currentToken !== token) return;
                 const render = fullComp.render();
-                const movie = e.data.movie;
+                const movie = e.data && e.data.movie;
                 if (!movie) return;
                 const right = render.find('.full-start-new__right');
                 const title = render.find('.full-start-new__title');
@@ -107,23 +124,46 @@
                 if (countries.length) infoParts.push(countries.join(', '));
                 if (genreLabels.length) infoParts.push(genreLabels.join(', '));
                 if (pg) infoParts.push(pg);
-                const kpRating = movie.kp_rating || movie.kinopoisk_rating;
-                if (kpRating) infoParts.push(parseFloat(kpRating).toFixed(1) + ' KP');
-                if (tmdbRating > 0) infoParts.push(tmdbRating.toFixed(1) + ' TMDB');
-                const quality = movie.release_quality || movie.quality;
-                if (quality) infoParts.push(quality);
-                const infoEl = $('<span class="fsc-serial-badge"></span>').text(infoParts.join(' \u2022 '));
-                let movieStatusEl = null;
+                let currentKP = 0;
+                let currentQuality = '';
+                const infoEl = $('<span class="fsc-serial-badge"></span>');
+                function rebuildInfo() {
+                    const parts = infoParts.slice();
+                    if (currentKP > 0) parts.push(currentKP.toFixed(1) + ' KP');
+                    else if (tmdbRating > 0) parts.push(tmdbRating.toFixed(1) + ' TMDB');
+                    if (currentQuality) parts.push(currentQuality);
+                    infoEl.text(parts.join(' \u2022 '));
+                }
+                rebuildInfo();
+                const kpEl = render.find('.rate--kp')[0];
+                function checkKP(attempt) {
+                    if (currentToken !== token || attempt > 12) return;
+                    if (kpEl && !$(kpEl).hasClass('hide')) {
+                        const kpValue = parseFloat($(kpEl).find('> div').eq(0).text());
+                        if (kpValue > 0) { currentKP = kpValue; rebuildInfo(); }
+                    } else {
+                        setTimeout(() => checkKP(attempt + 1), 500);
+                    }
+                }
+                checkKP(0);
+                function checkQual(attempt) {
+                    if (currentToken !== token || attempt > 30) return;
+                    const qualBadge = render.find('.tag--quality').first();
+                    if (qualBadge.length) { currentQuality = qualBadge.text().trim(); rebuildInfo(); }
+                    else setTimeout(() => checkQual(attempt + 1), 500);
+                }
+                setTimeout(() => checkQual(0), 300);
+                let serialEl = null;
                 if (movie.first_air_date) {
-                    const user = movie.user || {};
-                    const currentSeason = user.season || 1;
-                    const currentEpisode = user.episode || 1;
+                    const lastEpisode = movie.last_episode_to_air;
+                    const currentSeason = lastEpisode ? lastEpisode.season_number : 0;
                     const totalSeasons = movie.number_of_seasons || 0;
                     const totalEpisodes = movie.number_of_episodes || 0;
+                    const currentEpisode = lastEpisode ? lastEpisode.episode_number : 0;
                     let airedTotal = 0;
-                    const lastEpisode = movie.last_episode_to_air;
                     if (movie.seasons && lastEpisode) {
-                        for (const season of movie.seasons) {
+                        for (let si = 0; si < movie.seasons.length; si++) {
+                            const season = movie.seasons[si];
                             if (season.season_number > 0 && season.season_number < currentSeason)
                                 airedTotal += season.episode_count || 0;
                         }
@@ -144,32 +184,53 @@
                     }
                     const serialParts = [];
                     if (tvStatus && !(tvStatus === 'Returning Series' && hasNextEpisode))
-                        serialParts.push(Lampa.Lang.translate('tv_status_' + tvStatus.toLowerCase().replace(/ /g,'_')));
+                        serialParts.push(Lampa.Lang.translate('tv_status_' + tvStatus.toLowerCase().replace(/ /g, '_')));
                     if (totalSeasons > 0)
-                        serialParts.push(Lampa.Lang.translate('title_seasons') + ': ' + (airedTotal > 0 ? airedTotal + '/' : '') + totalSeasons);
+                        serialParts.push(Lampa.Lang.translate('title_seasons') + ': '
+                            + (currentSeason < totalSeasons ? currentSeason + '/' + totalSeasons : totalSeasons));
                     if (totalEpisodes > 0)
-                        serialParts.push(Lampa.Lang.translate('title_episodes') + ': ' + totalEpisodes);
+                        serialParts.push(Lampa.Lang.translate('title_episodes') + ': '
+                            + (airedTotal > 0 && airedTotal < totalEpisodes ? airedTotal + '/' + totalEpisodes : totalEpisodes));
                     if (hasNextEpisode) serialParts.push(nextEpisodeText);
-                    if (serialParts.length) movieStatusEl = $('<span class="fsc-serial-badge"></span>').text(serialParts.join(' \u2022 '));
+                    if (serialParts.length) serialEl = $('<span class="fsc-serial-badge"></span>').text(serialParts.join(' \u2022 '));
+                }
+                let movieStatusEl = null;
+                if (!movie.first_air_date) {
+                    const movieStatus = movie.status || '';
+                    if (movieStatus && movieStatus.toLowerCase() !== 'released') {
+                        const movieParts = [Lampa.Lang.translate('tv_status_' + movieStatus.toLowerCase().replace(/ /g, '_'))];
+                        if (movie.release_date) movieParts.push(Lampa.Utils.parseTime(movie.release_date).short);
+                        movieStatusEl = $('<span class="fsc-serial-badge"></span>').text(movieParts.join(' \u2022 '));
+                    }
                 }
                 const main = $('<div class="fsc-main"></div>');
                 main.append(title);
-                if (movieStatusEl) main.append($('<div class="fsc-center-row"></div>').append(movieStatusEl));
+                if (movie.first_air_date && serialEl)
+                    main.append($('<div class="fsc-center-row"></div>').append(serialEl));
+                else if (!movie.first_air_date && movieStatusEl)
+                    main.append($('<div class="fsc-center-row"></div>').append(movieStatusEl));
                 main.append($('<div class="fsc-center-row"></div>').append(infoEl));
                 main.append(buttons);
-                if (reactionsEl.length) buttons.append(reactionsEl);
+                if (reactionsEl.length) main.append(reactionsEl);
                 right.find('.fsc-main').remove();
                 right.append(main);
                 right.find('.fsc-poster-fallback').remove();
-                if (!movie.backdrop_path && movie.poster_path)
-                    right.prepend($('<img class="fsc-poster-fallback">').attr('src', Lampa.TMDB.image('t/p/original' + movie.poster_path)));
+                if (!movie.backdrop_path && movie.poster_path) {
+                    const posterSrc = Lampa.TMDB.image('t/p/original' + movie.poster_path);
+                    const posterImg = $('<img class="fsc-poster-fallback">').attr('src', posterSrc);
+                    right.prepend(posterImg);
+                }
                 if (movie.id) {
                     const rawHtml = title.html();
                     const titleText = title.text().trim();
                     const formatted = formatTitle(titleText);
                     const origHtml = formatted !== null ? formatted : rawHtml;
-                    if (formatted !== null) { title.html(origHtml); title.addClass('fsc-title-split'); }
-                    else title.removeClass('fsc-title-split');
+                    if (formatted !== null) {
+                        title.html(origHtml);
+                        title.addClass('fsc-title-split');
+                    } else {
+                        title.removeClass('fsc-title-split');
+                    }
                     const mediaType = movie.name ? 'tv' : 'movie';
                     const cacheKey = mediaType + '_' + movie.id;
                     const applyLogo = (src) => {
@@ -191,10 +252,12 @@
                             Lampa.TMDB.api(mediaType + '/' + movie.id + '/images?api_key=' + Lampa.TMDB.key() + '&language=ru&include_image_language=ru'),
                             (data) => {
                                 if (currentToken !== token) return;
-                                const logos = (data.logos || []).filter(l => l.file_path && !l.file_path.endsWith('.svg') && l.iso_639_1 === 'ru');
+                                const logos = (data.logos || [])
+                                    .filter(l => l.file_path && !l.file_path.endsWith('.svg') && l.iso_639_1 === 'ru');
                                 logos.sort((a, b) => b.vote_average - a.vote_average);
-                                if (Object.keys(logoCache).length > 200) logoCache = {};
+                                if (logoCacheSize > 200) { logoCache = {}; logoCacheSize = 0; }
                                 logoCache[cacheKey] = logos.length ? Lampa.TMDB.image('t/p/original' + logos[0].file_path) : null;
+                                logoCacheSize++;
                                 if (logoCache[cacheKey]) applyLogo(logoCache[cacheKey]);
                             }
                         );
@@ -210,14 +273,16 @@
                 }
             }, 0);
         });
+
         Lampa.Listener.follow('activity', (e) => {
             if (e.type === 'archive' && e.component === 'full') {
-                openFsc();
+                $('body').addClass('fsc--open').removeClass('fsc--scrolled');
+                if (!Lampa.Storage.field('card_interfice_cover')) $('body').removeClass('card--no-cover');
                 currentFullComp = e.object.activity.component;
             }
             if (e.type === 'destroy' && e.component === 'full') {
-                const destroyedComp = e.object?.activity?.component;
-                if (destroyedComp?.scroll) destroyedComp.scroll._fscWrapped = false;
+                const destroyedComp = e.object && e.object.activity && e.object.activity.component;
+                if (destroyedComp && destroyedComp.scroll) destroyedComp.scroll._fscWrapped = false;
                 if (destroyedComp === currentFullComp) {
                     currentToken = null;
                     currentFullComp = null;
@@ -227,6 +292,7 @@
             }
         });
     }
+
     if (window.appready) init();
     else Lampa.Listener.follow('app', (e) => { if (e.type === 'ready') init(); });
 })();
