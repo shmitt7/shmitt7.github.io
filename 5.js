@@ -78,8 +78,8 @@
             '.fsc-center-row{display:flex!important;flex-wrap:wrap!important;align-items:center!important;justify-content:center!important;gap:0.35em!important;margin-bottom:0.2em!important;}',
             '.fsc-serial-badge{display:inline-flex!important;align-items:center!important;height:1.5em!important;padding:0 0.5em!important;background:rgba(0,0,0,0.65)!important;color:#fff!important;font-size:1.25em!important;font-weight:550!important;border-radius:0.35em!important;white-space:nowrap!important;box-sizing:border-box!important;border:1px solid rgba(255,255,255,0.2)!important;margin:0!important;text-shadow:none!important;}',
             '.fsc-poster-fallback{flex:1 1 0!important;min-height:0!important;max-width:60%!important;object-fit:cover!important;object-position:center top!important;margin-bottom:0.5em!important;border-radius:1em!important;}',
-            // реакции внутри fsc-main — центрируем, убираем лишние отступы
-            'body.fsc--open .fsc-main .full-start-new__reactions{justify-content:center!important;min-height:0!important;margin:0 0 0.2em!important;}',
+            // реакции внутри fsc-main — центрируем, убираем min-height
+            'body.fsc--open .fsc-main .full-start-new__reactions{justify-content:center!important;min-height:0!important;margin:0!important;}',
         ].join('');
         document.head.appendChild(style);
 
@@ -200,16 +200,23 @@
                         movieStatusEl = $('<span class="fsc-serial-badge"></span>').text(movieParts.join(' \u2022 '));
                     }
                 }
+
+                // Обёртка для слота инфо/реакции — занимает одно место
+                const infoRow = $('<div class="fsc-center-row"></div>').append(infoEl);
+
+                // Скрыть реакции изначально
+                if (reactionsEl.length) reactionsEl.hide();
+
                 const main = $('<div class="fsc-main"></div>');
                 main.append(title);
                 if (movie.first_air_date && serialEl)
                     main.append($('<div class="fsc-center-row"></div>').append(serialEl));
                 else if (!movie.first_air_date && movieStatusEl)
                     main.append($('<div class="fsc-center-row"></div>').append(movieStatusEl));
-                main.append($('<div class="fsc-center-row"></div>').append(infoEl));
-                // реакции между инфо и кнопками
+                main.append(infoRow);
                 if (reactionsEl.length) main.append(reactionsEl);
                 main.append(buttons);
+
                 right.find('.fsc-main').remove();
                 right.append(main);
                 right.find('.fsc-poster-fallback').remove();
@@ -218,6 +225,46 @@
                     const posterImg = $('<img class="fsc-poster-fallback">').attr('src', posterSrc);
                     right.prepend(posterImg);
                 }
+
+                // Анимация переключения инфо ↔ реакции
+                if (reactionsEl.length) {
+                    let showingReactions = false;
+
+                    function fadeSwitch(from, to, cb) {
+                        from.animate({ opacity: 0 }, 350, function () {
+                            from.hide();
+                            to.css({ display: 'flex', opacity: 0 }).animate({ opacity: 1 }, 350, cb);
+                        });
+                    }
+
+                    function scheduleSwitch() {
+                        const delay = showingReactions ? 3000 : 4000;
+                        setTimeout(function () {
+                            if (currentToken !== token) return;
+                            if (!showingReactions) {
+                                // Переключить на реакции — только если они есть
+                                if (reactionsEl.find('.reaction').length) {
+                                    fadeSwitch(infoRow, reactionsEl, function () {
+                                        showingReactions = true;
+                                        scheduleSwitch();
+                                    });
+                                } else {
+                                    // Реакций ещё нет — подождать ещё
+                                    scheduleSwitch();
+                                }
+                            } else {
+                                // Переключить обратно на инфо
+                                fadeSwitch(reactionsEl, infoRow, function () {
+                                    showingReactions = false;
+                                    scheduleSwitch();
+                                });
+                            }
+                        }, delay);
+                    }
+
+                    scheduleSwitch();
+                }
+
                 if (movie.id) {
                     const rawHtml = title.html();
                     const titleText = title.text().trim();
