@@ -35,22 +35,22 @@
     function getGenreLabels(movie, max) {
         const isTv = !!movie.name;
         const genres = movie.genres || [];
-        const ids = genres.map(g => typeof g === 'object' ? g.id : g);
+        const ids = genres.map(function(g) { return typeof g === 'object' ? g.id : g; });
         let priority = null;
-        if (ids.indexOf(16) !== -1 && movie.original_language === 'ja') priority = '\u0410\u043d\u0438\u043c\u0435';
-        else if (ids.indexOf(10763) !== -1) priority = '\u041d\u043e\u0432\u043e\u0441\u0442\u0438';
-        else if (ids.indexOf(10767) !== -1) priority = '\u0422\u043e\u043a-\u0448\u043e\u0443';
-        else if (ids.indexOf(10764) !== -1) priority = '\u0420\u0435\u0430\u043b\u0438\u0442\u0438-\u0448\u043e\u0443';
-        else if (ids.indexOf(99) !== -1) priority = '\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u0430\u043b\u044c\u043d\u044b\u0439';
-        else if (ids.indexOf(10766) !== -1) priority = '\u041c\u044b\u043b\u044c\u043d\u0430\u044f \u043e\u043f\u0435\u0440\u0430';
-        else if (ids.indexOf(16) !== -1) priority = isTv ? '\u041c\u0443\u043b\u044c\u0442\u0441\u0435\u0440\u0438\u0430\u043b' : '\u041c\u0443\u043b\u044c\u0442\u0444\u0438\u043b\u044c\u043c';
+        if (ids.indexOf(16) !== -1 && movie.original_language === 'ja') priority = 'Аниме';
+        else if (ids.indexOf(10763) !== -1) priority = 'Новости';
+        else if (ids.indexOf(10767) !== -1) priority = 'Ток-шоу';
+        else if (ids.indexOf(10764) !== -1) priority = 'Реалити-шоу';
+        else if (ids.indexOf(99) !== -1) priority = 'Документальный';
+        else if (ids.indexOf(10766) !== -1) priority = 'Мыльная опера';
+        else if (ids.indexOf(16) !== -1) priority = isTv ? 'Мультсериал' : 'Мультфильм';
         const result = [];
         if (priority) result.push(priority);
         for (let i = 0; i < genres.length && result.length < (max || 2); i++) {
             const g = genres[i];
             if (!g) continue;
             const gId = typeof g === 'object' ? g.id : g;
-            if ((priority === '\u0410\u043d\u0438\u043c\u0435' || priority === '\u041c\u0443\u043b\u044c\u0442\u0441\u0435\u0440\u0438\u0430\u043b' || priority === '\u041c\u0443\u043b\u044c\u0442\u0444\u0438\u043b\u044c\u043c') && gId === 16) continue;
+            if ((priority === 'Аниме' || priority === 'Мультсериал' || priority === 'Мультфильм') && gId === 16) continue;
             const name = Lampa.Utils.capitalizeFirstLetter(g.name);
             if (name && result.indexOf(name) === -1) result.push(name);
         }
@@ -63,26 +63,33 @@
         const map = {};
         reactionsData.result.forEach(function(r) { map[r.type] = r.counter || 0; });
 
-        const green  = (map['fire']  || 0) + (map['nice']  || 0);
-        const orange = (map['think'] || 0);
-        const red    = (map['bore']  || 0) + (map['shit']  || 0);
+        const think     = map['think'] || 0;
+        const thinkPos  = Math.floor(think / 2);
+        const thinkNeg  = think - thinkPos;
 
-        if (!green && !orange && !red) return null;
+        const pos = (map['fire'] || 0) + (map['nice'] || 0) + thinkPos;
+        const neg = (map['bore'] || 0) + (map['shit'] || 0) + thinkNeg;
 
-        const max = Math.max(green, orange, red);
-        const DIM = 'color:rgba(255,255,255,0.35)';
+        if (!pos && !neg) return null;
 
-        const gStyle  = (green  === max && green  > 0) ? 'color:#6fcf6f' : DIM;
-        const oStyle  = (orange === max && orange > 0) ? 'color:#f0c040' : DIM;
-        const rStyle  = (red    === max && red    > 0) ? 'color:#e05555' : DIM;
-
-        const parts = [];
-        parts.push('<span style="' + gStyle  + '">' + green  + '</span>');
-        parts.push('<span style="' + oStyle  + '">' + orange + '</span>');
-        parts.push('<span style="' + rStyle  + '">' + red    + '</span>');
+        var posStyle, negStyle;
+        if (pos > neg) {
+            posStyle = 'color:#6fcf6f';
+            negStyle = 'color:#fff';
+        } else if (neg > pos) {
+            posStyle = 'color:#fff';
+            negStyle = 'color:#e05555';
+        } else {
+            posStyle = 'color:#fff';
+            negStyle = 'color:#fff';
+        }
 
         const el = $('<span class="fsc-serial-badge"></span>');
-        el.html(parts.join('<span style="opacity:0.3;margin:0 0.25em">\u2022</span>'));
+        el.html(
+            '<span style="' + posStyle + '">' + pos + '</span>' +
+            '<span style="opacity:0.3;margin:0 0.25em">\u2022</span>' +
+            '<span style="' + negStyle + '">' + neg + '</span>'
+        );
         return el;
     }
 
