@@ -63,14 +63,17 @@
         const map = {};
         reactionsData.result.forEach(function(r) { map[r.type] = r.counter || 0; });
 
-        const think     = map['think'] || 0;
-        const thinkPos  = Math.floor(think / 2);
-        const thinkNeg  = think - thinkPos;
+        const think    = map['think'] || 0;
+        const thinkPos = Math.floor(think / 2);
+        const thinkNeg = think - thinkPos;
 
         const pos = (map['fire'] || 0) + (map['nice'] || 0) + thinkPos;
         const neg = (map['bore'] || 0) + (map['shit'] || 0) + thinkNeg;
 
         if (!pos && !neg) return null;
+
+        const posStr = Lampa.Utils.bigNumberToShort(pos);
+        const negStr = Lampa.Utils.bigNumberToShort(neg);
 
         var posStyle, negStyle;
         if (pos > neg) {
@@ -86,9 +89,9 @@
 
         const el = $('<span class="fsc-serial-badge"></span>');
         el.html(
-            '<span style="' + posStyle + '">' + pos + '</span>' +
-            '<span style="opacity:0.3;margin:0 0.25em">\u2022</span>' +
-            '<span style="' + negStyle + '">' + neg + '</span>'
+            '<span style="' + posStyle + '">\uD83D\uDD25 ' + posStr + '</span>' +
+            '<span style="color:#fff;margin:0 0.25em">\u2022</span>' +
+            '<span style="' + negStyle + '">\uD83D\uDCA9 ' + negStr + '</span>'
         );
         return el;
     }
