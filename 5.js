@@ -14,8 +14,8 @@
         const patterns = [
             { sep: ': ', keep: 1 },
             { sep: ' - ', keep: 2 },
-            { sep: ' \u2013 ', keep: 2 },
-            { sep: ' \u2014 ', keep: 2 },
+            { sep: ' \u2013', keep: 2 },
+            { sep: ' \u2014', keep: 2 },
         ];
         for (let pi = 0; pi < patterns.length; pi++) {
             const sep = patterns[pi].sep;
@@ -37,24 +37,53 @@
         const genres = movie.genres || [];
         const ids = genres.map(g => typeof g === 'object' ? g.id : g);
         let priority = null;
-        if (ids.indexOf(16) !== -1 && movie.original_language === 'ja') priority = 'Аниме';
-        else if (ids.indexOf(10763) !== -1) priority = 'Новости';
-        else if (ids.indexOf(10767) !== -1) priority = 'Ток-шоу';
-        else if (ids.indexOf(10764) !== -1) priority = 'Реалити-шоу';
-        else if (ids.indexOf(99) !== -1) priority = 'Документальный';
-        else if (ids.indexOf(10766) !== -1) priority = 'Мыльная опера';
-        else if (ids.indexOf(16) !== -1) priority = isTv ? 'Мультсериал' : 'Мультфильм';
+        if (ids.indexOf(16) !== -1 && movie.original_language === 'ja') priority = '\u0410\u043d\u0438\u043c\u0435';
+        else if (ids.indexOf(10763) !== -1) priority = '\u041d\u043e\u0432\u043e\u0441\u0442\u0438';
+        else if (ids.indexOf(10767) !== -1) priority = '\u0422\u043e\u043a-\u0448\u043e\u0443';
+        else if (ids.indexOf(10764) !== -1) priority = '\u0420\u0435\u0430\u043b\u0438\u0442\u0438-\u0448\u043e\u0443';
+        else if (ids.indexOf(99) !== -1) priority = '\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u0430\u043b\u044c\u043d\u044b\u0439';
+        else if (ids.indexOf(10766) !== -1) priority = '\u041c\u044b\u043b\u044c\u043d\u0430\u044f \u043e\u043f\u0435\u0440\u0430';
+        else if (ids.indexOf(16) !== -1) priority = isTv ? '\u041c\u0443\u043b\u044c\u0442\u0441\u0435\u0440\u0438\u0430\u043b' : '\u041c\u0443\u043b\u044c\u0442\u0444\u0438\u043b\u044c\u043c';
         const result = [];
         if (priority) result.push(priority);
         for (let i = 0; i < genres.length && result.length < (max || 2); i++) {
             const g = genres[i];
             if (!g) continue;
             const gId = typeof g === 'object' ? g.id : g;
-            if ((priority === 'Аниме' || priority === 'Мультсериал' || priority === 'Мультфильм') && gId === 16) continue;
+            if ((priority === '\u0410\u043d\u0438\u043c\u0435' || priority === '\u041c\u0443\u043b\u044c\u0442\u0441\u0435\u0440\u0438\u0430\u043b' || priority === '\u041c\u0443\u043b\u044c\u0442\u0444\u0438\u043b\u044c\u043c') && gId === 16) continue;
             const name = Lampa.Utils.capitalizeFirstLetter(g.name);
             if (name && result.indexOf(name) === -1) result.push(name);
         }
         return result;
+    }
+
+    function buildReactionsEl(reactionsData) {
+        if (!reactionsData || !reactionsData.result || !reactionsData.result.length) return null;
+
+        const map = {};
+        reactionsData.result.forEach(function(r) { map[r.type] = r.counter || 0; });
+
+        const green  = (map['fire']  || 0) + (map['nice']  || 0);
+        const orange = (map['think'] || 0);
+        const red    = (map['bore']  || 0) + (map['shit']  || 0);
+
+        if (!green && !orange && !red) return null;
+
+        const max = Math.max(green, orange, red);
+        const DIM = 'color:rgba(255,255,255,0.35)';
+
+        const gStyle  = (green  === max && green  > 0) ? 'color:#6fcf6f' : DIM;
+        const oStyle  = (orange === max && orange > 0) ? 'color:#f0c040' : DIM;
+        const rStyle  = (red    === max && red    > 0) ? 'color:#e05555' : DIM;
+
+        const parts = [];
+        parts.push('<span style="' + gStyle  + '">' + green  + '</span>');
+        parts.push('<span style="' + oStyle  + '">' + orange + '</span>');
+        parts.push('<span style="' + rStyle  + '">' + red    + '</span>');
+
+        const el = $('<span class="fsc-serial-badge"></span>');
+        el.html(parts.join('<span style="opacity:0.3;margin:0 0.25em">\u2022</span>'));
+        return el;
     }
 
     function init() {
@@ -63,7 +92,7 @@
         document.head.appendChild(style);
         let currentToken = null;
         let currentFullComp = null;
-        Lampa.Listener.follow('full', (e) => {
+        Lampa.Listener.follow('full', function(e) {
             if (e.type !== 'complite') return;
             const fullComp = e.link;
             const token = {};
@@ -71,7 +100,7 @@
             currentFullComp = fullComp;
             $('body').addClass('fsc--open').removeClass('fsc--scrolled');
             if (!Lampa.Storage.field('card_interfice_cover')) $('body').removeClass('card--no-cover');
-            setTimeout(() => {
+            setTimeout(function() {
                 if (currentToken !== token) return;
                 const render = fullComp.render();
                 const movie = e.data && e.data.movie;
@@ -83,7 +112,7 @@
                 const year = relDate ? relDate.slice(0, 4) : '';
                 const runtimeMin = movie.first_air_date ? (movie.episode_run_time || [])[0] : movie.runtime;
                 const runtime = runtimeMin > 0 ? Lampa.Utils.secondsToTimeHuman(runtimeMin * 60) : '';
-                const countries = (movie.production_countries || []).slice(0, 2).map(c => {
+                const countries = (movie.production_countries || []).slice(0, 2).map(function(c) {
                     const k = 'country_' + (c.iso_3166_1 || '').toLowerCase();
                     const t = Lampa.Lang.translate(k);
                     return (t && t !== k) ? t : (c.iso_3166_1 || '');
@@ -115,7 +144,7 @@
                         const kpValue = parseFloat($(kpEl).find('> div').eq(0).text());
                         if (kpValue > 0) { currentKP = kpValue; rebuildInfo(); }
                     } else {
-                        setTimeout(() => checkKP(attempt + 1), 500);
+                        setTimeout(function() { checkKP(attempt + 1); }, 500);
                     }
                 }
                 checkKP(0);
@@ -123,9 +152,9 @@
                     if (currentToken !== token || attempt > 30) return;
                     const qualBadge = render.find('.tag--quality').first();
                     if (qualBadge.length) { currentQuality = qualBadge.text().trim(); rebuildInfo(); }
-                    else setTimeout(() => checkQual(attempt + 1), 500);
+                    else setTimeout(function() { checkQual(attempt + 1); }, 500);
                 }
-                setTimeout(() => checkQual(0), 300);
+                setTimeout(function() { checkQual(0); }, 300);
                 let serialEl = null;
                 if (movie.first_air_date) {
                     const lastEpisode = movie.last_episode_to_air;
@@ -183,6 +212,14 @@
                 else if (!movie.first_air_date && movieStatusEl)
                     main.append($('<div class="fsc-center-row"></div>').append(movieStatusEl));
                 main.append($('<div class="fsc-center-row"></div>').append(infoEl));
+
+                // --- реакции ---
+                const reactEl = buildReactionsEl(e.data && e.data.reactions);
+                if (reactEl) {
+                    main.append($('<div class="fsc-center-row"></div>').append(reactEl));
+                }
+                // ---------------
+
                 main.append(buttons);
                 right.find('.fsc-main').remove();
                 right.append(main);
@@ -205,10 +242,10 @@
                     }
                     const mediaType = movie.name ? 'tv' : 'movie';
                     const cacheKey = mediaType + '_' + movie.id;
-                    const applyLogo = (src) => {
+                    const applyLogo = function(src) {
                         const img = document.createElement('img');
                         img.className = 'fsc-logo';
-                        img.onerror = () => {
+                        img.onerror = function() {
                             title.html(origHtml);
                             if (formatted !== null) title.addClass('fsc-title-split');
                             else title.removeClass('fsc-title-split');
@@ -222,11 +259,11 @@
                     } else {
                         $.get(
                             Lampa.TMDB.api(mediaType + '/' + movie.id + '/images?api_key=' + Lampa.TMDB.key() + '&language=ru&include_image_language=ru'),
-                            (data) => {
+                            function(data) {
                                 if (currentToken !== token) return;
                                 const logos = (data.logos || [])
-                                    .filter(l => l.file_path && !l.file_path.endsWith('.svg') && l.iso_639_1 === 'ru');
-                                logos.sort((a, b) => b.vote_average - a.vote_average);
+                                    .filter(function(l) { return l.file_path && !l.file_path.endsWith('.svg') && l.iso_639_1 === 'ru'; });
+                                logos.sort(function(a, b) { return b.vote_average - a.vote_average; });
                                 if (logoCacheSize > 200) { logoCache = {}; logoCacheSize = 0; }
                                 logoCache[cacheKey] = logos.length ? Lampa.TMDB.image('t/p/original' + logos[0].file_path) : null;
                                 logoCacheSize++;
@@ -238,14 +275,14 @@
                 if (fullComp.scroll && !fullComp.scroll._fscWrapped) {
                     fullComp.scroll._fscWrapped = true;
                     const origOnScroll = fullComp.scroll.onScroll;
-                    fullComp.scroll.onScroll = (pos) => {
+                    fullComp.scroll.onScroll = function(pos) {
                         if (origOnScroll) origOnScroll(pos);
                         $('body').toggleClass('fsc--scrolled', pos > 30);
                     };
                 }
             }, 0);
         });
-        Lampa.Listener.follow('activity', (e) => {
+        Lampa.Listener.follow('activity', function(e) {
             if (e.type === 'archive' && e.component === 'full') {
                 $('body').addClass('fsc--open').removeClass('fsc--scrolled');
                 if (!Lampa.Storage.field('card_interfice_cover')) $('body').removeClass('card--no-cover');
@@ -264,5 +301,5 @@
         });
     }
     if (window.appready) init();
-    else Lampa.Listener.follow('app', (e) => { if (e.type === 'ready') init(); });
+    else Lampa.Listener.follow('app', function(e) { if (e.type === 'ready') init(); });
 })();
