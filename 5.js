@@ -93,11 +93,11 @@
         const shitIcon  = protocol + cubDomain + '/img/reactions/shit.svg';
 
         const el = $('<span class="fsc-serial-badge"></span>');
-        el.html(
-            '<span style="' + posStyle + '"><img class="fsc-react-icon" src="' + fireIcon + '"> ' + posStr + '</span>' +
-            '<span style="color:#fff;margin:0 0.3em">\u2022</span>' +
-            '<span style="' + negStyle + '"><img class="fsc-react-icon" src="' + shitIcon + '"> ' + negStr + '</span>'
-        );
+        el.html(  
+    '<span style="display:inline-flex;align-items:center;gap:0.2em;' + posStyle + '"><img class="fsc-react-icon" src="' + fireIcon + '">' + posStr + '</span>' +  
+    '<span style="color:#fff;margin:0 0.3em">\u2022</span>' +  
+    '<span style="display:inline-flex;align-items:center;gap:0.2em;' + negStyle + '"><img class="fsc-react-icon" src="' + shitIcon + '">' + negStr + '</span>'  
+);
         return el;
     }
 
@@ -122,7 +122,7 @@
             '.fsc-center-row{display:flex!important;flex-wrap:wrap!important;align-items:center!important;justify-content:center!important;gap:0.35em!important;margin-bottom:0.2em!important;}',
             '.fsc-serial-badge{display:inline-flex!important;align-items:center!important;height:1.5em!important;padding:0 0.5em!important;background:rgba(0,0,0,0.65)!important;color:#fff!important;font-size:1.25em!important;font-weight:550!important;border-radius:0.35em!important;white-space:nowrap!important;box-sizing:border-box!important;border:1px solid rgba(255,255,255,0.2)!important;margin:0!important;text-shadow:none!important;}',
             '.fsc-poster-fallback{flex:1 1 0!important;min-height:0!important;max-width:60%!important;object-fit:cover!important;object-position:center top!important;margin-bottom:0.5em!important;border-radius:1em!important;}',
-            '.fsc-react-icon{width:1em!important;height:1em!important;vertical-align:middle!important;margin-right:0.15em!important;filter:drop-shadow(0 1px 4px rgba(0,0,0,0.8))!important;}'
+            '.fsc-react-icon{width:1em!important;height:1em!important;flex-shrink:0!important;filter:drop-shadow(0 1px 4px rgba(0,0,0,0.9))!important;}'
         ].join('');
         document.head.appendChild(style);
 
