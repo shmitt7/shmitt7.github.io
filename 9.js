@@ -4,42 +4,59 @@
     if (window.plugin_overlay_menu_ready) return;  
     window.plugin_overlay_menu_ready = true;  
   
-    var style = document.createElement('style');  
-    style.textContent = [  
-        /* Меню фиксируется на весь экран слева, скрыто за краем */  
-        '.wrap__left {',  
-        '    position: fixed !important;',  
-        '    left: -15em !important;',  
-        '    top: 0 !important;',  
-        '    height: 100% !important;',  
-        '    margin-left: 0 !important;',  
-        '    z-index: 200 !important;',  
-        '}',  
+    function applyMenuStyles() {  
+        var left = document.querySelector('.wrap__left');  
+        if (!left) return;  
   
-        /* При открытии — меню выезжает поверх контента */  
-        'body.menu--open:not(.light--version) .wrap__left {',  
-        '    transform: translate3d(15em, 0, 0) !important;',  
-        '}',  
+        // Inline style с !important — абсолютный приоритет, никакой CSS не перебьёт  
+        left.style.setProperty('position',         'fixed',                      'important');  
+        left.style.setProperty('left',             '-15em',                      'important');  
+        left.style.setProperty('top',              '0',                          'important');  
+        left.style.setProperty('margin-left',      '0',                          'important');  
+        left.style.setProperty('z-index',          '200',                        'important');  
+        left.style.setProperty('border-radius',    '0 1.5em 1.5em 0',           'important');  
+        left.style.setProperty('box-shadow',       '0.3em 0 2em rgba(0,0,0,0.6)', 'important');  
   
-        /* Контент НЕ двигается */  
-        'body.menu--open:not(.light--version) .wrap__content {',  
-        '    transform: none !important;',  
-        '}',  
+        // Фон: glass-режим или обычный тёмный  
+        if (document.body.classList.contains('glass--style')) {  
+            left.style.setProperty('background-color',       'rgba(0,0,0,0.5)',  'important');  
+            left.style.setProperty('-webkit-backdrop-filter','blur(1.6em)',       'important');  
+            left.style.setProperty('backdrop-filter',        'blur(1.6em)',       'important');  
+        } else {  
+            left.style.setProperty('background-color', 'rgba(20,20,20,0.97)',    'important');  
+        }  
+    }  
   
-        /* Режим menu--always: иконки всегда видны слева */  
-        'body.menu--always:not(.light--version) .wrap__left {',  
-        '    left: 0 !important;',  
-        '    width: 5em !important;',  
-        '}',  
+    // MutationObserver: контент не двигается при открытии меню  
+    var observer = new MutationObserver(function (mutations) {  
+        for (var i = 0; i < mutations.length; i++) {  
+            if (mutations[i].attributeName !== 'class') continue;  
   
-        /* menu--always + открытие: меню расширяется, контент не двигается */  
-        'body.menu--always.menu--open:not(.light--version) .wrap__left {',  
-        '    transform: translate3d(0, 0, 0) !important;',  
-        '}',  
-        'body.menu--always.menu--open:not(.light--version) .wrap__content {',  
-        '    transform: none !important;',  
-        '}'  
-    ].join('\n');  
+            var content = document.querySelector('.wrap__content');  
+            if (!content) break;  
   
-    document.head.appendChild(style);  
+            if (document.body.classList.contains('menu--open')) {  
+                content.style.setProperty('-webkit-transform', 'none', 'important');  
+                content.style.setProperty('-moz-transform',    'none', 'important');  
+                content.style.setProperty('transform',         'none', 'important');  
+            } else {  
+                content.style.removeProperty('-webkit-transform');  
+                content.style.removeProperty('-moz-transform');  
+                content.style.removeProperty('transform');  
+            }  
+            break;  
+        }  
+    });  
+  
+    observer.observe(document.body, { attributes: true });  
+  
+    // Применяем стили после того, как DOM полностью построен  
+    if (window.appready) {  
+        applyMenuStyles();  
+    } else {  
+        Lampa.Listener.follow('app', function (e) {  
+            if (e.type === 'ready') applyMenuStyles();  
+        });  
+    }  
+  
 })();
