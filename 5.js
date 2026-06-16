@@ -27,20 +27,20 @@
         const genres = movie.genres || [];
         const ids = genres.map(function(g) { return typeof g === 'object' ? g.id : g; });
         let priority = null;
-        if (ids.indexOf(16) !== -1 && movie.original_language === 'ja') priority = 'Аниме';
-        else if (ids.indexOf(10763) !== -1) priority = 'Новости';
-        else if (ids.indexOf(10767) !== -1) priority = 'Ток-шоу';
-        else if (ids.indexOf(10764) !== -1) priority = 'Реалити-шоу';
-        else if (ids.indexOf(99) !== -1) priority = 'Документальный';
-        else if (ids.indexOf(10766) !== -1) priority = 'Мыльная опера';
-        else if (ids.indexOf(16) !== -1) priority = isTv ? 'Мультсериал' : 'Мультфильм';
+        if (ids.indexOf(16) !== -1 && movie.original_language === 'ja') priority = '\u0410\u043d\u0438\u043c\u0435';
+        else if (ids.indexOf(10763) !== -1) priority = '\u041d\u043e\u0432\u043e\u0441\u0442\u0438';
+        else if (ids.indexOf(10767) !== -1) priority = '\u0422\u043e\u043a-\u0448\u043e\u0443';
+        else if (ids.indexOf(10764) !== -1) priority = '\u0420\u0435\u0430\u043b\u0438\u0442\u0438-\u0448\u043e\u0443';
+        else if (ids.indexOf(99) !== -1) priority = '\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u0430\u043b\u044c\u043d\u044b\u0439';
+        else if (ids.indexOf(10766) !== -1) priority = '\u041c\u044b\u043b\u044c\u043d\u0430\u044f \u043e\u043f\u0435\u0440\u0430';
+        else if (ids.indexOf(16) !== -1) priority = isTv ? '\u041c\u0443\u043b\u044c\u0442\u0441\u0435\u0440\u0438\u0430\u043b' : '\u041c\u0443\u043b\u044c\u0442\u0444\u0438\u043b\u044c\u043c';
         const result = [];
         if (priority) result.push(priority);
         for (let i = 0; i < genres.length && result.length < (max || 2); i++) {
             const g = genres[i];
             if (!g) continue;
             const gId = typeof g === 'object' ? g.id : g;
-            if ((priority === 'Аниме' || priority === 'Мультсериал' || priority === 'Мультфильм') && gId === 16) continue;
+            if ((priority === '\u0410\u043d\u0438\u043c\u0435' || priority === '\u041c\u0443\u043b\u044c\u0442\u0441\u0435\u0440\u0438\u0430\u043b' || priority === '\u041c\u0443\u043b\u044c\u0442\u0444\u0438\u043b\u044c\u043c') && gId === 16) continue;
             const name = Lampa.Utils.capitalizeFirstLetter(g.name);
             if (name && result.indexOf(name) === -1) result.push(name);
         }
@@ -98,12 +98,12 @@
                         const posStyle = pos > neg ? 'color:#6fcf6f' : 'color:#fff';
                         const negStyle = neg > pos ? 'color:#e05555' : 'color:#fff';
                         const base = (Lampa.Utils.protocol ? Lampa.Utils.protocol() : 'https://') + ((Lampa.Manifest && Lampa.Manifest.cub_domain) || 'cub.red') + '/img/reactions/';
-                        reactionsHtml = ' \u2022 <span style="display:inline-flex;align-items:center;gap:0.2em;' + posStyle + '"><img class="fsc-react-icon" src="' + base + 'fire.svg">' + Lampa.Utils.bigNumberToShort(pos) + '</span><span style="color:#fff;margin:0 0.2em">/</span><span style="display:inline-flex;align-items:center;gap:0.2em;' + negStyle + '"><img class="fsc-react-icon" src="' + base + 'shit.svg">' + Lampa.Utils.bigNumberToShort(neg) + '</span>';
+                        reactionsHtml = '<span> \u2022 <span style="display:inline-flex;align-items:center;gap:0.2em;' + posStyle + '"><img class="fsc-react-icon" src="' + base + 'fire.svg">' + Lampa.Utils.bigNumberToShort(pos) + '</span><span style="color:#fff;margin:0 0.2em">/</span><span style="display:inline-flex;align-items:center;gap:0.2em;' + negStyle + '"><img class="fsc-react-icon" src="' + base + 'shit.svg">' + Lampa.Utils.bigNumberToShort(neg) + '</span></span>';
                     }
                 }
+                const infoEl = $('<span class="fsc-serial-badge"></span>');
                 let currentKP = 0;
                 let currentQuality = '';
-                const infoEl = $('<span class="fsc-serial-badge"></span>');
                 function rebuildInfo() {
                     const parts = infoParts.slice();
                     if (currentKP > 0) parts.push(currentKP.toFixed(1) + ' KP');
