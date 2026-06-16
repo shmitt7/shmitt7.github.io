@@ -1,55 +1,45 @@
 (function () {  
     'use strict';  
   
-    function startPlugin() {  
-        window.plugin_floating_menu_ready = true;  
+    if (window.plugin_overlay_menu_ready) return;  
+    window.plugin_overlay_menu_ready = true;  
   
-        function init() {  
-            // Переопределяем контроллер меню — вместо боковой панели показываем Select-попап  
-            Lampa.Controller.add('menu', {  
-                toggle: function () {  
-                    var items = [];  
+    var style = document.createElement('style');  
+    style.textContent = [  
+        /* Меню фиксируется на весь экран слева, скрыто за краем */  
+        '.wrap__left {',  
+        '    position: fixed !important;',  
+        '    left: -15em !important;',  
+        '    top: 0 !important;',  
+        '    height: 100% !important;',  
+        '    margin-left: 0 !important;',  
+        '    z-index: 200 !important;',  
+        '}',  
   
-                    // Собираем все пункты меню из DOM (включая добавленные плагинами)  
-                    Lampa.Menu.render().find('.menu__item.selector').each(function () {  
-                        var el = $(this);  
-                        var title = el.find('.menu__text').text().trim();  
+        /* При открытии — меню выезжает поверх контента */  
+        'body.menu--open:not(.light--version) .wrap__left {',  
+        '    transform: translate3d(15em, 0, 0) !important;',  
+        '}',  
   
-                        if (title) {  
-                            items.push({  
-                                title: title,  
-                                element: el  
-                            });  
-                        }  
-                    });  
+        /* Контент НЕ двигается */  
+        'body.menu--open:not(.light--version) .wrap__content {',  
+        '    transform: none !important;',  
+        '}',  
   
-                    Lampa.Select.show({  
-                        title: 'Меню',  
-                        items: items,  
-                        onSelect: function (item) {  
-                            // Триггерим hover:enter на реальном элементе меню —  
-                            // это запускает всю существующую логику действий из menu.js  
-                            item.element.trigger('hover:enter');  
-                        },  
-                        onBack: function () {  
-                            Lampa.Controller.toggle('content');  
-                        }  
-                    });  
-                },  
-                back: function () {  
-                    Lampa.Activity.backward();  
-                }  
-            });  
-        }  
+        /* Режим menu--always: иконки всегда видны слева */  
+        'body.menu--always:not(.light--version) .wrap__left {',  
+        '    left: 0 !important;',  
+        '    width: 5em !important;',  
+        '}',  
   
-        // Стандартный паттерн: если приложение уже готово — запускаем сразу  
-        if (window.appready) init();  
-        else {  
-            Lampa.Listener.follow('app', function (e) {  
-                if (e.type == 'ready') init();  
-            });  
-        }  
-    }  
+        /* menu--always + открытие: меню расширяется, контент не двигается */  
+        'body.menu--always.menu--open:not(.light--version) .wrap__left {',  
+        '    transform: translate3d(0, 0, 0) !important;',  
+        '}',  
+        'body.menu--always.menu--open:not(.light--version) .wrap__content {',  
+        '    transform: none !important;',  
+        '}'  
+    ].join('\n');  
   
-    if (!window.plugin_floating_menu_ready) startPlugin();  
+    document.head.appendChild(style);  
 })();
