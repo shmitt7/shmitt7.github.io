@@ -92,10 +92,10 @@
         const fireIcon  = protocol + cubDomain + '/img/reactions/fire.svg';
         const shitIcon  = protocol + cubDomain + '/img/reactions/shit.svg';
 
-        const el = $('<div class="fsc-reactions"></div>');
+        const el = $('<span class="fsc-serial-badge"></span>');
         el.html(
             '<span style="' + posStyle + '"><img class="fsc-react-icon" src="' + fireIcon + '"> ' + posStr + '</span>' +
-            '<span style="color:#fff;margin:0 0.4em">\u2022</span>' +
+            '<span style="color:#fff;margin:0 0.3em">\u2022</span>' +
             '<span style="' + negStyle + '"><img class="fsc-react-icon" src="' + shitIcon + '"> ' + negStr + '</span>'
         );
         return el;
@@ -122,8 +122,7 @@
             '.fsc-center-row{display:flex!important;flex-wrap:wrap!important;align-items:center!important;justify-content:center!important;gap:0.35em!important;margin-bottom:0.2em!important;}',
             '.fsc-serial-badge{display:inline-flex!important;align-items:center!important;height:1.5em!important;padding:0 0.5em!important;background:rgba(0,0,0,0.65)!important;color:#fff!important;font-size:1.25em!important;font-weight:550!important;border-radius:0.35em!important;white-space:nowrap!important;box-sizing:border-box!important;border:1px solid rgba(255,255,255,0.2)!important;margin:0!important;text-shadow:none!important;}',
             '.fsc-poster-fallback{flex:1 1 0!important;min-height:0!important;max-width:60%!important;object-fit:cover!important;object-position:center top!important;margin-bottom:0.5em!important;border-radius:1em!important;}',
-            '.fsc-reactions{position:fixed!important;bottom:1.2em!important;right:1.4em!important;display:flex!important;align-items:center!important;font-size:1.4em!important;font-weight:700!important;text-shadow:0 2px 12px rgba(0,0,0,0.95)!important;pointer-events:none!important;z-index:100!important;}',
-            '.fsc-react-icon{width:1.1em!important;height:1.1em!important;vertical-align:middle!important;margin-right:0.15em!important;filter:drop-shadow(0 2px 6px rgba(0,0,0,0.9))!important;}'
+            '.fsc-react-icon{width:1em!important;height:1em!important;vertical-align:middle!important;margin-right:0.15em!important;filter:drop-shadow(0 1px 4px rgba(0,0,0,0.8))!important;}'
         ].join('');
         document.head.appendChild(style);
 
@@ -249,7 +248,13 @@
                     main.append($('<div class="fsc-center-row"></div>').append(serialEl));
                 else if (!movie.first_air_date && movieStatusEl)
                     main.append($('<div class="fsc-center-row"></div>').append(movieStatusEl));
-                main.append($('<div class="fsc-center-row"></div>').append(infoEl));
+
+                // инфо-строка: инфо-бейдж + бейдж реакций рядом
+                const infoRow = $('<div class="fsc-center-row"></div>').append(infoEl);
+                const reactEl = buildReactionsEl(e.data && e.data.reactions);
+                if (reactEl) infoRow.append(reactEl);
+                main.append(infoRow);
+
                 main.append(buttons);
                 right.find('.fsc-main').remove();
                 right.append(main);
@@ -259,13 +264,6 @@
                     const posterImg = $('<img class="fsc-poster-fallback">').attr('src', posterSrc);
                     right.prepend(posterImg);
                 }
-
-                // --- реакции в правом нижнем углу ---
-                render.find('.fsc-reactions').remove();
-                const reactEl = buildReactionsEl(e.data && e.data.reactions);
-                if (reactEl) render.append(reactEl);
-                // -------------------------------------
-
                 if (movie.id) {
                     const rawHtml = title.html();
                     const titleText = title.text().trim();
