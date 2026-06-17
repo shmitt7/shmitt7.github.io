@@ -4,8 +4,8 @@
     if (window.plugin_overlay_menu_ready) return;  
     window.plugin_overlay_menu_ready = true;  
   
-    var HIDDEN_POS  = '-16.5em'; // скрыто за левым краем  
-    var VISIBLE_POS = '1em';     // отступ от левого края когда открыто  
+    var HIDDEN_POS  = '-16.5em';  
+    var VISIBLE_POS = '1em';  
   
     function applyMenuStyles() {  
         var left = document.querySelector('.wrap__left');  
@@ -13,7 +13,7 @@
   
         left.style.setProperty('position',      'fixed',                       'important');  
         left.style.setProperty('left',          HIDDEN_POS,                    'important');  
-        left.style.setProperty('top',           '1em',                         'important');  
+        left.style.setProperty('top',           '4.5em',                       'important'); // ниже шапки с логотипом  
         left.style.setProperty('bottom',        '1em',                         'important');  
         left.style.setProperty('height',        'auto',                        'important');  
         left.style.setProperty('margin-left',   '0',                           'important');  
@@ -35,14 +35,20 @@
     }  
   
     function applyScrollStyles() {  
+        // Убираем лишние отступы у скролл-контейнера  
         var scrollContent = document.querySelector('.wrap__left .scroll--mask .scroll__content');  
         if (scrollContent) {  
             scrollContent.style.setProperty('padding-top',    '1em', 'important');  
-            scrollContent.style.setProperty('padding-bottom', '1em', 'important');  
+            scrollContent.style.setProperty('padding-bottom', '0',   'important'); // убираем пустое место снизу  
+        }  
+  
+        // Выравниваем кнопки меню симметрично: добавляем padding-right как у padding-left  
+        var menuList = document.querySelector('.wrap__left .menu__list');  
+        if (menuList) {  
+            menuList.style.setProperty('padding-right', '0.6em', 'important');  
         }  
     }  
   
-    // Анимация открытия/закрытия через left, блокируем transform от Lampa  
     var observer = new MutationObserver(function (mutations) {  
         for (var i = 0; i < mutations.length; i++) {  
             if (mutations[i].attributeName !== 'class') continue;  
@@ -66,7 +72,6 @@
   
     observer.observe(document.body, { attributes: true });  
   
-    // Применяем стили к .wrap__left после готовности приложения  
     if (window.appready) {  
         applyMenuStyles();  
     } else {  
@@ -75,7 +80,6 @@
         });  
     }  
   
-    // Применяем стили к scroll__content после построения DOM меню  
     Lampa.Listener.follow('menu', function (e) {  
         if (e.type === 'end') {  
             applyMenuStyles();  
