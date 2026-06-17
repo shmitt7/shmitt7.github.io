@@ -13,8 +13,8 @@
   
         left.style.setProperty('position',      'fixed',                       'important');  
         left.style.setProperty('left',          HIDDEN_POS,                    'important');  
-        left.style.setProperty('top',           '3em',                         'important'); // приподнято  
-        left.style.setProperty('bottom',        '2em',                         'important'); // не выходит за экран  
+        left.style.setProperty('top',           '3em',                         'important');  
+        left.style.setProperty('bottom',        '1em',                         'important');  
         left.style.setProperty('height',        'auto',                        'important');  
         left.style.setProperty('margin-left',   '0',                           'important');  
         left.style.setProperty('z-index',       '200',                         'important');  
@@ -24,7 +24,8 @@
         left.style.setProperty('transform',     'none',                        'important');  
         left.style.setProperty('will-change',   'left',                        'important');  
         left.style.setProperty('padding-top',   '0',                           'important');  
-        left.style.setProperty('overflow',      'hidden',                      'important'); // обрезает фон по border-radius  
+        left.style.setProperty('padding-bottom','0',                           'important');  
+        // НЕ ставим overflow:hidden — это ломает скролл внутри меню  
   
         if (document.body.classList.contains('glass--style')) {  
             left.style.setProperty('background-color',        'rgba(0,0,0,0.5)', 'important');  
@@ -36,17 +37,18 @@
     }  
   
     function applyScrollStyles() {  
-        var scrollContent = document.querySelector('.wrap__left .scroll--mask .scroll__content');  
+        // Убираем padding сверху и снизу у скролл-контейнера  
+        var scrollContent = document.querySelector('.wrap__left .scroll__content');  
         if (scrollContent) {  
             scrollContent.style.setProperty('padding-top',    '1em', 'important');  
-            scrollContent.style.setProperty('padding-bottom', '1em', 'important');  
+            scrollContent.style.setProperty('padding-bottom', '0',   'important');  
         }  
   
-        // Убираем padding-left и делаем симметричный отступ  
+        // Убираем padding-left у списка меню (было 0.6em — создавало пустое место слева)  
         var menuList = document.querySelector('.wrap__left .menu__list');  
         if (menuList) {  
-            menuList.style.setProperty('padding-left',  '0.6em', 'important');  
-            menuList.style.setProperty('padding-right', '0.6em', 'important');  
+            menuList.style.setProperty('padding-left',  '0', 'important');  
+            menuList.style.setProperty('padding-right', '0', 'important');  
         }  
     }  
   
