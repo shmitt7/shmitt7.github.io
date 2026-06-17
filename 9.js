@@ -7,18 +7,18 @@
     var HIDDEN_POS  = '-16.5em';  
     var VISIBLE_POS = '1em';  
   
-    // CSS injection — работает до построения DOM меню, надёжнее чем JS querySelector  
+    // CSS injection — применяется сразу, до построения DOM меню  
     var style = document.createElement('style');  
     style.textContent = [  
-        // Скрываем разделители и пункты настроек/консоли/редактора  
-        '.wrap__left .menu__case.nosort { display: none !important; }',  
-        '.wrap__left .menu__split       { display: none !important; }',  
-        // Убираем padding-left у списка (было 0.6em — пустое место слева)  
+        // Убираем padding-left у списка (пустое место слева)  
         '.wrap__left .menu__list { padding-left: 0 !important; padding-right: 0 !important; }',  
-        // Убираем большие отступы у скролл-контейнера (было 2.5em)  
-        '.wrap__left .scroll__content { padding-top: 0.5em !important; padding-bottom: 0.5em !important; }',  
-        // Убираем маску-градиент (она создаёт визуальный эффект пустого места сверху/снизу)  
+        // Убираем все отступы у скролл-контейнера — серый фон сверху/снизу исчезнет  
+        '.wrap__left .scroll__content { padding-top: 0 !important; padding-bottom: 0 !important; }',  
+        // Убираем маску-градиент (она делает края прозрачными и визуально увеличивает отступ)  
         '.wrap__left .scroll--mask { mask-image: none !important; -webkit-mask-image: none !important; }',  
+        // Скролл-контейнер занимает только высоту .wrap__left — не выходит за bottom  
+        '.wrap__left > .scroll { height: 100% !important; }',  
+        '.wrap__left .scroll--over { height: 100% !important; }',  
     ].join('\n');  
     document.head.appendChild(style);  
   
@@ -40,7 +40,7 @@
         left.style.setProperty('will-change',    'left',                        'important');  
         left.style.setProperty('padding-top',    '0',                           'important');  
         left.style.setProperty('padding-bottom', '0',                           'important');  
-        left.style.setProperty('overflow',       'hidden',                      'important');  
+        left.style.setProperty('overflow',       'hidden',                      'important'); // обрезает по border-radius и по bottom  
   
         if (document.body.classList.contains('glass--style')) {  
             left.style.setProperty('background-color',        'rgba(0,0,0,0.5)', 'important');  
