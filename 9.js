@@ -7,16 +7,11 @@
     var HIDDEN_POS  = '-16.5em';  
     var VISIBLE_POS = '1em';  
   
-    // CSS injection — применяется сразу, до построения DOM меню  
     var style = document.createElement('style');  
     style.textContent = [  
-        // Убираем padding-left у списка (пустое место слева)  
         '.wrap__left .menu__list { padding-left: 0 !important; padding-right: 0 !important; }',  
-        // Убираем все отступы у скролл-контейнера — серый фон сверху/снизу исчезнет  
         '.wrap__left .scroll__content { padding-top: 0 !important; padding-bottom: 0 !important; }',  
-        // Убираем маску-градиент (она делает края прозрачными и визуально увеличивает отступ)  
         '.wrap__left .scroll--mask { mask-image: none !important; -webkit-mask-image: none !important; }',  
-        // Скролл-контейнер занимает только высоту .wrap__left — не выходит за bottom  
         '.wrap__left > .scroll { height: 100% !important; }',  
         '.wrap__left .scroll--over { height: 100% !important; }',  
     ].join('\n');  
@@ -29,18 +24,19 @@
         left.style.setProperty('position',       'fixed',                       'important');  
         left.style.setProperty('left',           HIDDEN_POS,                    'important');  
         left.style.setProperty('top',            '3.5em',                       'important');  
-        left.style.setProperty('bottom',         '1em',                         'important');  
-        left.style.setProperty('height',         'auto',                        'important');  
+        // Явная высота вместо bottom — надёжнее работает на всех устройствах  
+        left.style.setProperty('height',         'calc(100vh - 4.5em)',         'important');  
         left.style.setProperty('margin-left',    '0',                           'important');  
         left.style.setProperty('z-index',        '200',                         'important');  
-        left.style.setProperty('border-radius',  '1.5em',                       'important');  
+        // border-radius совпадает с .menu__item (1em) — углы меню = углы выделения  
+        left.style.setProperty('border-radius',  '1em',                         'important');  
         left.style.setProperty('box-shadow',     '0 0.5em 3em rgba(0,0,0,0.7)', 'important');  
         left.style.setProperty('transition',     'left 0.25s ease',             'important');  
         left.style.setProperty('transform',      'none',                        'important');  
         left.style.setProperty('will-change',    'left',                        'important');  
         left.style.setProperty('padding-top',    '0',                           'important');  
         left.style.setProperty('padding-bottom', '0',                           'important');  
-        left.style.setProperty('overflow',       'hidden',                      'important'); // обрезает по border-radius и по bottom  
+        left.style.setProperty('overflow',       'hidden',                      'important');  
   
         if (document.body.classList.contains('glass--style')) {  
             left.style.setProperty('background-color',        'rgba(0,0,0,0.5)', 'important');  
