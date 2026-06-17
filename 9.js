@@ -9,21 +9,16 @@
 
     var style = document.createElement('style');
     style.textContent = [
-        // position, top, height, overflow — через CSS injection, надёжнее inline style
         '.wrap__left {',
         '    position: fixed !important;',
         '    top: 3.5em !important;',
         '    height: calc(100vh - 4.5em) !important;',
         '    overflow: hidden !important;',
         '}',
-        // Скролл-контейнер ограничен высотой .wrap__left
         '.wrap__left > .scroll { height: 100% !important; }',
         '.wrap__left .scroll--over { height: 100% !important; }',
-        // Убираем padding-left у списка (пустое место слева)
         '.wrap__left .menu__list { padding-left: 0 !important; padding-right: 0 !important; }',
-        // Убираем отступы у скролл-контейнера
         '.wrap__left .scroll__content { padding-top: 0 !important; padding-bottom: 0 !important; }',
-        // Убираем маску-градиент
         '.wrap__left .scroll--mask { mask-image: none !important; -webkit-mask-image: none !important; }',
     ].join('\n');
     document.head.appendChild(style);
@@ -32,24 +27,18 @@
         var left = document.querySelector('.wrap__left');
         if (!left) return;
 
-        left.style.setProperty('left',           HIDDEN_POS,                    'important');
-        left.style.setProperty('margin-left',    '0',                           'important');
-        left.style.setProperty('z-index',        '200',                         'important');
-        left.style.setProperty('border-radius',  '1em',                         'important');
-        left.style.setProperty('box-shadow',     '0 0.5em 3em rgba(0,0,0,0.7)', 'important');
-        left.style.setProperty('transition',     'left 0.25s ease',             'important');
-        left.style.setProperty('transform',      'none',                        'important');
-        left.style.setProperty('will-change',    'left',                        'important');
-        left.style.setProperty('padding-top',    '0',                           'important');
-        left.style.setProperty('padding-bottom', '0',                           'important');
-
-        if (document.body.classList.contains('glass--style')) {
-            left.style.setProperty('background-color',        'rgba(0,0,0,0.5)', 'important');
-            left.style.setProperty('-webkit-backdrop-filter', 'blur(1.6em)',      'important');
-            left.style.setProperty('backdrop-filter',         'blur(1.6em)',      'important');
-        } else {
-            left.style.setProperty('background-color', 'rgba(20,20,20,0.97)',    'important');
-        }
+        left.style.setProperty('left',             HIDDEN_POS,                          'important');
+        left.style.setProperty('margin-left',      '0',                                 'important');
+        left.style.setProperty('z-index',          '200',                               'important');
+        left.style.setProperty('border-radius',    '1em',                               'important');
+        left.style.setProperty('background-color', 'rgba(0,0,0,0.65)',                  'important');
+        left.style.setProperty('border',           '1px solid rgba(255,255,255,0.2)',   'important');
+        left.style.setProperty('box-shadow',       '0 0.5em 3em rgba(0,0,0,0.7)',       'important');
+        left.style.setProperty('transition',       'left 0.25s ease',                   'important');
+        left.style.setProperty('transform',        'none',                              'important');
+        left.style.setProperty('will-change',      'left',                              'important');
+        left.style.setProperty('padding-top',      '0',                                 'important');
+        left.style.setProperty('padding-bottom',   '0',                                 'important');
     }
 
     var observer = new MutationObserver(function (mutations) {
