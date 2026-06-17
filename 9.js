@@ -13,8 +13,8 @@
   
         left.style.setProperty('position',      'fixed',                       'important');  
         left.style.setProperty('left',          HIDDEN_POS,                    'important');  
-        left.style.setProperty('top',           '4.5em',                       'important'); // ниже шапки с логотипом  
-        left.style.setProperty('bottom',        '1em',                         'important');  
+        left.style.setProperty('top',           '3em',                         'important'); // приподнято  
+        left.style.setProperty('bottom',        '2em',                         'important'); // не выходит за экран  
         left.style.setProperty('height',        'auto',                        'important');  
         left.style.setProperty('margin-left',   '0',                           'important');  
         left.style.setProperty('z-index',       '200',                         'important');  
@@ -24,6 +24,7 @@
         left.style.setProperty('transform',     'none',                        'important');  
         left.style.setProperty('will-change',   'left',                        'important');  
         left.style.setProperty('padding-top',   '0',                           'important');  
+        left.style.setProperty('overflow',      'hidden',                      'important'); // обрезает фон по border-radius  
   
         if (document.body.classList.contains('glass--style')) {  
             left.style.setProperty('background-color',        'rgba(0,0,0,0.5)', 'important');  
@@ -35,16 +36,16 @@
     }  
   
     function applyScrollStyles() {  
-        // Убираем лишние отступы у скролл-контейнера  
         var scrollContent = document.querySelector('.wrap__left .scroll--mask .scroll__content');  
         if (scrollContent) {  
             scrollContent.style.setProperty('padding-top',    '1em', 'important');  
-            scrollContent.style.setProperty('padding-bottom', '0',   'important'); // убираем пустое место снизу  
+            scrollContent.style.setProperty('padding-bottom', '1em', 'important');  
         }  
   
-        // Выравниваем кнопки меню симметрично: добавляем padding-right как у padding-left  
+        // Убираем padding-left и делаем симметричный отступ  
         var menuList = document.querySelector('.wrap__left .menu__list');  
         if (menuList) {  
+            menuList.style.setProperty('padding-left',  '0.6em', 'important');  
             menuList.style.setProperty('padding-right', '0.6em', 'important');  
         }  
     }  
