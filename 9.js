@@ -10,6 +10,7 @@
         '.wrap__left > .scroll{height:auto!important;}',
         '.wrap__left .scroll__content{padding-top:0!important;padding-bottom:0!important;}',
         '.wrap__left .scroll--mask{mask-image:none!important;-webkit-mask-image:none!important;}',
+        '.wrap__left .menu__list{padding-left:0!important;padding-right:0.6em!important;}',
         '.wrap__left{background-color:#1d1f20!important;}',
         'body.black--style .wrap__left{background-color:#000!important;}',
         'body.glass--style .wrap__left{background-color:rgba(0,0,0,0.3)!important;backdrop-filter:blur(1.6em)!important;}',
