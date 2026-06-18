@@ -6,9 +6,8 @@
     var VISIBLE_POS = '1em';
     var style = document.createElement('style');
     style.textContent = [
-        '.wrap__left{position:fixed!important;top:3.5em!important;height:auto!important;max-height:calc(100vh - 4.5em)!important;overflow:hidden!important;}',
+        '.wrap__left{position:fixed!important;top:3.5em!important;height:auto!important;max-height:calc(100vh - 4.5em)!important;overflow:hidden!important;padding-top:0!important;}',
         '.wrap__left > .scroll{height:auto!important;}',
-        '.wrap__left .menu__list{padding-left:0!important;padding-right:0!important;}',
         '.wrap__left .scroll__content{padding-top:0!important;padding-bottom:0!important;}',
         '.wrap__left .scroll--mask{mask-image:none!important;-webkit-mask-image:none!important;}',
         '.wrap__left{background-color:#1d1f20!important;}',
@@ -25,13 +24,9 @@
         left.style.setProperty('margin-left', '0', 'important');
         left.style.setProperty('z-index', '200', 'important');
         left.style.setProperty('border-radius', '1em', 'important');
-        left.style.setProperty('border', '1px solid rgba(255,255,255,0.2)', 'important');
-        left.style.setProperty('box-shadow', '0 0.5em 3em rgba(0,0,0,0.7)', 'important');
+        left.style.setProperty('border', '1px solid rgba(255,255,255,0.6)', 'important');
         left.style.setProperty('transition', 'left 0.25s ease', 'important');
         left.style.setProperty('transform', 'none', 'important');
-        left.style.setProperty('will-change', 'left', 'important');
-        left.style.setProperty('padding-top', '0', 'important');
-        left.style.setProperty('padding-bottom', '0', 'important');
     }
     new MutationObserver(function () {
         var leftEl = document.querySelector('.wrap__left');
