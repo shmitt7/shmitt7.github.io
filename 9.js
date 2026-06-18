@@ -15,7 +15,7 @@
         'body.black--style .wrap__left{background-color:#000!important;}',  
         'body.glass--style .wrap__left{background-color:rgba(0,0,0,0.3)!important;backdrop-filter:blur(1.6em)!important;}',  
         'body.glass--style-opacity--medium .wrap__left{background-color:rgba(20,20,20,0.6)!important;backdrop-filter:blur(1.1em)!important;}',  
-        'body.glass--style-opacity--blacked .wrap__left{background-color:rgba(20,20,20,0.9)!important;backdrop-filter:blur(0.5em)!important;}'  
+        'body.glass--style-opacity--blacked .wrap__left{background-color:rgba(0,0,0,0.85)!important;}'  
     ].join('\n');  
     document.head.appendChild(style);  
     function applyMenuStyles() {  
