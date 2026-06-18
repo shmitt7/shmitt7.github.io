@@ -112,16 +112,18 @@
                 function rebuildInfo() {
                     const parts = [];
                     if (year) parts.push(year);
-                    if (countries.length) parts.push(countries.join(', '));
-                    if (genreLabels.length) parts.push(genreLabels.join(' / '));
+                    // FIX 3: runtime сразу после года
                     if (runtime) parts.push(runtime);
-                    if (tmdbRating >= 1) parts.push('TMDB ' + tmdbRating.toFixed(1));
+                    if (countries.length) parts.push(countries.join(', '));
+                    // FIX 1: жанры через запятую
+                    if (genreLabels.length) parts.push(genreLabels.join(', '));
+                    // FIX 2: KP заменяет TMDB, если есть
                     if (currentKP !== null && currentKP >= 1) parts.push('KP ' + currentKP.toFixed(1));
+                    else if (tmdbRating >= 1) parts.push('TMDB ' + tmdbRating.toFixed(1));
                     if (currentQuality) parts.push(currentQuality);
                     infoEl.text(parts.join(' \u2022 '));
                 }
                 rebuildInfo();
-                // Исправлен селектор: реальная разметка — .rate--kp > div:first-child
                 function checkKP(attempt) {
                     if (currentToken !== token || attempt > 30) return;
                     const kpEl = render.find('.rate--kp').not('.hide');
@@ -170,12 +172,19 @@
                     const serialParts = [];
                     if (tvStatus && !(tvStatus === 'Returning Series' && hasNextEpisode))
                         serialParts.push(Lampa.Lang.translate('tv_status_' + tvStatus.toLowerCase().replace(/ /g, '_')));
-                    if (totalSeasons > 0)
-                        serialParts.push(Lampa.Lang.translate('title_seasons') + ': '
-                            + (currentSeason < totalSeasons ? currentSeason + '/' + totalSeasons : totalSeasons));
-                    if (totalEpisodes > 0)
-                        serialParts.push(Lampa.Lang.translate('title_episodes') + ': '
-                            + (airedTotal > 0 && airedTotal < totalEpisodes ? airedTotal + '/' + totalEpisodes : totalEpisodes));
+                    if (totalSeasons > 0) {
+                        // FIX 4: currentSeason > 0 исключает случай когда last_episode_to_air отсутствует
+                        const seasonsText = (currentSeason > 0 && currentSeason < totalSeasons)
+                            ? currentSeason + '/' + totalSeasons
+                            : totalSeasons;
+                        serialParts.push(Lampa.Lang.translate('title_seasons') + ': ' + seasonsText);
+                    }
+                    if (totalEpisodes > 0) {
+                        const episodesText = (airedTotal > 0 && airedTotal < totalEpisodes)
+                            ? airedTotal + '/' + totalEpisodes
+                            : totalEpisodes;
+                        serialParts.push(Lampa.Lang.translate('title_episodes') + ': ' + episodesText);
+                    }
                     if (hasNextEpisode) serialParts.push(nextEpisodeText);
                     if (serialParts.length) serialEl = $('<span class="fsc-serial-badge"></span>').text(serialParts.join(' \u2022 '));
                 }
@@ -241,7 +250,6 @@
                         );
                     }
                 }
-                // Только onScroll — обёртка scroll.update убрана (давала ложные срабатывания)
                 if (fullComp.scroll && !fullComp.scroll._fscWrapped) {
                     fullComp.scroll._fscWrapped = true;
                     const origOnScroll = fullComp.scroll.onScroll;
