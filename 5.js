@@ -121,12 +121,13 @@
                     infoEl.text(parts.join(' \u2022 '));
                 }
                 rebuildInfo();
+                // Исправлен селектор: реальная разметка — .rate--kp > div:first-child
                 function checkKP(attempt) {
                     if (currentToken !== token || attempt > 30) return;
-                    const kpBadge = render.find('.full-start-new__rate-kinopoisk .rate__text, .full-start-new__rate-kp .rate__text').first();
-                    if (kpBadge.length) {
-                        const val = parseFloat(kpBadge.text().replace(',', '.'));
-                        if (!isNaN(val)) { currentKP = val; rebuildInfo(); }
+                    const kpEl = render.find('.rate--kp').not('.hide');
+                    if (kpEl.length) {
+                        const val = parseFloat(kpEl.find('> div').eq(0).text().replace(',', '.'));
+                        if (!isNaN(val) && val > 0) { currentKP = val; rebuildInfo(); }
                     } else setTimeout(function() { checkKP(attempt + 1); }, 500);
                 }
                 checkKP(0);
@@ -240,6 +241,7 @@
                         );
                     }
                 }
+                // Только onScroll — обёртка scroll.update убрана (давала ложные срабатывания)
                 if (fullComp.scroll && !fullComp.scroll._fscWrapped) {
                     fullComp.scroll._fscWrapped = true;
                     const origOnScroll = fullComp.scroll.onScroll;
@@ -247,19 +249,6 @@
                         if (origOnScroll) origOnScroll(pos);
                         $('body').toggleClass('fsc--scrolled', pos > 30);
                     };
-                    const origUpdate = fullComp.scroll.update;
-                    if (origUpdate) {
-                        fullComp.scroll.update = function(elem, tocenter) {
-                            if (elem) {
-                                const scrollEl = this.render()[0];
-                                const scrollRect = scrollEl.getBoundingClientRect();
-                                const elemEl = elem.jquery ? elem[0] : elem;
-                                const elemRect = elemEl.getBoundingClientRect();
-                                $('body').toggleClass('fsc--scrolled', elemRect.top > scrollRect.bottom - 50);
-                            }
-                            origUpdate.call(this, elem, tocenter);
-                        };
-                    }
                 }
             }, 0);
         });
