@@ -6,7 +6,8 @@
     var VISIBLE_POS = '1em';  
     var style = document.createElement('style');  
     style.textContent = [  
-        '.wrap__left{position:fixed!important;top:3.5em!important;height:auto!important;max-height:calc(100vh - 4.5em)!important;overflow:hidden!important;}',  
+        '.wrap__left{position:fixed!important;top:3.5em!important;height:auto!important;max-height:calc(100vh - 4.5em)!important;overflow:hidden!important;}',
+        '.wrap__left > .scroll{height:auto!important;}',
         '.wrap__left .menu__list{padding-left:0!important;padding-right:0!important;}',  
         '.wrap__left .scroll__content{padding-top:0!important;padding-bottom:0!important;}',  
         '.wrap__left .scroll--mask{mask-image:none!important;-webkit-mask-image:none!important;}'  
