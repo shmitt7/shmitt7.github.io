@@ -20,7 +20,7 @@
         left.style.setProperty('margin-left', '0', 'important');  
         left.style.setProperty('z-index', '200', 'important');  
         left.style.setProperty('border-radius', '1em', 'important');  
-        left.style.setProperty('background-color', 'rgba(0,0,0,0.5)', 'important');  
+        left.style.setProperty('background-color', 'rgba(0,0,0,0.85)', 'important');  
         left.style.setProperty('border', '1px solid rgba(255,255,255,0.2)', 'important');  
         left.style.setProperty('box-shadow', '0 0.5em 3em rgba(0,0,0,0.7)', 'important');  
         left.style.setProperty('transition', 'left 0.25s ease', 'important');  
