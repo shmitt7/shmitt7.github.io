@@ -4,20 +4,20 @@ if (window.fscPlugin) return;
 window.fscPlugin = true;
 let logoCache = {};
 let logoCacheSize = 0;
+const FORMAT_PATTERNS = [
+    { sep: ': ', keep: 1 },
+    { sep: ' - ', keep: 2 },
+    { sep: ' \u2013', keep: 2 },
+    { sep: ' \u2014', keep: 2 },
+];
 function escapeHtml(s) {
     return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 function formatTitle(text) {
     if (!text || text.length <= 30) return null;
-    const patterns = [
-        { sep: ': ', keep: 1 },
-        { sep: ' - ', keep: 2 },
-        { sep: ' \u2013', keep: 2 },
-        { sep: ' \u2014', keep: 2 },
-    ];
-    for (let pi = 0; pi < patterns.length; pi++) {
-        const sep = patterns[pi].sep;
-        const keep = patterns[pi].keep;
+    for (let pi = 0; pi < FORMAT_PATTERNS.length; pi++) {
+        const sep = FORMAT_PATTERNS[pi].sep;
+        const keep = FORMAT_PATTERNS[pi].keep;
         const idx = text.indexOf(sep);
         if (idx > 2 && idx + sep.length < text.length - 2) {
             const part1 = text.slice(0, idx + keep);
@@ -72,9 +72,12 @@ function buildReactionsEl(reactionsData) {
     );
     return el;
 }
+function tvStatusLabel(s) {
+    return Lampa.Lang.translate('tv_status_' + s.toLowerCase().replace(/ /g, '_'));
+}
 function init() {
     const style = document.createElement('style');
-    style.textContent = 'body.fsc--open .full-start__background{position:fixed!important;inset:0!important;width:100vw!important;height:100vh!important;z-index:0!important;object-fit:cover!important;mask-image:none!important;-webkit-mask-image:none!important;pointer-events:none!important;filter:none!important;opacity:0;transition:opacity 0.5s ease-in-out;}body.fsc--open .full-start__background.loaded{opacity:0.8!important;}body.fsc--open .full-start__background.dim{opacity:0!important;transition:opacity 0s!important;}body.fsc--open:not(.fsc--scrolled) .background{opacity:0!important;transition:none!important;}body.fsc--open.fsc--scrolled .background{opacity:1!important;transition:opacity 0.4s!important;}body.fsc--open:not(.fsc--scrolled) .head{background:transparent!important;}body.fsc--open .full-start-new{position:relative!important;overflow:visible!important;}body.fsc--open .full-start-new__body{min-height:calc(100vh - 6em)!important;align-items:stretch!important;justify-content:center!important;overflow:visible!important;}body.fsc--open .full-start-new__right{display:flex!important;flex-direction:column!important;min-height:calc(100vh - 6em)!important;justify-content:flex-end!important;align-items:center!important;text-align:center!important;padding-bottom:0.8em!important;overflow:visible!important;position:relative!important;}body.fsc--open.fsc--scrolled .full-start-new__right{min-height:0!important;}body.fsc--open .full-start-new__left{display:none!important;}body.fsc--open .full-start-new__right>*:not(.fsc-main):not(.fsc-poster-fallback):not(.fsc-reactions-badge){display:none!important;}.fsc-main{display:flex!important;flex-direction:column!important;align-items:center!important;text-align:center!important;margin-bottom:0.2em!important;width:100%!important;}body.fsc--open.fsc--scrolled .fsc-main{display:none!important;}body.fsc--open .full-start-new__title{text-align:center!important;max-width:100%!important;text-shadow:0 2px 12px rgba(0,0,0,0.95)!important;margin-bottom:0.15em!important;display:block!important;overflow:hidden!important;white-space:nowrap!important;text-overflow:ellipsis!important;-webkit-line-clamp:unset!important;line-clamp:unset!important;}body.fsc--open .full-start-new__title.fsc-title-split{white-space:normal!important;text-overflow:clip!important;display:-webkit-box!important;-webkit-box-orient:vertical!important;-webkit-line-clamp:2!important;line-clamp:2!important;}.fsc-logo{max-width:18em!important;max-height:5em!important;object-fit:contain!important;}.fsc-center-row{display:flex!important;flex-wrap:wrap!important;align-items:center!important;justify-content:center!important;gap:0.35em!important;margin-bottom:0.2em!important;}.fsc-serial-badge{display:inline-flex!important;align-items:center!important;height:1.5em!important;padding:0 0.5em!important;background:rgba(0,0,0,0.65)!important;color:#fff!important;font-size:1.25em!important;font-weight:550!important;border-radius:0.35em!important;white-space:nowrap!important;box-sizing:border-box!important;border:1px solid rgba(255,255,255,0.2)!important;margin:0!important;text-shadow:none!important;}.fsc-poster-fallback{flex:1 1 0!important;min-height:0!important;max-width:60%!important;object-fit:cover!important;object-position:center top!important;margin-bottom:0.5em!important;border-radius:1em!important;}.fsc-react-icon{width:1em!important;height:1em!important;flex-shrink:0!important;}.fsc-reactions-badge{position:absolute!important;bottom:1em!important;right:0em!important;z-index:10!important;}body.fsc--open.fsc--scrolled .fsc-reactions-badge{display:none!important;}';
+    style.textContent = 'body.fsc--open .full-start__background{position:fixed!important;inset:0!important;width:100vw!important;height:100vh!important;z-index:0!important;object-fit:cover!important;mask-image:none!important;-webkit-mask-image:none!important;pointer-events:none!important;filter:none!important;opacity:0;transition:opacity 0.5s ease-in-out;}body.fsc--open .full-start__background.loaded{opacity:0.8!important;}body.fsc--open .full-start__background.dim{opacity:0!important;transition:opacity 0s!important;}body.fsc--open:not(.fsc--scrolled) .background{opacity:0!important;transition:none!important;}body.fsc--open.fsc--scrolled .background{opacity:1!important;transition:opacity 0.4s!important;}body.fsc--open:not(.fsc--scrolled) .head{background:transparent!important;}body.fsc--open .full-start-new{position:relative!important;overflow:visible!important;}body.fsc--open .full-start-new__body{min-height:calc(100vh - 6em)!important;align-items:stretch!important;justify-content:center!important;overflow:visible!important;}body.fsc--open .full-start-new__right{display:flex!important;flex-direction:column!important;min-height:calc(100vh - 6em)!important;justify-content:flex-end!important;align-items:center!important;text-align:center!important;padding-bottom:0.8em!important;overflow:visible!important;position:relative!important;}body.fsc--open.fsc--scrolled .full-start-new__right{min-height:0!important;}body.fsc--open .full-start-new__left{display:none!important;}body.fsc--open .full-start-new__right>*:not(.fsc-main):not(.fsc-poster-fallback):not(.fsc-reactions-badge){display:none!important;}.fsc-main{display:flex!important;flex-direction:column!important;align-items:center!important;text-align:center!important;margin-bottom:0.2em!important;width:100%!important;}body.fsc--open.fsc--scrolled .fsc-main{display:none!important;}body.fsc--open .full-start-new__title{text-align:center!important;max-width:100%!important;text-shadow:0 2px 12px rgba(0,0,0,0.95)!important;margin-bottom:0.15em!important;display:block!important;overflow:hidden!important;white-space:nowrap!important;text-overflow:ellipsis!important;-webkit-line-clamp:unset!important;line-clamp:unset!important;}body.fsc--open .full-start-new__title.fsc-title-split{white-space:normal!important;text-overflow:clip!important;display:-webkit-box!important;-webkit-box-orient:vertical!important;-webkit-line-clamp:2!important;line-clamp:2!important;}.fsc-logo{max-width:18em!important;max-height:5em!important;object-fit:contain!important;}.fsc-center-row{display:flex!important;flex-wrap:wrap!important;align-items:center!important;justify-content:center!important;gap:0.35em!important;margin-bottom:0.2em!important;}.fsc-serial-badge{display:inline-flex!important;align-items:center!important;height:1.5em!important;padding:0 0.5em!important;background:rgba(0,0,0,0.65)!important;color:#fff!important;font-size:1.25em!important;font-weight:550!important;border-radius:0.35em!important;white-space:nowrap!important;box-sizing:border-box!important;border:1px solid rgba(255,255,255,0.2)!important;margin:0!important;text-shadow:none!important;}.fsc-poster-fallback{flex:1 1 0!important;min-height:0!important;max-width:60%!important;object-fit:cover!important;object-position:center top!important;margin-bottom:0.5em!important;border-radius:1em!important;}.fsc-react-icon{width:1em!important;height:1em!important;flex-shrink:0!important;}.fsc-reactions-badge{position:absolute!important;bottom:1em!important;right:0!important;z-index:10!important;}body.fsc--open.fsc--scrolled .fsc-reactions-badge{display:none!important;}';
     document.head.appendChild(style);
     let currentToken = null;
     let currentFullComp = null;
@@ -91,12 +94,14 @@ function init() {
             const render = fullComp.render();
             const movie = e.data && e.data.movie;
             if (!movie) return;
+            const isTv = !!movie.first_air_date;
+            const mediaType = isTv ? 'tv' : 'movie';
             const right = render.find('.full-start-new__right');
             const title = render.find('.full-start-new__title');
             const buttons = render.find('.full-start-new__buttons');
             const relDate = movie.release_date || movie.first_air_date || '';
             const year = relDate ? relDate.slice(0, 4) : '';
-            const runtimeMin = movie.first_air_date ? (movie.episode_run_time || [])[0] : movie.runtime;
+            const runtimeMin = isTv ? (movie.episode_run_time || [])[0] : movie.runtime;
             const runtime = runtimeMin > 0 ? Lampa.Utils.secondsToTimeHuman(runtimeMin * 60) : '';
             const countries = (movie.production_countries || []).slice(0, 2).map(function(c) {
                 const k = 'country_' + (c.iso_3166_1 || '').toLowerCase();
@@ -120,24 +125,26 @@ function init() {
                 infoEl.text(parts.join(' \u2022 '));
             }
             rebuildInfo();
-            function checkKP(attempt) {
+            function pollEl(selector, extract, onFound, attempt) {
                 if (currentToken !== token || attempt > 30) return;
-                const kpEl = render.find('.rate--kp').not('.hide');
-                if (kpEl.length) {
-                    const val = parseFloat(kpEl.find('> div').eq(0).text().replace(',', '.'));
-                    if (!isNaN(val) && val > 0) { currentKP = val; rebuildInfo(); }
-                } else setTimeout(function() { checkKP(attempt + 1); }, 500);
+                const el = render.find(selector);
+                if (el.length) {
+                    const val = extract(el);
+                    if (val !== null && val !== undefined) onFound(val);
+                } else {
+                    setTimeout(function() { pollEl(selector, extract, onFound, attempt + 1); }, 500);
+                }
             }
-            checkKP(0);
-            function checkQual(attempt) {
-                if (currentToken !== token || attempt > 30) return;
-                const qualBadge = render.find('.tag--quality').first();
-                if (qualBadge.length) { currentQuality = qualBadge.text().trim(); rebuildInfo(); }
-                else setTimeout(function() { checkQual(attempt + 1); }, 500);
-            }
-            setTimeout(function() { checkQual(0); }, 300);
+            pollEl('.rate--kp:not(.hide)', function(el) {
+                const v = parseFloat(el.find('> div').eq(0).text().replace(',', '.'));
+                return (!isNaN(v) && v > 0) ? v : null;
+            }, function(val) { currentKP = val; rebuildInfo(); }, 0);
+            setTimeout(function() {
+                pollEl('.tag--quality', function(el) { return el.first().text().trim() || null; },
+                function(val) { currentQuality = val; rebuildInfo(); }, 0);
+            }, 300);
             let serialEl = null;
-            if (movie.first_air_date) {
+            if (isTv) {
                 const lastEpisode = movie.last_episode_to_air;
                 const currentSeason = lastEpisode ? lastEpisode.season_number : 0;
                 const totalSeasons = movie.number_of_seasons || 0;
@@ -166,7 +173,7 @@ function init() {
                 }
                 const serialParts = [];
                 if (tvStatus && !(tvStatus === 'Returning Series' && hasNextEpisode))
-                    serialParts.push(Lampa.Lang.translate('tv_status_' + tvStatus.toLowerCase().replace(/ /g, '_')));
+                    serialParts.push(tvStatusLabel(tvStatus));
                 if (totalSeasons > 0) {
                     const seasonsText = (currentSeason > 0 && currentSeason < totalSeasons)
                         ? currentSeason + '/' + totalSeasons
@@ -183,10 +190,10 @@ function init() {
                 if (serialParts.length) serialEl = $('<span class="fsc-serial-badge"></span>').text(serialParts.join(' \u2022 '));
             }
             let movieStatusEl = null;
-            if (!movie.first_air_date) {
+            if (!isTv) {
                 const movieStatus = movie.status || '';
                 if (movieStatus && movieStatus.toLowerCase() !== 'released') {
-                    const movieParts = [Lampa.Lang.translate('tv_status_' + movieStatus.toLowerCase().replace(/ /g, '_'))];
+                    const movieParts = [tvStatusLabel(movieStatus)];
                     if (movie.release_date) movieParts.push(Lampa.Utils.parseTime(movie.release_date).short);
                     movieStatusEl = $('<span class="fsc-serial-badge"></span>').text(movieParts.join(' \u2022 '));
                 }
@@ -194,20 +201,17 @@ function init() {
             const reactEl = buildReactionsEl(e.data && e.data.reactions);
             const main = $('<div class="fsc-main"></div>');
             main.append(title);
-            if (movie.first_air_date && serialEl)
+            if (isTv && serialEl)
                 main.append($('<div class="fsc-center-row"></div>').append(serialEl));
-            else if (!movie.first_air_date && movieStatusEl)
+            else if (!isTv && movieStatusEl)
                 main.append($('<div class="fsc-center-row"></div>').append(movieStatusEl));
             main.append($('<div class="fsc-center-row"></div>').append(infoEl));
             main.append(buttons);
-            right.find('.fsc-main').remove();
-            right.find('.fsc-reactions-badge').remove();
+            right.find('.fsc-main, .fsc-reactions-badge, .fsc-poster-fallback').remove();
             right.append(main);
             if (reactEl) right.append(reactEl);
-            right.find('.fsc-poster-fallback').remove();
             if (!movie.backdrop_path && movie.poster_path)
                 right.prepend($('<img class="fsc-poster-fallback">').attr('src', Lampa.TMDB.image('t/p/original' + movie.poster_path)));
-            const mediaType = movie.name ? 'tv' : 'movie';
             if (movie.id) {
                 const rawHtml = title.html();
                 const titleText = title.text().trim();
