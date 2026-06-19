@@ -92,18 +92,19 @@ function init() {
         if (!Lampa.Storage.field('card_interfice_cover')) $('body').removeClass('card--no-cover');
         setTimeout(function() {
             if (currentToken !== token) return;
-            const render = fullComp.render();
-            const movie = e.data && e.data.movie;
-            if (!movie) return;
-            const isTv = !!movie.first_air_date;
-            const mediaType = isTv ? 'tv' : 'movie';
+            const render = fullComp.render ? fullComp.render() : fullComp.html;
             const right = render.find('.full-start-new__right');
             const title = render.find('.full-start-new__title');
             const buttons = render.find('.full-start-new__buttons');
+            if (!right.length || !title.length || !buttons.length) return;
+            const movie = e.data.movie || {};
+            const isTv = !!movie.first_air_date;
+            const mediaType = isTv ? 'tv' : 'movie';
             const relDate = movie.release_date || movie.first_air_date || '';
             const year = relDate ? relDate.slice(0, 4) : '';
-            const runtimeMin = isTv ? (movie.episode_run_time || [])[0] : movie.runtime;
-            const runtime = runtimeMin > 0 ? Lampa.Utils.secondsToTimeHuman(runtimeMin * 60) : '';
+            const runtimeRaw = (movie.episode_run_time || [])[0] || movie.runtime || 0;
+            const runtime = runtimeRaw ? Math.floor(runtimeRaw / 60) + 'ч ' + (runtimeRaw % 60) + 'м' : '';
+            const pg = render.find('.full-start__pg').not('.hide').text().trim();
             const countries = (movie.production_countries || []).slice(0, 2).map(function(c) {
                 const k = 'country_' + (c.iso_3166_1 || '').toLowerCase();
                 const t = Lampa.Lang.translate(k);
@@ -111,15 +112,17 @@ function init() {
             }).filter(Boolean);
             const genreLabels = getGenreLabels(movie, 2);
             const tmdbRating = movie.vote_average ? parseFloat(movie.vote_average) : 0;
+            const infoParts = [];
+            if (year) infoParts.push(year);
+            if (runtime) infoParts.push(runtime);
+            if (countries.length) infoParts.push(countries.join(', '));
+            if (genreLabels.length) infoParts.push(genreLabels.join(', '));
+            if (pg) infoParts.push(pg);
             let currentKP = null;
             let currentQuality = null;
             const infoEl = $('<span class="fsc-serial-badge"></span>');
             function rebuildInfo() {
-                const parts = [];
-                if (year) parts.push(year);
-                if (runtime) parts.push(runtime);
-                if (countries.length) parts.push(countries.join(', '));
-                if (genreLabels.length) parts.push(genreLabels.join(', '));
+                const parts = infoParts.slice();
                 if (currentKP !== null && currentKP >= 1) parts.push(currentKP.toFixed(1) + ' KP');
                 else if (tmdbRating >= 1) parts.push(tmdbRating.toFixed(1) + ' TMDB');
                 if (currentQuality) parts.push(currentQuality);
@@ -137,8 +140,8 @@ function init() {
                 }
             }
             pollEl('.rate--kp:not(.hide)', function(el) {
-                const v = parseFloat(el.find('> div').eq(0).text().replace(',', '.'));
-                return (!isNaN(v) && v > 0) ? v : null;
+                const val = parseFloat(el.find('> div').eq(0).text().replace(',', '.'));
+                return (!isNaN(val) && val > 0) ? val : null;
             }, function(val) { currentKP = val; rebuildInfo(); }, 0);
             setTimeout(function() {
                 pollEl('.tag--quality', function(el) { return el.first().text().trim() || null; },
