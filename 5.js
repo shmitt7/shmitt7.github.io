@@ -1,7 +1,7 @@
 (function() {
 'use strict';
-if (window.fscPlugin) return;
-window.fscPlugin = true;
+if (window.fullCard) return;
+window.fullCard = true;
 let logoCache = {};
 let logoCacheSize = 0;
 const FORMAT_PATTERNS = [
