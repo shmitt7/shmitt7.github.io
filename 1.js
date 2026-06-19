@@ -13,7 +13,8 @@
     );  
     const plugins = [  
         { url: 'https://nb557.github.io/plugins/online_mod.js', name: 'Online Mod', description: 'Источники онлайн-просмотра фильмов и сериалов. Необходимое зеркало: hdrezka.club | @t_anton/nb557' },  
-        { url: 'https://shmitt7.github.io/rating.js', name: 'Рейтинг КиноПоиск с логотипом', description: 'Отображение рейтинга КиноПоиск с логотипом на карточке | Рейтинг без логотипа - TMDB' },  
+        { url: 'https://shmitt7.github.io/rating.js', name: 'Рейтинг КиноПоиск с логотипом', description: 'Отображение рейтинга КиноПоиск с логотипом на карточке | Рейтинг без логотипа - TMDB' },
+        { url: 'https://shmitt7.github.io/card.js', name: 'Карточка фильма', description: 'Меняет визуальный вид полной карточки на TV' },
         { url: 'https://shmitt7.github.io/labels.js', name: 'Цветные метки контента', description: 'Визуальные метки типа контента: синие для фильмов, красные для сериалов' },  
         { url: 'https://shmitt7.github.io/quality.js', name: 'Отметка качества', description: 'Отображение доступного качества видео 4K, HD, TS' },  
         { url: 'https://shmitt7.github.io/parser.js', name: 'Дополнительные кнопки Торрента', description: 'Управление общедоступными парсерами. Доступ: Карточка → Торренты → кнопка µTorrent в шапке | Долгий тап на карточку → Парсер' },  
