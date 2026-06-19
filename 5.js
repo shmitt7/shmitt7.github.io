@@ -52,7 +52,7 @@ function getGenreLabels(movie, max) {
     return result;
 }
 function buildReactionsEl(reactionsData) {
-    if (!Lampa.Storage.field('card_interfice_reactions') || window.lampa_settings.disable_features.reactions) return null;
+    if (!Lampa.Storage.field('card_interfice_reactions') || (window.lampa_settings && window.lampa_settings.disable_features && window.lampa_settings.disable_features.reactions)) return null;
     if (!reactionsData || !reactionsData.result || !reactionsData.result.length) return null;
     const map = {};
     reactionsData.result.forEach(function(r) { map[r.type] = r.counter || 0; });
@@ -263,7 +263,7 @@ function init() {
         if (e.type === 'archive' && e.component === 'full') {
             $('body').addClass('fsc--open').removeClass('fsc--scrolled');
             if (!Lampa.Storage.field('card_interfice_cover')) $('body').removeClass('card--no-cover');
-            currentFullComp = e.object.activity.component;
+            currentFullComp = e.object && e.object.activity && e.object.activity.component;
         }
         if (e.type === 'destroy' && e.component === 'full') {
             const destroyedComp = e.object && e.object.activity && e.object.activity.component;
