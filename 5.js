@@ -1,11 +1,11 @@
 (function () {  
     'use strict';  
+    /* Lampa. */  
     if (window.plugin_overlay_menu_ready) return;  
     window.plugin_overlay_menu_ready = true;  
   
     var style = document.createElement('style');  
     style.textContent = [  
-        // Левое меню: фиксированная высота вместо height:auto + max-height  
         '.wrap__left{position:fixed!important;top:3.5em!important;left:-16.5em!important;height:calc(100vh - 3.5em)!important;overflow:hidden!important;padding-top:0!important;margin-left:0!important;z-index:200!important;border-radius:1em!important;border:1px solid rgba(255,255,255,0.6)!important;transition:left 0.25s ease!important;transform:none!important;background-color:#1d1f20!important;}',  
         'body.menu--open .wrap__left{left:1em!important;}',  
         '.wrap__content{transform:none!important;}',  
@@ -16,7 +16,6 @@
         'body.glass--style .wrap__left{background-color:rgba(0,0,0,0.3)!important;backdrop-filter:blur(1.6em)!important;}',  
         'body.glass--style-opacity--medium .wrap__left{background-color:rgba(20,20,20,0.6)!important;backdrop-filter:blur(1.1em)!important;}',  
         'body.glass--style-opacity--blacked .wrap__left{background-color:rgba(0,0,0,0.85)!important;}',  
-        // Правые панели: height вместо max-height, шире, padding-bottom для последнего пункта  
         '.settings__content,.selectbox__content{top:3.5em!important;height:calc(100vh - 3.5em)!important;overflow:hidden!important;width:30%!important;border-radius:1em!important;border:1px solid rgba(255,255,255,0.6)!important;background-color:#1d1f20!important;}',  
         '.settings__content .scroll__content,.selectbox__content .scroll__content{padding-bottom:4em!important;}',  
         'body.settings--open .settings__content{transform:translate3d(calc(-100% - 1em),0,0)!important;}',  
