@@ -104,7 +104,9 @@
         const relDate = movie.release_date || movie.first_air_date || '';
         const year = relDate ? relDate.slice(0, 4) : '';
         const runtimeRaw = (movie.episode_run_time || [])[0] || movie.runtime || 0;
-        const runtime = runtimeRaw ? Math.floor(runtimeRaw / 60) + 'ч ' + (runtimeRaw % 60) + 'м' : '';
+        const hours = Math.floor(runtimeRaw / 60);  
+        const minutes = runtimeRaw % 60;  
+        const runtime = runtimeRaw ? (hours > 0 ? hours + 'ч ' : '') + minutes + 'м' : '';
         const pg = render.find('.full-start__pg').not('.hide').text().trim();
         const countries = (movie.production_countries || []).slice(0, 2).map(function(c) {
           const k = 'country_' + (c.iso_3166_1 || '').toLowerCase();
