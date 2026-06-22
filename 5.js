@@ -19,6 +19,15 @@
             transform: translate3d(-17em, 0, 0) !important;  
         }  
   
+        /* Убираем лишние отступы — выделение вровень с краями */  
+        .wrap__left .menu__list {  
+            padding-left: 0 !important;  
+            padding-right: 0 !important;  
+        }  
+        .wrap__left .scroll--mask .scroll__content {  
+            padding: 0.4em 0 !important;  
+        }  
+  
         body.menu--open:not(.light--version) .wrap__left {  
             transform: translate3d(0, 0, 0) !important;  
         }  
@@ -47,19 +56,20 @@
             }  
         }  
   
-        /* ======= Плавающее правое меню (настройки) ======= */  
+        /* ======= Плавающие правые меню (настройки + selectbox) ======= */  
         @media screen and (min-width: 481px) {  
-            .settings__content {  
+            .settings__content,  
+            .selectbox__content {  
                 top: 5em !important;  
-                /* max-height вместо bottom — JS может перебивать height через inline-style */  
-                max-height: calc(100vh - 6em) !important;  
+                /* height перебивает inline-style от JS, решает обрезание */  
+                height: calc(100vh - 6em) !important;  
                 border-radius: 1em !important;  
                 border: 2px solid rgba(255,255,255,0.25) !important;  
-                /* overflow НЕ трогаем — иначе обрезается последний пункт */  
             }  
   
-            body.settings--open .settings__content {  
-                /* -100% сдвигает панель влево на её ширину, ещё -1em = отступ от правого края */  
+            body.settings--open .settings__content,  
+            body.selectbox--open .selectbox__content {  
+                /* -100% = ширина панели, ещё -1em = отступ от правого края */  
                 transform: translate3d(calc(-100% - 1em), 0, 0) !important;  
             }  
         }  
