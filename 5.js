@@ -1,39 +1,77 @@
 (function () {  
     'use strict';  
-    if (window.plugin_overlay_menu_ready) return;  
-    window.plugin_overlay_menu_ready = true;  
   
-    var style = document.createElement('style');  
-    style.textContent = [  
-        '.wrap__left { position:fixed!important; top:3.5em!important; left:-16.5em!important; display:flex!important; flex-direction:column!important; height:auto!important; max-height:calc(100vh - 4.5em)!important; overflow:hidden!important; padding-top:0!important; margin-left:0!important; z-index:200!important; border-radius:1.5em!important; border:1px solid rgba(255,255,255,0.6)!important; transition:left 0.25s ease!important; transform:none!important; background-color:#1d1f20!important; }',  
-        '.wrap__left > .scroll { flex:1!important; min-height:0!important; }',  
-        'body.menu--open:not(.light--version) .wrap__left { left:1em!important; }',  
-        '.wrap__content { transform:none!important; }',  
-        '.wrap__left .scroll--mask { mask-image:none!important; -webkit-mask-image:none!important; }',  
-        '.wrap__left .menu__list { padding-left:0.5em!important; padding-right:0.5em!important; }',  
-        '.wrap__left .scroll__content { padding-top:0!important; padding-bottom:0!important; }',  
-        'body.menu--always:not(.light--version) .wrap__left { left:0!important; width:5em!important; border-radius:0 1.5em 1.5em 0!important; }',  
-        'body.menu--always:not(.light--version) .wrap__content { margin-left:5em!important; }',  
-        'body.menu--always.menu--open:not(.light--version) .wrap__left { left:0!important; width:15em!important; }',  
-        'body.menu--always.menu--open:not(.light--version) .wrap__content { margin-left:15em!important; }',  
-        'body.black--style .wrap__left { background-color:#000!important; }',  
-        'body.glass--style .wrap__left { background-color:rgba(0,0,0,0.3)!important; backdrop-filter:blur(1.6em)!important; }',  
-        'body.glass--style-opacity--medium .wrap__left { background-color:rgba(20,20,20,0.6)!important; backdrop-filter:blur(1.1em)!important; }',  
-        'body.glass--style-opacity--blacked .wrap__left { background-color:rgba(20,20,20,0.9)!important; backdrop-filter:blur(0.5em)!important; }',  
-        '.settings__content, .selectbox__content { top:3.5em!important; height:calc(100vh - 4.5em)!important; overflow:hidden!important; width:30%!important; border-radius:1.5em!important; border:1px solid rgba(255,255,255,0.6)!important; background-color:#1d1f20!important; }',  
-        '.settings__content .scroll--mask, .selectbox__content .scroll--mask { mask-image:none!important; -webkit-mask-image:none!important; }',  
-        '.settings__content .scroll__content, .selectbox__content .scroll__content { padding-bottom:6em!important; }',  
-        'body.settings--open .settings__content { transform:translate3d(calc(-100% - 1em),0,0)!important; }',  
-        'body.selectbox--open .selectbox__content { transform:translate3d(calc(-100% - 1em),0,0)!important; }',  
-        'body.black--style .settings__content, body.black--style .selectbox__content { background-color:#000!important; }',  
-        'body.glass--style .settings__content, body.glass--style .selectbox__content { background-color:rgba(0,0,0,0.3)!important; backdrop-filter:blur(1.6em)!important; }',  
-        'body.glass--style-opacity--medium .settings__content, body.glass--style-opacity--medium .selectbox__content { background-color:rgba(20,20,20,0.6)!important; backdrop-filter:blur(1.1em)!important; }',  
-        'body.glass--style-opacity--blacked .settings__content, body.glass--style-opacity--blacked .selectbox__content { background-color:rgba(20,20,20,0.9)!important; backdrop-filter:blur(0.5em)!important; }',  
-        '.modal__content { border-radius:1.5em!important; border:1px solid rgba(255,255,255,0.6)!important; background-color:#1d1f20!important; }',  
-        'body.black--style .modal__content { background-color:#000!important; }',  
-        'body.glass--style .modal__content { background-color:rgba(0,0,0,0.3)!important; backdrop-filter:blur(1.6em)!important; }',  
-        'body.glass--style-opacity--medium .modal__content { background-color:rgba(20,20,20,0.6)!important; backdrop-filter:blur(1.1em)!important; }',  
-        'body.glass--style-opacity--blacked .modal__content { background-color:rgba(20,20,20,0.9)!important; backdrop-filter:blur(0.5em)!important; }',  
-    ].join('\n');  
-    document.head.appendChild(style);  
+    if (window.plugin_floating_menus_ready) return;  
+    window.plugin_floating_menus_ready = true;  
+  
+    var css = `  
+        /* ======= Плавающее левое меню ======= */  
+  
+        /* Переводим на position:fixed, убираем margin-left и padding-top */  
+        .wrap__left {  
+            position: fixed !important;  
+            top: 5em !important;        /* 4em шапка + 1em отступ */  
+            bottom: 1em !important;  
+            left: 1em !important;  
+            margin-left: 0 !important;  
+            padding-top: 0 !important;  
+            border-radius: 1em !important;  
+            background: #262829 !important;  
+            overflow: hidden !important;  
+            /* скрыто за левым краем: 15em ширина + 1em left + запас */  
+            transform: translate3d(-17em, 0, 0) !important;  
+        }  
+  
+        /* При открытии — показываем на месте, контент не сдвигаем */  
+        body.menu--open:not(.light--version) .wrap__left {  
+            transform: translate3d(0, 0, 0) !important;  
+        }  
+        body.menu--open:not(.light--version) .wrap__content {  
+            transform: translate3d(0, 0, 0) !important;  
+        }  
+  
+        /* Режим "всегда видно" — иконки */  
+        body.menu--always:not(.light--version) .wrap__left {  
+            width: 5em !important;  
+            transform: translate3d(0, 0, 0) !important;  
+        }  
+  
+        /* Режим "всегда видно" + открыто — полное меню */  
+        body.menu--always.menu--open:not(.light--version) .wrap__left {  
+            width: 15em !important;  
+            transform: translate3d(0, 0, 0) !important;  
+        }  
+        body.menu--always.menu--open:not(.light--version) .wrap__left > .scroll {  
+            width: 15em !important;  
+        }  
+        body.menu--always.menu--open:not(.light--version) .wrap__content {  
+            transform: translate3d(0, 0, 0) !important;  
+        }  
+  
+        /* Медиа — маленькие экраны */  
+        @media screen and (max-width: 767px) {  
+            body.menu--open .wrap__left {  
+                transform: translate3d(0, 0, 0) !important;  
+            }  
+        }  
+  
+        /* ======= Плавающее правое меню (настройки) ======= */  
+        /* Только для экранов > 480px, мобильная версия (снизу) не трогается */  
+        @media screen and (min-width: 481px) {  
+            .settings__content {  
+                top: 5em !important;  
+                bottom: 1em !important;  
+                border-radius: 1em !important;  
+                overflow: hidden !important;  
+            }  
+  
+            /* При открытии — отступ 1em от правого края */  
+            body.settings--open .settings__content {  
+                transform: translate3d(calc(-100% - 1em), 0, 0) !important;  
+            }  
+        }  
+    `;  
+  
+    $('body').append('<style id="floating-menus-plugin">' + css + '</style>');  
+  
 })();
