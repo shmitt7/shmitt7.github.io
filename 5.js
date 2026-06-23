@@ -25,7 +25,7 @@
             var fs = parseFloat(getComputedStyle(document.documentElement).fontSize);  
             var head = document.querySelector('.head');  
             var headH = head ? head.getBoundingClientRect().height : 0;  
-            var topPx = headH + SIDE * fs;  
+            var topPx = headH;  
             var leftEl = document.querySelector('.wrap__left');  
             if(leftEl){  
                 var maxH = window.innerHeight - topPx - SIDE * fs;  
