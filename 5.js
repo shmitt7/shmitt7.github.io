@@ -3,8 +3,8 @@
         window.plugin_floating_menus_ready = true;  
         var SIDE = 1;  
         var css = [  
-            '.wrap__left{position:fixed!important;top:'+SIDE+'em!important;left:'+SIDE+'em!important;margin-left:0!important;padding-top:0!important;height:auto!important;max-height:calc(100vh - '+(SIDE*2)+'em)!important;border-radius:1em!important;background:#262829!important;border:2px solid rgba(255,255,255,.25)!important;transform:translate3d(-17em,0,0)!important;overflow:hidden!important}',  
-            '.wrap__left>.scroll{height:auto!important;max-height:calc(100vh - '+(SIDE*2)+'em)!important;overflow:hidden!important}',  
+            '.wrap__left{position:fixed!important;left:'+SIDE+'em!important;margin-left:0!important;padding-top:0!important;height:auto!important;border-radius:1em!important;background:#262829!important;border:2px solid rgba(255,255,255,.25)!important;transform:translate3d(-17em,0,0)!important;overflow:hidden!important}',  
+            '.wrap__left>.scroll{height:auto!important;overflow:hidden!important}',  
             '.wrap__left .scroll--mask{mask-image:none!important}',  
             '.wrap__left .scroll--mask .scroll__content{padding:0!important}',  
             '.wrap__left .menu__list{padding-left:0!important;padding-right:0!important}',  
@@ -21,34 +21,46 @@
             '}',  
             '@media screen and (min-width:481px){.modal__content{border:2px solid rgba(255,255,255,.25)!important}}'  
         ].join('');  
-        function fixScrollHeight(){  
-            if(window.innerWidth <= 480) return;  
+        function fix(){  
             var fs = parseFloat(getComputedStyle(document.documentElement).fontSize);  
-            var maxH = window.innerHeight - SIDE * 2 * fs;  
+            var head = document.querySelector('.head');  
+            var headH = head ? head.getBoundingClientRect().height : 0;  
+            var topPx = headH + SIDE * fs;  
+            var leftEl = document.querySelector('.wrap__left');  
+            if(leftEl){  
+                var maxH = window.innerHeight - topPx - SIDE * fs;  
+                leftEl.style.setProperty('top', topPx + 'px', 'important');  
+                leftEl.style.setProperty('max-height', maxH + 'px', 'important');  
+                var ls = leftEl.querySelector('.scroll');  
+                if(ls) ls.style.setProperty('max-height', maxH + 'px', 'important');  
+            }  
+            if(window.innerWidth <= 480) return;  
+            var maxHR = window.innerHeight - SIDE * 2 * fs;  
             [{cls:'settings--open',sel:'.settings__content'},{cls:'selectbox--open',sel:'.selectbox__content'}].forEach(function(p){  
                 if(!document.body.classList.contains(p.cls)) return;  
                 var c = document.querySelector(p.sel);  
                 if(!c) return;  
                 var s = c.querySelector('.scroll');  
                 if(!s) return;  
-                var h = Math.round(maxH - (s.getBoundingClientRect().top - c.getBoundingClientRect().top));  
+                var h = Math.round(maxHR - (s.getBoundingClientRect().top - c.getBoundingClientRect().top));  
                 if(h > 0 && Math.round(parseFloat(s.style.height)) !== h)  
                     s.style.setProperty('height', h + 'px', 'important');  
             });  
         }  
         function add(){  
             $('body').append('<style id="floating-menus-plugin">'+css+'</style>');  
-            var styleObs = new MutationObserver(function(){ setTimeout(fixScrollHeight, 10); });  
+            var styleObs = new MutationObserver(function(){ setTimeout(fix, 10); });  
             new MutationObserver(function(mutations){  
                 mutations.forEach(function(m){  
-                    if(m.attributeName === 'class') setTimeout(fixScrollHeight, 50);  
+                    if(m.attributeName === 'class') setTimeout(fix, 50);  
                 });  
                 ['.settings__content .scroll','.selectbox__content .scroll'].forEach(function(sel){  
                     var el = document.querySelector(sel);  
                     if(el && !el._fmObs){ el._fmObs = true; styleObs.observe(el,{attributes:true,attributeFilter:['style']}); }  
                 });  
             }).observe(document.body,{attributes:true,attributeFilter:['class'],childList:true,subtree:true});  
-            window.addEventListener('resize', function(){ setTimeout(fixScrollHeight, 150); });  
+            window.addEventListener('resize', function(){ setTimeout(fix, 150); });  
+            fix();  
         }  
         if(window.appready) add();  
         else Lampa.Listener.follow('app', function(e){ if(e.type == 'ready') add(); });  
