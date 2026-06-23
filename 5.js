@@ -3,7 +3,7 @@
     function startPlugin() {  
         window.plugin_floating_menus_ready = true;  
   
-        var TOP_EM    = 4.3;  
+        var TOP_EM    = 5.5;  
         var BOTTOM_EM = 1;  
         var TOTAL_EM  = TOP_EM + BOTTOM_EM; // 5.3  
   
