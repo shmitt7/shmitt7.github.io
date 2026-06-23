@@ -1,7 +1,7 @@
 (function(){  
     function startPlugin(){  
         window.plugin_floating_menus_ready = true;  
-        var TOP = 5.5, BOT = 1, TOT = TOP + BOT;  
+        var TOP = 5.5, BOT = 1, TOT = TOP + BOT, SIDE = 1;  
         var css = [  
             '.wrap__left{position:fixed!important;top:'+TOP+'em!important;left:1em!important;margin-left:0!important;padding-top:0!important;height:auto!important;max-height:calc(100vh - '+TOT+'em)!important;border-radius:1em!important;background:#262829!important;border:2px solid rgba(255,255,255,.25)!important;transform:translate3d(-17em,0,0)!important;overflow:hidden!important}',  
             '.wrap__left>.scroll{height:auto!important;max-height:calc(100vh - '+TOT+'em)!important;overflow:hidden!important}',  
@@ -15,8 +15,8 @@
             'body.menu--always.menu--open:not(.light--version) .wrap__left>.scroll{width:15em!important}',  
             '@media screen and (max-width:767px){body.menu--open .wrap__left{transform:translate3d(0,0,0)!important}}',  
             '@media screen and (min-width:481px){',  
-            '.settings__content,.selectbox__content{top:'+TOP+'em!important;bottom:'+BOT+'em!important;height:auto!important;max-height:calc(100vh - '+TOT+'em)!important;border-radius:1em!important;border:2px solid rgba(255,255,255,.25)!important;overflow:hidden!important}',  
-            'body.settings--open .settings__content,body.selectbox--open .selectbox__content{transform:translate3d(calc(-100% - 1em),0,0)!important}',  
+            '.settings__content,.selectbox__content{top:'+SIDE+'em!important;bottom:'+SIDE+'em!important;height:auto!important;max-height:calc(100vh - '+(SIDE*2)+'em)!important;border-radius:1em!important;border:2px solid rgba(255,255,255,.25)!important;overflow:hidden!important}',  
+            'body.settings--open .settings__content,body.selectbox--open .selectbox__content{transform:translate3d(calc(-100% - '+SIDE+'em),0,0)!important}',  
             '.settings__content .scroll--mask .scroll__content,.selectbox__content .scroll--mask .scroll__content{padding-bottom:.5em!important}',  
             '}',  
             '@media screen and (min-width:481px){.modal__content{border:2px solid rgba(255,255,255,.25)!important}}'  
@@ -24,7 +24,7 @@
         function fixScrollHeight(){  
             if(window.innerWidth <= 480) return;  
             var fs = parseFloat(getComputedStyle(document.documentElement).fontSize);  
-            var maxH = window.innerHeight - TOT * fs;  
+            var maxH = window.innerHeight - SIDE * 2 * fs;  
             [{cls:'settings--open',sel:'.settings__content'},{cls:'selectbox--open',sel:'.selectbox__content'}].forEach(function(p){  
                 if(!document.body.classList.contains(p.cls)) return;  
                 var c = document.querySelector(p.sel);  
