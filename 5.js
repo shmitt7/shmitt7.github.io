@@ -42,7 +42,7 @@
             '    body.menu--open .wrap__left { transform: translate3d(0,0,0) !important; }',  
             '}',  
   
-            /* ======= Плавающие правые меню ======= */  
+            /* ======= Плавающие правые меню (настройки + selectbox) ======= */  
             '@media screen and (min-width: 481px) {',  
             '    .settings__content, .selectbox__content {',  
             '        top: ' + TOP_EM + 'em !important;',  
@@ -56,6 +56,11 @@
             '    body.settings--open .settings__content,',  
             '    body.selectbox--open .selectbox__content {',  
             '        transform: translate3d(calc(-100% - 1em), 0, 0) !important;',  
+            '    }',  
+            /* Уменьшаем подложку (padding-bottom) снизу скролла в правых меню */  
+            '    .settings__content .scroll--mask .scroll__content,',  
+            '    .selectbox__content .scroll--mask .scroll__content {',  
+            '        padding-bottom: 0.5em !important;',  
             '    }',  
             '}',  
   
@@ -101,7 +106,6 @@
             $('body').append('<style id="floating-menus-plugin">' + css + '</style>');  
   
             // Следим за изменением классов body (открытие/закрытие меню)  
-            // и за изменением style на .scroll (layer.js меняет height)  
             var classObserver = new MutationObserver(function (mutations) {  
                 mutations.forEach(function (m) {  
                     if (m.attributeName === 'class') setTimeout(fixScrollHeight, 50);  
@@ -109,13 +113,14 @@
             });  
             classObserver.observe(document.body, { attributes: true, attributeFilter: ['class'] });  
   
+            // Следим за изменением style на .scroll (layer.js меняет height)  
             var styleObserver = new MutationObserver(function (mutations) {  
                 mutations.forEach(function (m) {  
                     if (m.attributeName === 'style') setTimeout(fixScrollHeight, 10);  
                 });  
             });  
   
-            // Наблюдаем за .scroll внутри правых меню когда они появляются  
+            // Подключаем styleObserver к .scroll внутри правых меню когда они появляются  
             var domObserver = new MutationObserver(function () {  
                 ['.settings__content .scroll', '.selectbox__content .scroll'].forEach(function (sel) {  
                     var el = document.querySelector(sel);  
