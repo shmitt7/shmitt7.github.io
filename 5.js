@@ -12,27 +12,41 @@
             '.wrap__left {',  
             '    position: fixed !important;',  
             '    top: ' + TOP_EM + 'em !important;',  
-            '    bottom: ' + BOTTOM_EM + 'em !important;',  
             '    left: 1em !important;',  
             '    margin-left: 0 !important;',  
             '    padding-top: 0 !important;',  
             '    height: auto !important;',  
+            '    max-height: calc(100vh - ' + TOTAL_EM + 'em) !important;',  
             '    border-radius: 1em !important;',  
             '    background: #262829 !important;',  
             '    border: 2px solid rgba(255,255,255,0.25) !important;',  
             '    transform: translate3d(-17em, 0, 0) !important;',  
             '    overflow: hidden !important;',  
             '}',  
+  
+            /* Скролл внутри левого меню — auto + max-height,  
+               чтобы JS-скролл знал реальную высоту видимой области */  
+            '.wrap__left > .scroll {',  
+            '    height: auto !important;',  
+            '    max-height: calc(100vh - ' + TOTAL_EM + 'em) !important;',  
+            '    overflow: hidden !important;',  
+            '}',  
+  
+            /* Убираем маску и лишние отступы */  
             '.wrap__left .scroll--mask { mask-image: none !important; }',  
             '.wrap__left .scroll--mask .scroll__content { padding: 0 !important; }',  
             '.wrap__left .menu__list { padding-left: 0 !important; padding-right: 0 !important; }',  
   
+            /* Открытие / закрытие */  
             'body.menu--open:not(.light--version) .wrap__left { transform: translate3d(0,0,0) !important; }',  
             'body.menu--open:not(.light--version) .wrap__content { transform: translate3d(0,0,0) !important; }',  
+  
+            /* Режим "всегда видно" */  
             'body.menu--always:not(.light--version) .wrap__left { width: 5em !important; transform: translate3d(0,0,0) !important; }',  
             'body.menu--always.menu--open:not(.light--version) .wrap__left { width: 15em !important; transform: translate3d(0,0,0) !important; }',  
             'body.menu--always.menu--open:not(.light--version) .wrap__left > .scroll { width: 15em !important; }',  
             'body.menu--always.menu--open:not(.light--version) .wrap__content { transform: translate3d(0,0,0) !important; }',  
+  
             '@media screen and (max-width: 767px) {',  
             '    body.menu--open .wrap__left { transform: translate3d(0,0,0) !important; }',  
             '}',  
@@ -42,14 +56,21 @@
             '    .settings__content, .selectbox__content {',  
             '        top: ' + TOP_EM + 'em !important;',  
             '        bottom: ' + BOTTOM_EM + 'em !important;',  
+            '        height: auto !important;',  
+            '        max-height: calc(100vh - ' + TOTAL_EM + 'em) !important;',  
             '        border-radius: 1em !important;',  
             '        border: 2px solid rgba(255,255,255,0.25) !important;',  
             '        overflow: hidden !important;',  
             '    }',  
+  
+            /* Скролл внутри правых меню — ограничиваем высоту,  
+               чтобы JS-скролл правильно вычислял позицию последнего пункта */  
             '    .settings__content .scroll,',  
             '    .selectbox__content .scroll {',  
-            '        height: calc(100vh - ' + TOTAL_EM + 'em) !important;',  
+            '        max-height: calc(100vh - ' + TOTAL_EM + 'em) !important;',  
+            '        overflow: hidden !important;',  
             '    }',  
+  
             '    body.settings--open .settings__content,',  
             '    body.selectbox--open .selectbox__content {',  
             '        transform: translate3d(calc(-100% - 1em), 0, 0) !important;',  
