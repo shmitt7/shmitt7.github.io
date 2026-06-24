@@ -3,7 +3,7 @@
         window.plugin_floating_menus_ready = true;  
   
         var LEFT_LEFT  = 1;    // левое меню: отступ слева (em)  
-        var LEFT_BOT   = 1;    // левое меню: отступ снизу (em)  
+        var LEFT_BOT   = 0.5;    // левое меню: отступ снизу (em)  
         var RIGHT_TOP   = 0.5; // правые меню: отступ сверху (em)  
         var RIGHT_BOT   = 0.5; // правые меню: отступ снизу (em)  
         var RIGHT_RIGHT = 0.5; // правые меню: отступ справа (em)  
