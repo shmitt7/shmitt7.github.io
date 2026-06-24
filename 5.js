@@ -1,12 +1,20 @@
 (function(){  
     function startPlugin(){  
         window.plugin_floating_menus_ready = true;  
-        var SL = 0.5;    // отступы левого меню (слева, снизу)  
-        var SR = 0.5;  // отступы правых меню (сверху, снизу, справа)  
+  
+        // ── Регулировка отступов ─────────────────────────────────────────  
+        var LEFT_LEFT  = 1;    // левое меню: отступ слева (em)  
+        var LEFT_BOT   = 0.5;    // левое меню: отступ снизу (em)  
+        // левое меню: отступ сверху = высота шапки (вычисляется автоматически)  
+  
+        var RIGHT_TOP   = 0.5; // правые меню: отступ сверху (em)  
+        var RIGHT_BOT   = 0.5; // правые меню: отступ снизу (em)  
+        var RIGHT_RIGHT = 0.5; // правые меню: отступ справа (em)  
+        // ────────────────────────────────────────────────────────────────  
   
         // ======= ЧАСТЬ 1: ЛЕВОЕ МЕНЮ =======  
         var cssLeft = [  
-            '.wrap__left{position:fixed!important;left:'+SL+'em!important;margin-left:0!important;padding-top:0!important;height:auto!important;border-radius:1em!important;background:#262829!important;border:2px solid rgba(255,255,255,.25)!important;transform:translate3d(-17em,0,0)!important;overflow:hidden!important}',  
+            '.wrap__left{position:fixed!important;margin-left:0!important;padding-top:0!important;height:auto!important;border-radius:1em!important;background:#262829!important;border:2px solid rgba(255,255,255,.25)!important;transform:translate3d(-17em,0,0)!important;overflow:hidden!important}',  
             'body.black--style .wrap__left{background:#000!important}',  
             'body.glass--style .wrap__left{background:rgba(0,0,0,.3)!important;backdrop-filter:blur(1.6em)!important}',  
             'body.glass--style-opacity--medium .wrap__left{background:rgba(20,20,20,.6)!important;backdrop-filter:blur(1.1em)!important}',  
@@ -23,11 +31,11 @@
             '@media screen and (max-width:767px){body.menu--open .wrap__left{transform:translate3d(0,0,0)!important}}'  
         ].join('');  
   
-        // ======= ЧАСТЬ 2: ПРАВОЕ МЕНЮ =======  
+        // ======= ЧАСТЬ 2: ПРАВЫЕ МЕНЮ (только > 480px, на мобильных не трогаем) =======  
         var cssRight = [  
             '@media screen and (min-width:481px){',  
-            '.settings__content,.selectbox__content{top:'+SR+'em!important;bottom:'+SR+'em!important;height:auto!important;max-height:calc(100vh - '+(SR*2)+'em)!important;border-radius:1em!important;border:2px solid rgba(255,255,255,.25)!important;overflow:hidden!important}',  
-            'body.settings--open .settings__content,body.selectbox--open .selectbox__content{transform:translate3d(calc(-100% - '+SR+'em),0,0)!important}',  
+            '.settings__content,.selectbox__content{top:'+RIGHT_TOP+'em!important;bottom:'+RIGHT_BOT+'em!important;height:auto!important;max-height:calc(100vh - '+(RIGHT_TOP+RIGHT_BOT)+'em)!important;border-radius:1em!important;border:2px solid rgba(255,255,255,.25)!important;overflow:hidden!important}',  
+            'body.settings--open .settings__content,body.selectbox--open .selectbox__content{transform:translate3d(calc(-100% - '+RIGHT_RIGHT+'em),0,0)!important}',  
             '.settings__content .scroll--mask .scroll__content,.selectbox__content .scroll--mask .scroll__content{padding-bottom:.5em!important}',  
             '}'  
         ].join('');  
@@ -36,19 +44,20 @@
         var cssCenter = '@media screen and (min-width:481px){.modal__content{border:2px solid rgba(255,255,255,.25)!important}}';  
   
         function fix(){  
-            var fs = parseFloat(getComputedStyle(document.documentElement).fontSize);  
+            var fs = parseFloat(getComputedStyle(document.body).fontSize);  
             var head = document.querySelector('.head');  
             var headH = head ? head.getBoundingClientRect().height : 0;  
             var leftEl = document.querySelector('.wrap__left');  
             if(leftEl){  
-                var maxH = window.innerHeight - headH - SL * fs;  
+                var maxH = window.innerHeight - headH - LEFT_BOT * fs;  
                 leftEl.style.setProperty('top', headH + 'px', 'important');  
+                leftEl.style.setProperty('left', LEFT_LEFT * fs + 'px', 'important');  
                 leftEl.style.setProperty('max-height', maxH + 'px', 'important');  
                 var ls = leftEl.querySelector('.scroll');  
                 if(ls) ls.style.setProperty('max-height', maxH + 'px', 'important');  
             }  
             if(window.innerWidth <= 480) return;  
-            var maxHR = window.innerHeight - SR * 2 * fs;  
+            var maxHR = window.innerHeight - (RIGHT_TOP + RIGHT_BOT) * fs;  
             [{cls:'settings--open',sel:'.settings__content'},{cls:'selectbox--open',sel:'.selectbox__content'}].forEach(function(p){  
                 if(!document.body.classList.contains(p.cls)) return;  
                 var c = document.querySelector(p.sel);  
