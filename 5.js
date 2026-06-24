@@ -2,15 +2,11 @@
     function startPlugin(){  
         window.plugin_floating_menus_ready = true;  
   
-        // ── Регулировка отступов ─────────────────────────────────────────  
         var LEFT_LEFT  = 1;    // левое меню: отступ слева (em)  
-        var LEFT_BOT   = 0.5;    // левое меню: отступ снизу (em)  
-        // левое меню: отступ сверху = высота шапки (вычисляется автоматически)  
-  
+        var LEFT_BOT   = 1;    // левое меню: отступ снизу (em)  
         var RIGHT_TOP   = 0.5; // правые меню: отступ сверху (em)  
         var RIGHT_BOT   = 0.5; // правые меню: отступ снизу (em)  
         var RIGHT_RIGHT = 0.5; // правые меню: отступ справа (em)  
-        // ────────────────────────────────────────────────────────────────  
   
         // ======= ЧАСТЬ 1: ЛЕВОЕ МЕНЮ =======  
         var cssLeft = [  
@@ -31,17 +27,23 @@
             '@media screen and (max-width:767px){body.menu--open .wrap__left{transform:translate3d(0,0,0)!important}}'  
         ].join('');  
   
-        // ======= ЧАСТЬ 2: ПРАВЫЕ МЕНЮ (только > 480px, на мобильных не трогаем) =======  
+        // ======= ЧАСТЬ 2: ПРАВЫЕ МЕНЮ (только > 480px, мобильные не трогаем) =======  
         var cssRight = [  
             '@media screen and (min-width:481px){',  
             '.settings__content,.selectbox__content{top:'+RIGHT_TOP+'em!important;bottom:'+RIGHT_BOT+'em!important;height:auto!important;max-height:calc(100vh - '+(RIGHT_TOP+RIGHT_BOT)+'em)!important;border-radius:1em!important;border:2px solid rgba(255,255,255,.25)!important;overflow:hidden!important}',  
+            'body.black--style .settings__content,body.black--style .selectbox__content{background:#000!important}',  
             'body.settings--open .settings__content,body.selectbox--open .selectbox__content{transform:translate3d(calc(-100% - '+RIGHT_RIGHT+'em),0,0)!important}',  
             '.settings__content .scroll--mask .scroll__content,.selectbox__content .scroll--mask .scroll__content{padding-bottom:.5em!important}',  
             '}'  
         ].join('');  
   
         // ======= ЧАСТЬ 3: ЦЕНТРАЛЬНЫЕ МЕНЮ =======  
-        var cssCenter = '@media screen and (min-width:481px){.modal__content{border:2px solid rgba(255,255,255,.25)!important}}';  
+        var cssCenter = [  
+            '@media screen and (min-width:481px){',  
+            '.modal__content{border:2px solid rgba(255,255,255,.25)!important}',  
+            'body.black--style .modal__content{background:#000!important}',  
+            '}'  
+        ].join('');  
   
         function fix(){  
             var fs = parseFloat(getComputedStyle(document.body).fontSize);  
@@ -72,17 +74,12 @@
   
         function add(){  
             $('body').append('<style id="floating-menus-plugin">'+cssLeft+cssRight+cssCenter+'</style>');  
-            var styleObs = new MutationObserver(function(){ setTimeout(fix, 10); });  
             new MutationObserver(function(mutations){  
                 mutations.forEach(function(m){  
-                    if(m.attributeName === 'class') setTimeout(fix, 50);  
+                    if(m.attributeName === 'class') setTimeout(fix, 100);  
                 });  
-                ['.settings__content .scroll','.selectbox__content .scroll'].forEach(function(sel){  
-                    var el = document.querySelector(sel);  
-                    if(el && !el._fmObs){ el._fmObs = true; styleObs.observe(el,{attributes:true,attributeFilter:['style']}); }  
-                });  
-            }).observe(document.body,{attributes:true,attributeFilter:['class'],childList:true,subtree:true});  
-            window.addEventListener('resize', function(){ setTimeout(fix, 150); });  
+            }).observe(document.body, {attributes:true, attributeFilter:['class']});  
+            Lampa.Listener.follow('resize_end', function(){ setTimeout(fix, 50); });  
             fix();  
         }  
   
