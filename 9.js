@@ -4,7 +4,7 @@
     window.myPlugin = true;  
   
     function run() {  
-        // Ваш код здесь  
+        // Ваш код здесь   
     }  
   
     if (window.appready) run();  
