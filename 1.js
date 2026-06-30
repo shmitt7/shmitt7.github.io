@@ -38,7 +38,7 @@
     const getKey = name => 'my_plugin_' + name.toLowerCase().replace(/\s+/g, '_');  
     function run() {  
         $('.head .open--broadcast, .head .open--profile, .head .notice--icon').remove();  
-        if (Lampa.Notice?.drawCount) Lampa.Notice.drawCount = () => {};  
+        if (Lampa.Notice && Lampa.Notice.drawCount) Lampa.Notice.drawCount = () => {};  
         $('.menu [data-action="catalog"], .menu [data-action="relise"], .menu [data-action="timetable"], .menu [data-action="about"], .menu [data-action="mytorrents"]').remove();  
         const editItem = $('.menu [data-action="edit"]').detach();  
         $('.menu .nosort:first .menu__list').append(editItem);  
