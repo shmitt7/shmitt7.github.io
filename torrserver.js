@@ -26,7 +26,8 @@
             button.toggle(e.component === 'torrents');  
             if (e.component === 'torrents') switchServer();  
         });  
-        button.toggle(Lampa.Activity.active()?.component === 'torrents');  
+        const _active = Lampa.Activity.active();  
+button.toggle(!!(_active && _active.component === 'torrents'));  
     };  
     if (window.appready) addButton();  
     else Lampa.Listener.follow('app', (e) => { if (e.type === 'ready') addButton(); });  
