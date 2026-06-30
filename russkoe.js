@@ -3,7 +3,8 @@
     if (window.russianContent) return;  
     window.russianContent = true;  
     const net = new Lampa.Reguest();  
-    const fmt = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;  
+    const pad = function(n) { return (n < 10 ? '0' : '') + n; };  
+    const fmt = function(d) { return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate()); };  
     const today = new Date();  
     const monthAgo = new Date(today); monthAgo.setMonth(monthAgo.getMonth()-1);  
     const yearAgo = new Date(today); yearAgo.setFullYear(yearAgo.getFullYear()-1);  
