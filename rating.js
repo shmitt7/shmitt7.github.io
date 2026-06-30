@@ -18,7 +18,7 @@
     }  
     function setCache(id, data, type) {  
         const key = type === 'search' ? 'search_' + id : id;  
-        cache[key] = { ...data, timestamp: Date.now() };  
+        cache[key] = Object.assign({}, data, { timestamp: Date.now() });  
         Lampa.Storage.set('kp_rating', cache);  
     }  
     function showFullRating(kp, tmdb, render) {  
@@ -31,7 +31,8 @@
         if (!el) {  
             el = document.createElement('div');  
             el.className = 'card__vote';  
-            card.querySelector('.card__view')?.appendChild(el);  
+            const view = card.querySelector('.card__view');  
+            if (view) view.appendChild(el);  
         }  
         const rating = kp > 0 ? kp : tmdb;  
         if (rating > 0) {  
@@ -45,8 +46,8 @@
         const tmdb = card.vote_average || 0;  
         net.timeout(3000);  
         net.silent('https://kinopoiskapiunofficial.tech/api/v2.2/films/' + id,  
-            (data) => { const kp = data.ratingKinopoisk || 0; setCache(card.id, { kp, tmdb }); callback(kp, tmdb); },  
-            () => { setCache(card.id, { kp: 0, tmdb }); callback(0, tmdb); },  
+            function(data) { const kp = data.ratingKinopoisk || 0; setCache(card.id, { kp: kp, tmdb: tmdb }); callback(kp, tmdb); },  
+            function() { setCache(card.id, { kp: 0, tmdb: tmdb }); callback(0, tmdb); },  
             false,  
             { headers: { 'X-API-KEY': API_KEY } }  
         );  
@@ -55,16 +56,16 @@
         const tmdb = card.vote_average || 0;  
         net.timeout(1000);  
         net.silent('https://rating.kinopoisk.ru/' + id + '.xml',  
-            (str) => {  
-                if (str?.includes('<rating>')) {  
+            function(str) {  
+                if (str && str.includes('<rating>')) {  
                     try {  
                         const kp = parseFloat($($.parseXML(str)).find('kp_rating').text()) || 0;  
-                        if (kp > 0) { setCache(card.id, { kp, tmdb }); callback(kp, tmdb); return; }  
+                        if (kp > 0) { setCache(card.id, { kp: kp, tmdb: tmdb }); callback(kp, tmdb); return; }  
                     } catch (e) {}  
                 }  
                 fetchFromKpApi(id, card, callback);  
             },  
-            () => fetchFromKpApi(id, card, callback),  
+            function() { fetchFromKpApi(id, card, callback); },  
             false,  
             { dataType: 'text' }  
         );  
@@ -77,18 +78,18 @@
         const year = parseInt((card.release_date || card.first_air_date || '').slice(0, 4)) || null;  
         const title = card.title || card.name;  
         const tmdb = card.vote_average || 0;  
-        const processError = () => { setCache(card.id, { kp: 0, tmdb }); callback(0, tmdb); };  
+        const processError = function() { setCache(card.id, { kp: 0, tmdb: tmdb }); callback(0, tmdb); };  
         function searchByTitle() {  
             const query = (title || '').toLowerCase().replace(/[^\wа-яё\s]/gi, ' ').replace(/\s+/g, ' ').trim();  
             net.timeout(5000);  
             net.silent('https://kinopoiskapiunofficial.tech/api/v2.1/films/search-by-keyword?keyword=' + encodeURIComponent(query),  
-                (json) => {  
-                    if (!json.films?.length) { processError(); return; }  
+                function(json) {  
+                    if (!json.films || !json.films.length) { processError(); return; }  
                     const films = json.films;  
                     let best = null;  
                     if (year) {  
-                        best = films.find(f => parseInt((f.year || '').slice(0, 4)) === year);  
-                        if (!best) best = films.find(f => { const y = parseInt((f.year || '').slice(0, 4)); return y && y > year - 3 && y < year + 3; });  
+                        best = films.find(function(f) { return parseInt((f.year || '').slice(0, 4)) === year; });  
+                        if (!best) best = films.find(function(f) { const y = parseInt((f.year || '').slice(0, 4)); return y && y > year - 3 && y < year + 3; });  
                     }  
                     best = best || films[0];  
                     if (best) { setCache(card.id, { kp_id: best.filmId }, 'search'); getRatingById(best.filmId, card, callback); }  
@@ -102,8 +103,9 @@
         if (card.imdb_id) {  
             net.timeout(5000);  
             net.silent('https://kinopoiskapiunofficial.tech/api/v2.2/films?imdbId=' + encodeURIComponent(card.imdb_id),  
-                (data) => {  
-                    const id = data.items?.[0]?.kinopoiskId || data.items?.[0]?.filmId || data.kinopoiskId || data.filmId;  
+                function(data) {  
+                    const firstItem = data.items && data.items[0];  
+                    const id = (firstItem && (firstItem.kinopoiskId || firstItem.filmId)) || data.kinopoiskId || data.filmId;  
                     if (id) { setCache(card.id, { kp_id: id }, 'search'); getRatingById(id, card, callback); }  
                     else searchByTitle();  
                 },  
@@ -115,31 +117,40 @@
             searchByTitle();  
         }  
     }  
-    const intersectionObserver = new IntersectionObserver((entries) => {  
-        for (const entry of entries) {  
-            if (!entry.isIntersecting) continue;  
-            intersectionObserver.unobserve(entry.target);  
-            fetchRating(entry.target.card_data, (kp, tmdb) => updateCardVote(entry.target, kp, tmdb));  
-        }  
-    }, { rootMargin: '100px' });  
+    let intersectionObserver = null;  
+    if (typeof IntersectionObserver !== 'undefined') {  
+        intersectionObserver = new IntersectionObserver(function(entries) {  
+            for (let ei = 0; ei < entries.length; ei++) {  
+                const entry = entries[ei];  
+                if (!entry.isIntersecting) continue;  
+                intersectionObserver.unobserve(entry.target);  
+                (function(target) {  
+                    fetchRating(target.card_data, function(kp, tmdb) { updateCardVote(target, kp, tmdb); });  
+                })(entry.target);  
+            }  
+        }, { rootMargin: '100px' });  
+    }  
     function observeCard(card) {  
-        if (!card.card_data?.id || card.dataset.kp) return;  
+        if (!card.card_data || !card.card_data.id || card.dataset.kp) return;  
         const data = card.card_data;  
         if (!data.release_date && !data.first_air_date) return;  
         card.dataset.kp = 'true';  
-        intersectionObserver.observe(card);  
+        if (intersectionObserver) intersectionObserver.observe(card);  
+        else fetchRating(data, function(kp, tmdb) { updateCardVote(card, kp, tmdb); });  
     }  
-    new MutationObserver((mutations) => {  
-        for (const m of mutations) {  
-            for (const node of m.addedNodes) {  
+    new MutationObserver(function(mutations) {  
+        for (let mi = 0; mi < mutations.length; mi++) {  
+            const addedNodes = mutations[mi].addedNodes;  
+            for (let ni = 0; ni < addedNodes.length; ni++) {  
+                const node = addedNodes[ni];  
                 if (node.nodeType !== 1) continue;  
-                if (node.classList?.contains('card')) observeCard(node);  
-                node.querySelectorAll?.('.card').forEach(observeCard);  
+                if (node.classList && node.classList.contains('card')) observeCard(node);  
+                if (node.querySelectorAll) [].forEach.call(node.querySelectorAll('.card'), observeCard);  
             }  
         }  
     }).observe(document.body, { childList: true, subtree: true });  
-    Lampa.Listener.follow('full', (e) => {  
-        if (e.type !== 'complite' || !e.data?.movie) return;  
+    Lampa.Listener.follow('full', function(e) {  
+        if (e.type !== 'complite' || !e.data || !e.data.movie) return;  
         const card = e.data.movie;  
         if (!card.release_date && !card.first_air_date) return;  
         const render = e.object.activity.render();  
@@ -147,9 +158,9 @@
         if (cached) { showFullRating(cached.kp, cached.tmdb, render); return; }  
         if ($('.rate--kp', render).hasClass('hide') && !$('.wait_rating', render).length) {  
             $('.info__rate', render).after('<div style="width:2em;margin-top:1em;margin-right:1em" class="wait_rating"><div class="broadcast__scan"><div></div></div></div>');  
-            fetchRating(card, (kp, tmdb) => showFullRating(kp, tmdb, render));  
+            fetchRating(card, function(kp, tmdb) { showFullRating(kp, tmdb, render); });  
         }  
     });  
-    Lampa.Listener.follow('app', (e) => { if (e.type === 'destroy') intersectionObserver.disconnect(); });  
-    document.querySelectorAll('.card').forEach(observeCard);  
+    Lampa.Listener.follow('app', function(e) { if (e.type === 'destroy' && intersectionObserver) intersectionObserver.disconnect(); });  
+    [].forEach.call(document.querySelectorAll('.card'), observeCard);  
 })();
