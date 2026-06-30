@@ -224,6 +224,10 @@ function init() {
                 const formatted = formatTitle(titleText);
                 const origHtml = formatted !== null ? formatted : rawHtml;
                 if (formatted !== null) { title.html(origHtml); title.addClass('fsc-title-split'); }
+                function applyLogo(url) {  
+                    title.html('<img class="fsc-logo" src="' + url + '" alt="">');  
+                    title.removeClass('fsc-title-split');  
+                }
                 const cacheKey = mediaType + '_' + movie.id;  
                 if (logoCache[cacheKey] !== undefined) {  
                     if (logoCache[cacheKey]) applyLogo(logoCache[cacheKey]);  
