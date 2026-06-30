@@ -19,7 +19,7 @@
         BUTTONS.forEach(({selector, svg}) => $container.find(selector).html(svg));  
         const $moved = $container.children();  
         $moved.prependTo($target);  
-        const start = e.link?.items?.[0];  
+        const start = e.link && e.link.items && e.link.items[0];  
         if (start) {  
             $moved.filter('.selector').on('hover:focus hover:enter hover:hover hover:touch', (ev) => {  
                 start.last = ev.target;  
