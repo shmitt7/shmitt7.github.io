@@ -82,6 +82,7 @@
         document.head.appendChild(style);  
         var currentToken = null;  
         var currentFullComp = null;  
+        var fullTimer;  
         Lampa.Listener.follow('full', function(e) {  
             if (e.type !== 'complite') return;  
             var fullComp = e.link;  
@@ -90,7 +91,8 @@
             currentFullComp = fullComp;  
             $('body').addClass('fsc--open').removeClass('fsc--scrolled');  
             if (!Lampa.Storage.field('card_interfice_cover')) $('body').removeClass('card--no-cover');  
-            setTimeout(function() {  
+            clearTimeout(fullTimer);  
+            fullTimer = setTimeout(function() {  
                 if (currentToken !== token) return;  
                 var render = fullComp.render();  
                 var right = render.find('.full-start-new__right');  
@@ -261,6 +263,7 @@
                 currentFullComp = e.object && e.object.activity && e.object.activity.component;  
             }  
             if (e.type === 'destroy' && e.component === 'full') {  
+                clearTimeout(fullTimer);  
                 var destroyedComp = e.object && e.object.activity && e.object.activity.component;  
                 if (destroyedComp && destroyedComp.scroll) destroyedComp.scroll._fscWrapped = false;  
                 if (destroyedComp === currentFullComp) {  
