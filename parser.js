@@ -16,6 +16,7 @@
     ];  
     var switchTimer;  
     var focusTimer;  
+    var bookmarksTimer;  
     function parseServer(s) { var p = s.split('='); return { url: p[0], key: p[1] || '' }; }  
     function switchServer(serverString) {  
         var activity = Lampa.Activity.active();  
@@ -54,8 +55,9 @@
         });  
     }  
     Lampa.Listener.follow('activity', function(e) {  
+        if (e.type === 'start') clearTimeout(bookmarksTimer);  
         if (e.component !== 'bookmarks' || e.type !== 'start') return;  
-        setTimeout(function() {  
+        bookmarksTimer = setTimeout(function() {  
             var line = document.querySelector('.activity--active .items-line');  
             if (!line) return;  
             var body = line.querySelector('.scroll__body');  
