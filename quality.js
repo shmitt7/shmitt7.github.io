@@ -49,8 +49,8 @@
                 for (var ri = 0; ri < results.length; ri++) {  
                     var r = results[ri];  
                     var y = parseInt((r.info && r.info.released) || r.year);  
-                    var inTitle = !targetYear || (r.Title && (r.Title.includes(String(targetYear)) || r.Title.includes(String(targetYear - 1)) || r.Title.includes(String(targetYear + 1))));  
-                    if ((y && Math.abs(y - targetYear) <= 1) || (!y && inTitle)) titles.push(r.Title);  
+                    var inTitle = !targetYear || (r.Title && r.Title.includes(String(targetYear)));  
+                    if ((y && y === targetYear) || (!y && inTitle)) titles.push(r.Title);  
                 }  
                 i++; next();  
             }, function() { i++; next(); });  
