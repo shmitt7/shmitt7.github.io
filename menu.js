@@ -1,15 +1,16 @@
 (function(){  
+    if(window.customMenu) return;  
+    window.customMenu = true;  
     function startPlugin(){  
         if(!Lampa.Platform.screen('tv')) return;  
-        window.customMenu = true;  
         var css = [  
             '.wrap__left{position:fixed!important;margin-left:0!important;padding-top:0!important;height:auto!important;border-radius:1em!important;background:#262829!important;border:2px solid rgba(255,255,255,.25)!important;transform:translate3d(-17em,0,0)!important;overflow:hidden!important}',  
             'body.black--style .wrap__left{background:#000!important}',  
-            'body.glass--style .wrap__left{background:rgba(0,0,0,.3)!important;backdrop-filter:blur(1.6em)!important}',  
-            'body.glass--style-opacity--medium .wrap__left{background:rgba(20,20,20,.6)!important;backdrop-filter:blur(1.1em)!important}',  
-            'body.glass--style-opacity--blacked .wrap__left{background:rgba(20,20,20,.9)!important;backdrop-filter:blur(.5em)!important}',  
+            'body.glass--style .wrap__left{background:rgba(0,0,0,.3)!important;-webkit-backdrop-filter:blur(1.6em)!important;backdrop-filter:blur(1.6em)!important}',  
+            'body.glass--style-opacity--medium .wrap__left{background:rgba(20,20,20,.6)!important;-webkit-backdrop-filter:blur(1.1em)!important;backdrop-filter:blur(1.1em)!important}',  
+            'body.glass--style-opacity--blacked .wrap__left{background:rgba(20,20,20,.9)!important;-webkit-backdrop-filter:blur(.5em)!important;backdrop-filter:blur(.5em)!important}',  
             '.wrap__left>.scroll{height:auto!important;overflow:hidden!important}',  
-            '.wrap__left .scroll--mask{mask-image:none!important}',  
+            '.wrap__left .scroll--mask{-webkit-mask-image:none!important;mask-image:none!important}',  
             '.wrap__left .scroll--mask .scroll__content{padding:0!important}',  
             '.wrap__left .menu__list{padding-left:0!important}',  
             'body.menu--open:not(.light--version) .wrap__left{transform:translate3d(0,0,0)!important}',  
@@ -23,6 +24,7 @@
             '.modal__content{border:2px solid rgba(255,255,255,.25)!important}',  
             'body.black--style .modal__content{background:#000!important}'  
         ].join('');  
+        var updateTimer;  
         function update(){  
             var fs = parseFloat(getComputedStyle(document.body).fontSize);  
             var head = document.querySelector('.head');  
@@ -48,18 +50,24 @@
                     s.style.setProperty('height', h + 'px', 'important');  
             });  
         }  
+        function scheduleUpdate(delay){  
+            clearTimeout(updateTimer);  
+            updateTimer = setTimeout(update, delay || 100);  
+        }  
         function add(){  
-            $('body').append('<style id="floating-menus-plugin">'+css+'</style>');  
-            new MutationObserver(function(mutations){  
+            document.head.insertAdjacentHTML('beforeend', '<style id="floating-menus-plugin">' + css + '</style>');  
+            var bodyObserver = new MutationObserver(function(mutations){  
                 mutations.forEach(function(m){  
-                    if(m.attributeName === 'class') setTimeout(update, 100);  
+                    if(m.attributeName === 'class') scheduleUpdate(100);  
                 });  
-            }).observe(document.body, {attributes:true, attributeFilter:['class']});  
-            Lampa.Listener.follow('resize_end', function(){ setTimeout(update, 50); });  
+            });  
+            bodyObserver.observe(document.body, {attributes:true, attributeFilter:['class']});  
+            Lampa.Listener.follow('resize_end', function(){ scheduleUpdate(50); });  
+            Lampa.Listener.follow('app', function(e){ if(e.type === 'destroy') bodyObserver.disconnect(); });  
             update();  
         }  
         if(window.appready) add();  
-        else Lampa.Listener.follow('app', function(e){ if(e.type == 'ready') add(); });  
+        else Lampa.Listener.follow('app', function(e){ if(e.type === 'ready') add(); });  
     }  
-    if(!window.customMenu) startPlugin();  
+    startPlugin();  
 })();
