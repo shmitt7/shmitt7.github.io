@@ -4,38 +4,13 @@
     var network = new Lampa.Reguest();  
     var pad = function(n) { return (n < 10 ? '0' : '') + n; };  
     var formatDate = function(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); };  
-    var getDates = function() {  
-        var today = new Date();  
-        var monthAgo = new Date(today); monthAgo.setMonth(monthAgo.getMonth() - 1);  
-        var yearAgo = new Date(today); yearAgo.setFullYear(yearAgo.getFullYear() - 1);  
-        return { now: formatDate(today), month: formatDate(monthAgo), year: formatDate(yearAgo) };  
-    };  
+    var today = new Date();  
+    var monthAgo = new Date(today); monthAgo.setMonth(monthAgo.getMonth() - 1);  
+    var yearAgo = new Date(today); yearAgo.setFullYear(yearAgo.getFullYear() - 1);  
+    var dates = { now: formatDate(today), month: formatDate(monthAgo), year: formatDate(yearAgo) };  
     var buildUrl = function(q) { return Lampa.TMDB.api(q + '&api_key=' + Lampa.TMDB.key() + '&language=ru'); };  
     var sortByPopularity = function(a, b) { return (b.popularity || 0) - (a.popularity || 0); };  
     var sortByDate = function(a, b) { return (b.release_date || b.first_air_date || '').localeCompare(a.release_date || a.first_air_date || ''); };  
-    var getQueries = function() {  
-        var dates = getDates();  
-        return {  
-            nowPlaying: [  
-                'discover/movie?with_original_language=ru&with_runtime.gte=71&primary_release_date.gte=' + dates.month + '&primary_release_date.lte=' + dates.now + '&sort_by=popularity.desc&page=1',  
-                'discover/tv?with_original_language=ru&first_air_date.gte=' + dates.month + '&first_air_date.lte=' + dates.now + '&sort_by=popularity.desc&page=1'  
-            ],  
-            yearlyPopular: [  
-                'discover/movie?with_original_language=ru&with_runtime.gte=71&primary_release_date.gte=' + dates.year + '&primary_release_date.lte=' + dates.now + '&sort_by=popularity.desc&page=1',  
-                'discover/tv?with_original_language=ru&first_air_date.gte=' + dates.year + '&first_air_date.lte=' + dates.now + '&sort_by=popularity.desc&page=1'  
-            ],  
-            movies: 'discover/movie?with_original_language=ru&with_runtime.gte=71&without_genres=16,99&primary_release_date.lte=' + dates.now + '&sort_by=primary_release_date.desc',  
-            series: 'discover/tv?with_original_language=ru&without_genres=16,10764,10767,99&first_air_date.lte=' + dates.now + '&sort_by=first_air_date.desc',  
-            cartoons: 'discover/movie?with_original_language=ru&with_genres=16&with_runtime.gte=70&primary_release_date.lte=' + dates.now + '&sort_by=primary_release_date.desc',  
-            cartoonSeries: 'discover/tv?with_original_language=ru&with_genres=16&first_air_date.lte=' + dates.now + '&sort_by=first_air_date.desc',  
-            reality: 'discover/tv?with_original_language=ru&with_genres=10764&first_air_date.lte=' + dates.now + '&sort_by=first_air_date.desc',  
-            talkShows: 'discover/tv?with_original_language=ru&with_genres=10767&first_air_date.lte=' + dates.now + '&sort_by=first_air_date.desc',  
-            documentary: [  
-                'discover/movie?with_original_language=ru&with_genres=99&primary_release_date.lte=' + dates.now + '&sort_by=primary_release_date.desc&page=1',  
-                'discover/tv?with_original_language=ru&with_genres=99&first_air_date.lte=' + dates.now + '&sort_by=first_air_date.desc&page=1'  
-            ]  
-        };  
-    };  
     var loadData = function(queries, title, callback, sortFn) {  
         var qs = Array.isArray(queries) ? queries : [queries];  
         var results = [], done = 0;  
@@ -46,19 +21,50 @@
         };  
         qs.forEach(function(q) { network.silent(buildUrl(q), function(json) { results = results.concat(json.results || []); onDone(); }, onDone, false, { cache: { life: 1440 } }); });  
     };  
+    var QUERIES = {  
+        nowPlaying: [  
+            'discover/movie?with_original_language=ru&with_runtime.gte=71&primary_release_date.gte=' + dates.month + '&primary_release_date.lte=' + dates.now + '&sort_by=popularity.desc&page=1',  
+            'discover/tv?with_original_language=ru&first_air_date.gte=' + dates.month + '&first_air_date.lte=' + dates.now + '&sort_by=popularity.desc&page=1'  
+        ],  
+        yearlyPopular: [  
+            'discover/movie?with_original_language=ru&with_runtime.gte=71&primary_release_date.gte=' + dates.year + '&primary_release_date.lte=' + dates.now + '&sort_by=popularity.desc&page=1',  
+            'discover/tv?with_original_language=ru&first_air_date.gte=' + dates.year + '&first_air_date.lte=' + dates.now + '&sort_by=popularity.desc&page=1'  
+        ],  
+        movies: 'discover/movie?with_original_language=ru&with_runtime.gte=71&without_genres=16,99&primary_release_date.lte=' + dates.now + '&sort_by=primary_release_date.desc',  
+        series: 'discover/tv?with_original_language=ru&without_genres=16,10764,10767,99&first_air_date.lte=' + dates.now + '&sort_by=first_air_date.desc',  
+        cartoons: 'discover/movie?with_original_language=ru&with_genres=16&with_runtime.gte=70&primary_release_date.lte=' + dates.now + '&sort_by=primary_release_date.desc',  
+        cartoonSeries: 'discover/tv?with_original_language=ru&with_genres=16&first_air_date.lte=' + dates.now + '&sort_by=first_air_date.desc',  
+        reality: 'discover/tv?with_original_language=ru&with_genres=10764&first_air_date.lte=' + dates.now + '&sort_by=first_air_date.desc',  
+        talkShows: 'discover/tv?with_original_language=ru&with_genres=10767&first_air_date.lte=' + dates.now + '&sort_by=first_air_date.desc',  
+        documentary: [  
+            'discover/movie?with_original_language=ru&with_genres=99&primary_release_date.lte=' + dates.now + '&sort_by=primary_release_date.desc&page=1',  
+            'discover/tv?with_original_language=ru&with_genres=99&first_air_date.lte=' + dates.now + '&sort_by=first_air_date.desc&page=1'  
+        ]  
+    };  
     Lampa.Component.add('russian_category', function(params) {  
         var comp = Lampa.Maker.make('Main', params);  
         var sections = [  
-            function(cb) { loadData(getQueries().nowPlaying, 'Сейчас смотрят', cb, sortByPopularity); },  
-            function(cb) { loadData(getQueries().yearlyPopular, 'Популярное за год', cb, sortByPopularity); },  
-            function(cb) { loadData(getQueries().movies, 'Русские фильмы', cb, sortByDate); },  
-            function(cb) { loadData(getQueries().series, 'Русские сериалы', cb, sortByDate); },  
-            function(cb) { loadData(getQueries().cartoons, 'Русские мультфильмы', cb, sortByDate); },  
-            function(cb) { loadData(getQueries().cartoonSeries, 'Русские мультсериалы', cb, sortByDate); },  
-            function(cb) { loadData(getQueries().reality, 'Русские реалити-шоу', cb, sortByDate); },  
-            function(cb) { loadData(getQueries().talkShows, 'Русские ток-шоу', cb, sortByDate); },  
-            function(cb) { loadData(getQueries().documentary, 'Русские документальные', cb, sortByDate); }  
+            function(cb) { loadData(QUERIES.nowPlaying, 'Сейчас смотрят', cb, sortByPopularity); },  
+            function(cb) { loadData(QUERIES.yearlyPopular, 'Популярное за год', cb, sortByPopularity); },  
+            function(cb) { loadData(QUERIES.movies, 'Русские фильмы', cb, sortByDate); },  
+            function(cb) { loadData(QUERIES.series, 'Русские сериалы', cb, sortByDate); },  
+            function(cb) { loadData(QUERIES.cartoons, 'Русские мультфильмы', cb, sortByDate); },  
+            function(cb) { loadData(QUERIES.cartoonSeries, 'Русские мультсериалы', cb, sortByDate); },  
+            function(cb) { loadData(QUERIES.reality, 'Русские реалити-шоу', cb, sortByDate); },  
+            function(cb) { loadData(QUERIES.talkShows, 'Русские ток-шоу', cb, sortByDate); },  
+            function(cb) { loadData(QUERIES.documentary, 'Русские документальные', cb, sortByDate); }  
         ];  
+        var routes = {  
+            'Сейчас смотрят': { component: 'russian_now_full', url: '' },  
+            'Популярное за год': { component: 'russian_year_full', url: '' },  
+            'Русские фильмы': { component: 'category_full', url: QUERIES.movies },  
+            'Русские сериалы': { component: 'category_full', url: QUERIES.series },  
+            'Русские мультфильмы': { component: 'category_full', url: QUERIES.cartoons },  
+            'Русские мультсериалы': { component: 'category_full', url: QUERIES.cartoonSeries },  
+            'Русские реалити-шоу': { component: 'category_full', url: QUERIES.reality },  
+            'Русские ток-шоу': { component: 'category_full', url: QUERIES.talkShows },  
+            'Русские документальные': { component: 'russian_documentary_full', url: '' }  
+        };  
         comp.use({  
             onCreate: function() {  
                 this.activity.loader(true);  
@@ -71,18 +77,6 @@
             onInstance: function(item, itemData) {  
                 item.use({  
                     onMore: function() {  
-                        var q = getQueries();  
-                        var routes = {  
-                            'Сейчас смотрят': { component: 'russian_now_full', url: '' },  
-                            'Популярное за год': { component: 'russian_year_full', url: '' },  
-                            'Русские фильмы': { component: 'category_full', url: q.movies },  
-                            'Русские сериалы': { component: 'category_full', url: q.series },  
-                            'Русские мультфильмы': { component: 'category_full', url: q.cartoons },  
-                            'Русские мультсериалы': { component: 'category_full', url: q.cartoonSeries },  
-                            'Русские реалити-шоу': { component: 'category_full', url: q.reality },  
-                            'Русские ток-шоу': { component: 'category_full', url: q.talkShows },  
-                            'Русские документальные': { component: 'russian_documentary_full', url: '' }  
-                        };  
                         var route = routes[itemData.title];  
                         if (route) Lampa.Activity.push({ url: route.url, title: itemData.title, component: route.component, page: 1, source: 'tmdb' });  
                     },  
@@ -101,10 +95,10 @@
         Lampa.Component.add('russian_' + type + '_full', function(params) {  
             var comp = Lampa.Maker.make('Category', params);  
             var pageCache = {};  
+            var queries = type === 'now' ? QUERIES.nowPlaying : type === 'year' ? QUERIES.yearlyPopular : QUERIES.documentary;  
             var sortFn = type === 'documentary' ? sortByDate : sortByPopularity;  
             var loadPage = function(pageNum, callback) {  
                 if (pageCache[pageNum]) return callback(pageCache[pageNum]);  
-                var queries = type === 'now' ? getQueries().nowPlaying : type === 'year' ? getQueries().yearlyPopular : getQueries().documentary;  
                 var apiPage = Math.ceil(pageNum / 2);  
                 var results = [], done = 0;  
                 var onDone = function() {  
