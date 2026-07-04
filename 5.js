@@ -21,31 +21,32 @@
     var mutationObserver = null;  
     var initialized = false;  
     function buildText(info) {  
-        var last = info.last_episode_to_air;  
-        var next = info.next_episode_to_air;  
-        var seasons = info.seasons || [];  
-        if (!last) return null;  
-        var curS = last.season_number;  
-        var curE = last.episode_number;  
-        var totalE = null;  
-        for (var i = 0; i < seasons.length; i++) {  
-            if (seasons[i].season_number === curS) {  
-                totalE = seasons[i].episode_count;  
-                break;  
-            }  
+    var last = info.last_episode_to_air;  
+    var next = info.next_episode_to_air;  
+    var seasons = info.seasons || [];  
+    if (!last) return null;  
+    var curS = last.season_number;  
+    var airedTotal = 0;  
+    for (var i = 0; i < seasons.length; i++) {  
+        var season = seasons[i];  
+        if (season.season_number > 0 && season.season_number < curS) {  
+            airedTotal += season.episode_count;  
         }  
-        var sPart = 'S' + curS;  
-        var ePart = 'E' + curE;  
-        if (next) {  
-            if (next.season_number > curS) {  
-                sPart += '/S' + next.season_number;  
-                if (totalE && totalE > curE) ePart += '/E' + totalE;  
-            } else if (next.season_number === curS && totalE && totalE > curE) {  
-                ePart += '/E' + totalE;  
-            }  
-        }  
-        return sPart + ':' + ePart;  
     }  
+    airedTotal += last.episode_number;  
+    var sPart = 'S' + curS;  
+    var ePart = 'E' + airedTotal;  
+    if (next) {  
+        var totalAll = info.number_of_episodes;  
+        if (next.season_number > curS) {  
+            sPart += '/S' + next.season_number;  
+            if (totalAll && totalAll > airedTotal) ePart += '/E' + totalAll;  
+        } else if (next.season_number === curS && totalAll && totalAll > airedTotal) {  
+            ePart += '/E' + totalAll;  
+        }  
+    }  
+    return sPart + ':' + ePart;  
+}  
     function applyLabel(cardElem, info) {  
         if (cardElem._tvsDone) return;  
         cardElem._tvsDone = true;  
