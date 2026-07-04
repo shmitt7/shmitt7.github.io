@@ -20,12 +20,13 @@
         if (parts.length < 3) return dateStr;  
         return parts[2] + '.' + parts[1] + '.' + parts[0].slice(2);  
     }  
-    function buildPremiereText(dateStr) {  
+    function formatDateLabel(dateStr, maxDays) {  
         if (!dateStr) return null;  
         var days = daysUntil(dateStr);  
         if (days <= 0) return null;  
-        if (days <= 60) return 'Премьера · ' + days + 'дн.';  
-        return 'Премьера · ' + formatDate(dateStr);  
+        if (days <= 30) return days + 'дн.';  
+        if (days <= maxDays) return formatDate(dateStr);  
+        return null;  
     }  
     function buildText(info) {  
         var last = info.last_episode_to_air;  
@@ -61,15 +62,26 @@
         var status = info.status;  
         if (!last) {  
             if (status === 'In Production') {  
-                var year = info.first_air_date ? info.first_air_date.split('-')[0] : '';  
-                return { text: 'В производстве' + (year ? ' ' + year : ''), icon: '⚙', color: '#FF9800' };  
+                var dateLabel = formatDateLabel(info.first_air_date, Infinity);  
+                return {  
+                    text: dateLabel ? 'Премьера · ' + dateLabel : 'В производстве',  
+                    icon: '⚙',  
+                    color: '#FF9800'  
+                };  
             }  
-            if (status === 'Canceled') {  
-                return { text: 'Отменён', icon: '✘', color: '#f44336' };  
+            if (status === 'Planned') {  
+                var dateLabel = formatDateLabel(info.first_air_date, Infinity);  
+                return {  
+                    text: dateLabel ? 'Премьера · ' + dateLabel : 'Запланировано',  
+                    icon: '◷',  
+                    color: '#9C27B0'  
+                };  
             }  
-            var premiereText = buildPremiereText(info.first_air_date);  
-            if (premiereText) return { text: premiereText, icon: '◷', color: '#9C27B0' };  
-            if (info.first_air_date) return { text: 'Запланирован', icon: '◷', color: '#9C27B0' };  
+            if (status === 'Pilot') {  
+                return { text: 'Пилот', icon: '★', color: '#00BCD4' };  
+            }  
+            var dateLabel = formatDateLabel(info.first_air_date, 90);  
+            if (dateLabel) return { text: 'Премьера · ' + dateLabel, icon: '◷', color: '#9C27B0' };  
             return null;  
         }  
         var text = buildText(info);  
@@ -80,16 +92,49 @@
         if (status === 'Ended') {  
             return { text: text, icon: '✔', color: '#9E9E9E' };  
         }  
+        if (status === 'Pilot') {  
+            return { text: text, icon: '★', color: '#00BCD4' };  
+        }  
         if (next && next.air_date) {  
             var days = daysUntil(next.air_date);  
             if (days >= 0 && days <= 14) {  
                 return { text: text, icon: '▶', color: '#4CAF50' };  
             }  
         }  
-        if (status === 'Returning Series' || status === 'In Production') {  
-            return { text: text, icon: '‖', color: '#2196F3' };  
+        return { text: text, icon: '‖', color: '#2196F3' };  
+    }  
+    function getMovieLabelInfo(info) {  
+        var status = info.status;  
+        var releaseDate = info.release_date;  
+        if (status === 'Released') return null;  
+        if (status === 'Canceled') {  
+            return { text: 'Отменён', icon: '✘', color: '#f44336' };  
         }  
-        return { text: text, icon: '?', color: '#888' };  
+        if (status === 'Rumored') {  
+            return { text: 'По слухам', icon: '◷', color: '#9C27B0' };  
+        }  
+        if (status === 'In Production') {  
+            return { text: 'В производстве', icon: '⚙', color: '#FF9800' };  
+        }  
+        if (status === 'Post Production') {  
+            var dateLabel = formatDateLabel(releaseDate, 90);  
+            return {  
+                text: dateLabel ? 'Скоро · ' + dateLabel : 'Скоро',  
+                icon: '⏳',  
+                color: '#FFC107'  
+            };  
+        }  
+        if (status === 'Planned') {  
+            var dateLabel = formatDateLabel(releaseDate, 90);  
+            return {  
+                text: dateLabel ? 'Премьера · ' + dateLabel : 'Запланировано',  
+                icon: '◷',  
+                color: '#9C27B0'  
+            };  
+        }  
+        var dateLabel = formatDateLabel(releaseDate, 90);  
+        if (dateLabel) return { text: 'Премьера · ' + dateLabel, icon: '◆', color: '#FF9800' };  
+        return null;  
     }  
     function applyLabel(cardElem, info) {  
         if (cardElem._tvsDone) return;  
@@ -99,9 +144,7 @@
         if (isTV) {  
             labelInfo = getTVLabelInfo(info);  
         } else {  
-            var text = buildPremiereText(info.release_date);  
-            if (!text) return;  
-            labelInfo = { text: text, icon: '◆', color: '#FF9800' };  
+            labelInfo = getMovieLabelInfo(info);  
         }  
         if (!labelInfo || !labelInfo.text) return;  
         var viewElem = cardElem.querySelector('.card__view');  
@@ -119,14 +162,18 @@
     }  
     function fetchAndApply(cardElem, data) {  
         if (!data || !data.id) return;  
+        var network = new Lampa.Reguest();  
         if (data.original_name) {  
             var url = Lampa.TMDB.api('tv/' + data.id + '?api_key=' + Lampa.TMDB.key());  
-            var network = new Lampa.Reguest();  
             network.silent(url, function(resp) {  
                 if (resp && resp.id) applyLabel(cardElem, resp);  
             }, function() {}, false, { cache: { life: 30 } });  
-        } else if (data.release_date) {  
-            applyLabel(cardElem, data);  
+        } else if (data.original_title || data.title) {  
+            if (data.release_date && daysUntil(data.release_date) < -30) return;  
+            var url = Lampa.TMDB.api('movie/' + data.id + '?api_key=' + Lampa.TMDB.key());  
+            network.silent(url, function(resp) {  
+                if (resp && resp.id) applyLabel(cardElem, resp);  
+            }, function() {}, false, { cache: { life: 30 } });  
         }  
     }  
     function attachToCard(cardElem) {  
