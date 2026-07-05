@@ -3,22 +3,14 @@
     window.card_mirror_plugin_ready = true;  
   
     var mutationObserver = null;  
-    var processTimer = null;  
+    var intervalId = null;  
   
-    function injectMirror(cardView) {  
-        if (cardView.getAttribute('data-mirror-done')) return;  
-        cardView.setAttribute('data-mirror-done', '1');  
+    function injectMirror(view) {  
+        if (view.getAttribute('data-mirror-done')) return;  
+        view.setAttribute('data-mirror-done', '1');  
         var mirror = document.createElement('div');  
         mirror.className = 'card__mirror';  
-        cardView.appendChild(mirror);  
-    }  
-  
-    function processCard(cardElement) {  
-        if (!cardElement.classList) return;  
-        if (!cardElement.classList.contains('card')) return;  
-        if (cardElement.classList.contains('card--wide')) return;  
-        var view = cardElement.querySelector('.card__view');  
-        if (view) injectMirror(view);  
+        view.appendChild(mirror);  
     }  
   
     function processAll() {  
@@ -28,36 +20,9 @@
         });  
     }  
   
-    function scheduleProcess() {  
-        clearTimeout(processTimer);  
-        processTimer = setTimeout(processAll, 150);  
-    }  
-  
-    function startObserver() {  
-        if (mutationObserver) return;  
-        if (typeof MutationObserver === 'undefined') return;  
-        mutationObserver = new MutationObserver(function(mutations) {  
-            [].forEach.call(mutations, function(mutation) {  
-                [].forEach.call(mutation.addedNodes, function(node) {  
-                    if (node.nodeType !== 1) return;  
-                    if (node.classList && node.classList.contains('card')) {  
-                        processCard(node);  
-                    }  
-                    var nested = node.querySelectorAll ? node.querySelectorAll('.card') : [];  
-                    [].forEach.call(nested, function(card) {  
-                        processCard(card);  
-                    });  
-                });  
-            });  
-            scheduleProcess();  
-        });  
-        mutationObserver.observe(document.documentElement, { childList: true, subtree: true });  
-        scheduleProcess();  
-    }  
-  
-    function addStyles() {  
+    function init() {  
         document.head.insertAdjacentHTML('beforeend',  
-            '<style id="card-mirror-plugin-style">' +  
+            '<style id="card-mirror-style">' +  
             '.card__mirror {' +  
                 'position: absolute;' +  
                 'left: 0;' +  
@@ -73,18 +38,24 @@
             '}' +  
             '</style>'  
         );  
-    }  
   
-    function init() {  
-        addStyles();  
-        startObserver();  
+        if (typeof MutationObserver !== 'undefined') {  
+            mutationObserver = new MutationObserver(processAll);  
+            mutationObserver.observe(document.documentElement, { childList: true, subtree: true });  
+        }  
+  
+        intervalId = setInterval(processAll, 2000);  
+  
+        processAll();  
+  
         Lampa.Listener.follow('app', function(e) {  
             if (e.type === 'destroy') {  
                 if (mutationObserver) {  
                     mutationObserver.disconnect();  
                     mutationObserver = null;  
                 }  
-                clearTimeout(processTimer);  
+                clearInterval(intervalId);  
+                intervalId = null;  
             }  
         });  
     }  
