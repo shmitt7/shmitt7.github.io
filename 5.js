@@ -24,7 +24,7 @@
         if (!dateStr) return null;  
         var days = daysUntil(dateStr);  
         if (days <= 0) return null;  
-        if (days <= 30) return days + 'дн.';  
+        if (days <= 30) return 'Премьера ' + days + 'дн.';  
         return formatDate(dateStr);  
     }  
     function buildEpisodeText(info) {  
@@ -58,61 +58,55 @@
     function getTVLabelInfo(info) {  
         var last = info.last_episode_to_air;  
         var next = info.next_episode_to_air;  
-        var status = info.status;  
+        var status = info.status || '';  
         if (!last) {  
+            var dateLabel = formatDateLabel(info.first_air_date);  
             if (status === 'In Production') {  
-                var dateLabel = formatDateLabel(info.first_air_date);  
-                return { icon: '⚙', color: '#FF9800', text: dateLabel ? 'Премьера · ' + dateLabel : 'В производстве' };  
+                return { icon: '◷', color: '#9C27B0', text: dateLabel ? dateLabel : 'В производстве' };  
             }  
             if (status === 'Planned') {  
-                var dateLabel = formatDateLabel(info.first_air_date);  
-                return { icon: '◷', color: '#9C27B0', text: dateLabel ? 'Премьера · ' + dateLabel : 'Запланировано' };  
+                return { icon: '◷', color: '#9C27B0', text: dateLabel ? dateLabel : 'Запланировано' };  
             }  
-            if (status === 'Pilot') {  
-                return { icon: '★', color: '#00BCD4', text: 'Пилот' };  
-            }  
+            if (dateLabel) return { icon: '◷', color: '#9C27B0', text: dateLabel };  
             return null;  
         }  
         var episodeText = buildEpisodeText(info);  
         if (!episodeText) return null;  
+        if (status === 'Ended') {  
+            return { icon: '✔', color: '#FFC107', text: episodeText };  
+        }  
         if (status === 'Canceled') {  
             return { icon: '✘', color: '#f44336', text: episodeText };  
         }  
-        if (status === 'Ended') {  
-            return { icon: '✔', color: '#888888', text: episodeText };  
-        }  
         if (status === 'Pilot') {  
-            return { icon: '★', color: '#00BCD4', text: episodeText };  
+            return { icon: '✔', color: '#FFC107', text: episodeText };  
         }  
-        if (next) {  
-            var nextDate = next.air_date;  
-            var days = nextDate ? daysUntil(nextDate) : 999;  
-            if (days >= 0 && days <= 14) {  
-                return { icon: '▶', color: '#4CAF50', text: episodeText };  
-            }  
+        var nextDays = (next && next.air_date) ? daysUntil(next.air_date) : 999;  
+        if (nextDays >= 0 && nextDays <= 8) {  
+            return { icon: '▶', color: '#4CAF50', text: episodeText };  
         }  
         return { icon: '‖', color: '#2196F3', text: episodeText };  
     }  
     function getMovieLabelInfo(info) {  
-        var status = info.status;  
+        var status = info.status || '';  
+        var dateLabel = formatDateLabel(info.release_date);  
         if (status === 'Released') return null;  
         if (status === 'Canceled') {  
             return { icon: '✘', color: '#f44336', text: 'Отменён' };  
         }  
-        if (status === 'Rumored') {  
-            return { icon: '◷', color: '#9C27B0', text: 'По слухам' };  
-        }  
         if (status === 'In Production') {  
             return { icon: '⚙', color: '#FF9800', text: 'В производстве' };  
         }  
-        if (status === 'Planned') {  
-            var dateLabel = formatDateLabel(info.release_date);  
-            return { icon: '◷', color: '#9C27B0', text: dateLabel ? 'Премьера · ' + dateLabel : 'Запланировано' };  
-        }  
         if (status === 'Post Production') {  
-            var dateLabel = formatDateLabel(info.release_date);  
-            return { icon: '⏳', color: '#FFC107', text: dateLabel ? 'Скоро · ' + dateLabel : 'Скоро' };  
+            return { icon: '◷', color: '#9C27B0', text: dateLabel ? dateLabel : 'Скоро' };  
         }  
+        if (status === 'Planned') {  
+            return { icon: '◷', color: '#9C27B0', text: dateLabel ? dateLabel : 'Запланировано' };  
+        }  
+        if (status === 'Rumored') {  
+            return { icon: '◷', color: '#9C27B0', text: dateLabel ? dateLabel : 'По слухам' };  
+        }  
+        if (dateLabel) return { icon: '◷', color: '#9C27B0', text: dateLabel };  
         return null;  
     }  
     function applyLabel(cardElem, info) {  
@@ -124,7 +118,7 @@
         } else {  
             labelInfo = getMovieLabelInfo(info);  
         }  
-        if (!labelInfo) return;  
+        if (!labelInfo || !labelInfo.text) return;  
         var viewElem = cardElem.querySelector('.card__view');  
         if (!viewElem) return;  
         var label = document.createElement('div');  
@@ -142,13 +136,14 @@
         if (!data || !data.id) return;  
         var network = new Lampa.Reguest();  
         if (data.original_name) {  
-            var url = Lampa.TMDB.api('tv/' + data.id + '?api_key=' + Lampa.TMDB.key());  
-            network.silent(url, function(resp) {  
+            var tvUrl = Lampa.TMDB.api('tv/' + data.id + '?api_key=' + Lampa.TMDB.key());  
+            network.silent(tvUrl, function(resp) {  
                 if (resp && resp.id) applyLabel(cardElem, resp);  
             }, function() {}, false, { cache: { life: 30 } });  
-        } else if (data.original_title) {  
-            var url = Lampa.TMDB.api('movie/' + data.id + '?api_key=' + Lampa.TMDB.key());  
-            network.silent(url, function(resp) {  
+        } else {  
+            if (data.release_date && daysUntil(data.release_date) <= 0) return;  
+            var movieUrl = Lampa.TMDB.api('movie/' + data.id + '?api_key=' + Lampa.TMDB.key());  
+            network.silent(movieUrl, function(resp) {  
                 if (resp && resp.id) applyLabel(cardElem, resp);  
             }, function() {}, false, { cache: { life: 30 } });  
         }  
