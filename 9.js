@@ -6,46 +6,37 @@
     window[PLUGIN_READY_KEY] = true;  
   
     var mutationObserver = null;  
-    var initialized = false;  
   
     function isEnabled() {  
-        return Lampa.Storage.get(PLUGIN_KEY, false);  
+        return Lampa.Storage.get(PLUGIN_KEY, true);  
     }  
   
     function injectUnderlay(cardElement) {  
         if (cardElement.getAttribute('data-underlay-done')) return;  
         cardElement.setAttribute('data-underlay-done', '1');  
-  
         var view = cardElement.querySelector('.card__view');  
         if (!view) return;  
-  
         var titleEl = cardElement.querySelector('.card__title');  
         var ageEl = cardElement.querySelector('.card__age');  
         var voteEl = cardElement.querySelector('.card__vote');  
-  
         var titleText = titleEl ? (titleEl.innerText || titleEl.textContent || '') : '';  
         var ageText = ageEl ? (ageEl.innerText || ageEl.textContent || '') : '';  
         var voteText = voteEl ? (voteEl.innerText || voteEl.textContent || '') : '';  
-  
         var metaText = '';  
         if (ageText) metaText = ageText;  
         if (voteText) metaText = metaText ? (metaText + ' · ' + voteText) : voteText;  
-  
         var underlay = document.createElement('div');  
         underlay.className = 'card__underlay';  
-  
         var titleDiv = document.createElement('div');  
         titleDiv.className = 'card__underlay-title';  
         titleDiv.innerText = titleText;  
         underlay.appendChild(titleDiv);  
-  
         if (metaText) {  
             var metaDiv = document.createElement('div');  
             metaDiv.className = 'card__underlay-meta';  
             metaDiv.innerText = metaText;  
             underlay.appendChild(metaDiv);  
         }  
-  
         view.appendChild(underlay);  
         cardElement.classList.add('card--underlay');  
     }  
@@ -67,7 +58,6 @@
     function startObserver() {  
         if (mutationObserver) return;  
         if (typeof MutationObserver === 'undefined') return;  
-  
         mutationObserver = new MutationObserver(function(mutations) {  
             [].forEach.call(mutations, function(mutation) {  
                 [].forEach.call(mutation.addedNodes, function(node) {  
@@ -82,7 +72,6 @@
                 });  
             });  
         });  
-  
         mutationObserver.observe(document.body, { childList: true, subtree: true });  
         processExistingCards();  
     }  
@@ -170,7 +159,7 @@
                 param: {  
                     name: PLUGIN_KEY,  
                     type: 'trigger',  
-                    default: false  
+                    default: true  
                 },  
                 field: {  
                     name: 'Подложка на карточках',  
@@ -190,21 +179,17 @@
     }  
   
     function init() {  
-        if (initialized) return;  
-        initialized = true;  
-  
         addStyles();  
         addSettings();  
-  
         if (isEnabled()) {  
             startObserver();  
         }  
+        Lampa.Listener.follow('app', function(e) {  
+            if (e.type === 'destroy') {  
+                stopObserver();  
+            }  
+        });  
     }  
   
-    Lampa.Listener.follow('app', function(e) {  
-        if (e.type === 'ready') init();  
-        if (e.type === 'destroy') stopObserver();  
-    });  
-  
-    if (window.appready) init();  
+    init();  
 })();
