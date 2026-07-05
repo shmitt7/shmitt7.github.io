@@ -4,7 +4,7 @@
   
     document.head.insertAdjacentHTML('beforeend',  
         '<style id="card-mirror-plugin-style">' +  
-        '.card:not(.card--wide) .card__view::after {' +  
+        '.card:not(.card--wide) .card__view::before {' +  
             'content: "";' +  
             'position: absolute;' +  
             'left: 0;' +  
@@ -16,7 +16,7 @@
             'border-bottom-left-radius: 1em;' +  
             'border-bottom-right-radius: 1em;' +  
             'pointer-events: none;' +  
-            'z-index: 0;' +  
+            'z-index: 1;' +  
         '}' +  
         '</style>'  
     );  
