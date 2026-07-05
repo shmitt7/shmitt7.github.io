@@ -3,6 +3,7 @@
     window.card_mirror_plugin_ready = true;  
   
     var mutationObserver = null;  
+    var processTimer = null;  
   
     function injectMirror(cardView) {  
         if (cardView.getAttribute('data-mirror-done')) return;  
@@ -20,11 +21,16 @@
         if (view) injectMirror(view);  
     }  
   
-    function processExistingCards() {  
-        var cards = document.querySelectorAll('.card:not(.card--wide) .card__view:not([data-mirror-done])');  
-        [].forEach.call(cards, function(view) {  
+    function processAll() {  
+        var views = document.querySelectorAll('.card:not(.card--wide) .card__view:not([data-mirror-done])');  
+        [].forEach.call(views, function(view) {  
             injectMirror(view);  
         });  
+    }  
+  
+    function scheduleProcess() {  
+        clearTimeout(processTimer);  
+        processTimer = setTimeout(processAll, 150);  
     }  
   
     function startObserver() {  
@@ -43,9 +49,10 @@
                     });  
                 });  
             });  
+            scheduleProcess();  
         });  
-        mutationObserver.observe(document.body, { childList: true, subtree: true });  
-        processExistingCards();  
+        mutationObserver.observe(document.documentElement, { childList: true, subtree: true });  
+        scheduleProcess();  
     }  
   
     function addStyles() {  
@@ -57,12 +64,12 @@
                 'right: 0;' +  
                 'bottom: 0;' +  
                 'height: 25%;' +  
-                'background: -webkit-linear-gradient(top, rgba(0,0,0,0) 0%, rgba(0,0,0,0.7) 100%);' +  
-                'background: linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.7) 100%);' +  
+                'background: -webkit-linear-gradient(top, rgba(0,0,0,0) 0%, rgba(0,0,0,0.75) 100%);' +  
+                'background: linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.75) 100%);' +  
                 'border-bottom-left-radius: 1em;' +  
                 'border-bottom-right-radius: 1em;' +  
                 'pointer-events: none;' +  
-                'z-index: 1;' +  
+                'z-index: 2;' +  
             '}' +  
             '</style>'  
         );  
@@ -77,6 +84,7 @@
                     mutationObserver.disconnect();  
                     mutationObserver = null;  
                 }  
+                clearTimeout(processTimer);  
             }  
         });  
     }  
