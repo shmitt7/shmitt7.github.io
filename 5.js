@@ -33,7 +33,6 @@
         var seasons = info.seasons || [];  
         if (!last) return null;  
         var curS = last.season_number;  
-        var curE = last.episode_number;  
         var airedTotal = 0;  
         for (var i = 0; i < seasons.length; i++) {  
             var season = seasons[i];  
@@ -41,7 +40,7 @@
                 airedTotal += season.episode_count;  
             }  
         }  
-        airedTotal += curE;  
+        airedTotal += last.episode_number;  
         var sPart = 'S' + curS;  
         var ePart = 'E' + airedTotal;  
         if (next) {  
@@ -58,103 +57,113 @@
     function getTVLabelInfo(info) {  
         var last = info.last_episode_to_air;  
         var next = info.next_episode_to_air;  
-        var status = info.status || '';  
+        var status = info.status;  
+        var dateLabel;  
+        var episodeText;  
+        var nextDays;  
         if (!last) {  
-            var dateLabel = formatDateLabel(info.first_air_date);  
+            dateLabel = formatDateLabel(info.first_air_date);  
+            if (status === 'Returning Series') {  
+                return { text: dateLabel || 'Онгоинг', icon: '‖', color: '#2196F3' };  
+            }  
             if (status === 'In Production') {  
-                return { icon: '◷', color: '#9C27B0', text: dateLabel ? dateLabel : 'В производстве' };  
+                return { text: dateLabel || 'В производстве', icon: '◷', color: '#9C27B0' };  
             }  
             if (status === 'Planned') {  
-                return { icon: '◷', color: '#9C27B0', text: dateLabel ? dateLabel : 'Запланировано' };  
+                return { text: dateLabel || 'Запланировано', icon: '◷', color: '#9C27B0' };  
             }  
-            if (dateLabel) return { icon: '◷', color: '#9C27B0', text: dateLabel };  
             return null;  
         }  
-        var episodeText = buildEpisodeText(info);  
+        episodeText = buildEpisodeText(info);  
         if (!episodeText) return null;  
-        if (status === 'Ended') {  
-            return { icon: '✔', color: '#FFC107', text: episodeText };  
-        }  
         if (status === 'Canceled') {  
-            return { icon: '✘', color: '#f44336', text: episodeText };  
+            return { text: episodeText, icon: '✘', color: '#f44336' };  
         }  
-        if (status === 'Pilot') {  
-            return { icon: '✔', color: '#FFC107', text: episodeText };  
+        if (status === 'Ended' || status === 'Pilot') {  
+            return { text: episodeText, icon: '✔', color: '#FFC107' };  
         }  
-        var nextDays = (next && next.air_date) ? daysUntil(next.air_date) : 999;  
+        nextDays = next && next.air_date ? daysUntil(next.air_date) : 999;  
         if (nextDays >= 0 && nextDays <= 8) {  
-            return { icon: '▶', color: '#4CAF50', text: episodeText };  
+            return { text: episodeText, icon: '▶', color: '#4CAF50' };  
         }  
-        return { icon: '‖', color: '#2196F3', text: episodeText };  
+        return { text: episodeText, icon: '‖', color: '#2196F3' };  
     }  
     function getMovieLabelInfo(info) {  
-        var status = info.status || '';  
-        var dateLabel = formatDateLabel(info.release_date);  
+        var status = info.status;  
+        var releaseDate = info.release_date;  
+        var dateLabel;  
         if (status === 'Released') return null;  
         if (status === 'Canceled') {  
-            return { icon: '✘', color: '#f44336', text: 'Отменён' };  
+            return { text: 'Отменён', icon: '✘', color: '#f44336' };  
         }  
         if (status === 'In Production') {  
-            return { icon: '⚙', color: '#FF9800', text: 'В производстве' };  
+            return { text: 'В производстве', icon: '⚙', color: '#FF9800' };  
         }  
-        if (status === 'Post Production') {  
-            return { icon: '◷', color: '#9C27B0', text: dateLabel ? dateLabel : 'Скоро' };  
+        dateLabel = formatDateLabel(releaseDate);  
+        if (status === 'Rumored') {  
+            return { text: dateLabel || 'По слухам', icon: '◷', color: '#9C27B0' };  
         }  
         if (status === 'Planned') {  
-            return { icon: '◷', color: '#9C27B0', text: dateLabel ? dateLabel : 'Запланировано' };  
+            return { text: dateLabel || 'Запланировано', icon: '◷', color: '#9C27B0' };  
         }  
-        if (status === 'Rumored') {  
-            return { icon: '◷', color: '#9C27B0', text: dateLabel ? dateLabel : 'По слухам' };  
+        if (status === 'Post Production') {  
+            return { text: dateLabel || 'Скоро', icon: '◷', color: '#9C27B0' };  
         }  
-        if (dateLabel) return { icon: '◷', color: '#9C27B0', text: dateLabel };  
         return null;  
     }  
-    function applyLabel(cardElem, info) {  
+    function applyLabel(cardElem, info, isTV) {  
         if (cardElem._tvsDone) return;  
         cardElem._tvsDone = true;  
-        var labelInfo;  
-        if (cardElem.classList.contains('card--tv')) {  
-            labelInfo = getTVLabelInfo(info);  
-        } else {  
-            labelInfo = getMovieLabelInfo(info);  
-        }  
-        if (!labelInfo || !labelInfo.text) return;  
+        var labelInfo = isTV ? getTVLabelInfo(info) : getMovieLabelInfo(info);  
+        if (!labelInfo) return;  
         var viewElem = cardElem.querySelector('.card__view');  
         if (!viewElem) return;  
         var label = document.createElement('div');  
         label.className = 'tvs-label';  
         label.style.borderLeftColor = labelInfo.color;  
         label.innerHTML = '<span class="tvs-icon" style="color:' + labelInfo.color + '">' + labelInfo.icon + '</span><span class="tvs-text">' + labelInfo.text + '</span>';  
-        var typeElem = cardElem.querySelector('.card__type');  
-        if (typeElem) {  
-            typeElem.parentNode.insertBefore(label, typeElem.nextSibling);  
-        } else {  
-            viewElem.appendChild(label);  
-        }  
+        viewElem.appendChild(label);  
     }  
     function fetchAndApply(cardElem, data) {  
-        if (!data || !data.id) return;  
-        var network = new Lampa.Reguest();  
-        if (data.original_name) {  
-            var tvUrl = Lampa.TMDB.api('tv/' + data.id + '?api_key=' + Lampa.TMDB.key());  
-            network.silent(tvUrl, function(resp) {  
-                if (resp && resp.id) applyLabel(cardElem, resp);  
-            }, function() {}, false, { cache: { life: 30 } });  
-        } else {  
-            if (data.release_date && daysUntil(data.release_date) <= 0) return;  
-            var movieUrl = Lampa.TMDB.api('movie/' + data.id + '?api_key=' + Lampa.TMDB.key());  
-            network.silent(movieUrl, function(resp) {  
-                if (resp && resp.id) applyLabel(cardElem, resp);  
-            }, function() {}, false, { cache: { life: 30 } });  
+        if (cardElem._tvsDone) return;  
+        var isTV = data.original_name || data.first_air_date;  
+        var isMovie = !isTV && (data.release_date || data.original_title);  
+        if (isTV) {  
+            var tvNetwork = new Lampa.Reguest();  
+            tvNetwork.silent(  
+                Lampa.TMDB.api('tv/' + data.id + '?api_key=' + Lampa.TMDB.key()),  
+                function(resp) {  
+                    if (resp && resp.id) applyLabel(cardElem, resp, true);  
+                },  
+                function() {},  
+                false,  
+                { cache: { life: 30 } }  
+            );  
+        } else if (isMovie) {  
+            if (data.release_date && daysUntil(data.release_date) < -30) return;  
+            var movieNetwork = new Lampa.Reguest();  
+            movieNetwork.silent(  
+                Lampa.TMDB.api('movie/' + data.id + '?api_key=' + Lampa.TMDB.key()),  
+                function(resp) {  
+                    if (resp && resp.id) applyLabel(cardElem, resp, false);  
+                },  
+                function() {},  
+                false,  
+                { cache: { life: 30 } }  
+            );  
         }  
     }  
     function attachToCard(cardElem) {  
         if (cardElem._tvsAttached) return;  
         cardElem._tvsAttached = true;  
-        if (intersectionObserver) intersectionObserver.observe(cardElem);  
+        if (intersectionObserver) {  
+            intersectionObserver.observe(cardElem);  
+        } else {  
+            var cardData = cardElem.card_data;  
+            if (cardData) fetchAndApply(cardElem, cardData);  
+        }  
     }  
     function wrapOldCard() {  
-        if (!Lampa.Card) return;  
         var Orig = Lampa.Card;  
         Lampa.Card = function(data, params) {  
             var inst = new Orig(data, params);  
@@ -200,7 +209,7 @@
             intersectionObserver.disconnect();  
             intersectionObserver = null;  
         }  
-    }  
+                    }  
     function init() {  
         if (initialized) return;  
         initialized = true;  
