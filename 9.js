@@ -29,8 +29,7 @@
                 'right: 0;' +  
                 'bottom: 0;' +  
                 'height: 25%;' +  
-                'background: -webkit-linear-gradient(top, rgba(0,0,0,0) 0%, rgba(0,0,0,0.92) 100%);' +  
-                'background: linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.92) 100%);' +  
+                'background: rgba(0,0,0,0.85);' +  
                 'border-bottom-left-radius: 1em;' +  
                 'border-bottom-right-radius: 1em;' +  
                 'pointer-events: none;' +  
