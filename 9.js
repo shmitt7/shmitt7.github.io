@@ -205,6 +205,19 @@
         return null;
     }
 
+    function getQualityColor(q) {
+        if (q === 'TS') return '#f44336';
+        if (q === 'HD') return '#FFC107';
+        if (q === '4K') return '#4CAF50';
+        return '';
+    }
+
+    function getRatingColor(val) {
+        if (val < 6.0) return '#f44336';
+        if (val < 7.5) return '#FFC107';
+        return '#4CAF50';
+    }
+
     function fetchQuality(data, callback) {
         var key = data.id;
         var builtinQuality = data.quality || data.release_quality || null;
@@ -394,20 +407,25 @@
 
     function renderRow3(row3Elem, genre, quality, rating, isKp, year) {
         row3Elem.innerHTML = '';
-        var parts = [];
-        if (genre) parts.push({ text: genre, cls: '' });
-        if (quality) parts.push({ text: quality, cls: '' });
-        for (var pi = 0; pi < parts.length; pi++) {
-            if (pi > 0) row3Elem.appendChild(document.createTextNode(' '));
-            var span = document.createElement('span');
-            span.textContent = parts[pi].text;
-            row3Elem.appendChild(span);
+        if (genre) {
+            var genreSpan = document.createElement('span');
+            genreSpan.textContent = genre;
+            row3Elem.appendChild(genreSpan);
+        }
+        if (quality) {
+            var qualSpan = document.createElement('span');
+            qualSpan.textContent = quality;
+            var qualColor = getQualityColor(quality);
+            if (qualColor) qualSpan.style.color = qualColor;
+            row3Elem.appendChild(qualSpan);
         }
         if (rating) {
-            if (row3Elem.childNodes.length) row3Elem.appendChild(document.createTextNode(' '));
+            var ratingVal = parseFloat(rating);
             var rateSpan = document.createElement('span');
             rateSpan.className = 'cio-rating';
-            rateSpan.textContent = parseFloat(rating).toFixed(1);
+            rateSpan.style.color = getRatingColor(ratingVal);
+            var rateText = document.createTextNode(ratingVal.toFixed(1));
+            rateSpan.appendChild(rateText);
             if (isKp) {
                 var kpIcon = document.createElement('span');
                 kpIcon.className = 'cio-kp-icon';
@@ -416,7 +434,6 @@
             row3Elem.appendChild(rateSpan);
         }
         if (year) {
-            if (row3Elem.childNodes.length) row3Elem.appendChild(document.createTextNode(' '));
             var yearSpan = document.createElement('span');
             yearSpan.textContent = year;
             row3Elem.appendChild(yearSpan);
@@ -452,7 +469,7 @@
         view.appendChild(box);
 
         var year = ((data.release_date || data.first_air_date || '') + '').slice(0, 4);
-        if (year === '0000') year = '';
+        if (!year || year === '0000') year = '';
 
         var genreText = getGenreText(data);
         var tmdbVote = parseFloat(data.vote_average || 0);
@@ -478,7 +495,6 @@
                 var refinedGenre = getGenreText(tmdbData);
                 if (refinedGenre) genreText = refinedGenre;
             }
-
             fetchQuality(data, function(quality) {
                 fetchKpRating(data, function(kpRating, isKp) {
                     var ratingVal = (kpRating && kpRating > 0) ? kpRating : fallbackRating;
@@ -502,21 +518,58 @@
     function addStyles() {
         document.head.insertAdjacentHTML('beforeend', '<style>' +
             '.cio-card .card__title,.cio-card .card__age,.cio-card .card__vote,.cio-card .card__quality,.cio-card .card__type{display:none!important}' +
-            '.cio-box{position:absolute;left:0;right:0;bottom:0;top:0;padding:0.5em 0.6em 0.5em;background:-webkit-gradient(linear,left top,left bottom,from(rgba(0,0,0,0)),color-stop(45%,rgba(0,0,0,0.82)),to(rgba(0,0,0,0.9)));background:-webkit-linear-gradient(top,rgba(0,0,0,0) 0%,rgba(0,0,0,0.82) 45%,rgba(0,0,0,0.9) 100%);background:-moz-linear-gradient(top,rgba(0,0,0,0) 0%,rgba(0,0,0,0.82) 45%,rgba(0,0,0,0.9) 100%);background:-o-linear-gradient(top,rgba(0,0,0,0) 0%,rgba(0,0,0,0.82) 45%,rgba(0,0,0,0.9) 100%);background:linear-gradient(to bottom,rgba(0,0,0,0) 0%,rgba(0,0,0,0.82) 45%,rgba(0,0,0,0.9) 100%);-webkit-border-radius:1em;-moz-border-radius:1em;border-radius:1em;display:-webkit-box;display:-webkit-flex;display:-moz-box;display:-ms-flexbox;display:flex;-webkit-box-orient:vertical;-webkit-flex-direction:column;-moz-box-orient:vertical;-ms-flex-direction:column;flex-direction:column;-webkit-box-pack:end;-webkit-justify-content:flex-end;-moz-box-pack:end;-ms-flex-pack:end;justify-content:flex-end;pointer-events:none;z-index:2;overflow:hidden}' +
+            '.cio-box{' +
+                'position:absolute;left:0;right:0;bottom:0;top:0;' +
+                'padding:0.5em 0.7em 0.6em;' +
+                'background:-webkit-gradient(linear,left top,left bottom,from(rgba(0,0,0,0)),color-stop(58%,rgba(0,0,0,0)),color-stop(72%,rgba(0,0,0,0.8)),to(rgba(0,0,0,0.92)));' +
+                'background:-webkit-linear-gradient(top,rgba(0,0,0,0) 0%,rgba(0,0,0,0) 58%,rgba(0,0,0,0.8) 72%,rgba(0,0,0,0.92) 100%);' +
+                'background:-moz-linear-gradient(top,rgba(0,0,0,0) 0%,rgba(0,0,0,0) 58%,rgba(0,0,0,0.8) 72%,rgba(0,0,0,0.92) 100%);' +
+                'background:-o-linear-gradient(top,rgba(0,0,0,0) 0%,rgba(0,0,0,0) 58%,rgba(0,0,0,0.8) 72%,rgba(0,0,0,0.92) 100%);' +
+                'background:linear-gradient(to bottom,rgba(0,0,0,0) 0%,rgba(0,0,0,0) 58%,rgba(0,0,0,0.8) 72%,rgba(0,0,0,0.92) 100%);' +
+                '-webkit-border-radius:1em;-moz-border-radius:1em;border-radius:1em;' +
+                'display:-webkit-box;display:-webkit-flex;display:-moz-box;display:-ms-flexbox;display:flex;' +
+                '-webkit-box-orient:vertical;-webkit-flex-direction:column;-moz-box-orient:vertical;-ms-flex-direction:column;flex-direction:column;' +
+                '-webkit-box-pack:end;-webkit-justify-content:flex-end;-moz-box-pack:end;-ms-flex-pack:end;justify-content:flex-end;' +
+                'pointer-events:none;z-index:2;overflow:hidden' +
+            '}' +
             '.cio-row{color:#fff;overflow:hidden}' +
-            '.cio-status{font-size:0.68em;font-weight:700;margin-bottom:0.25em;display:-webkit-box;display:-webkit-flex;display:-moz-box;display:-ms-flexbox;display:flex;-webkit-box-align:center;-webkit-align-items:center;-moz-box-align:center;-ms-flex-align:center;align-items:center;white-space:nowrap;line-height:1.2}' +
+            '.cio-status{' +
+                'font-size:0.82em;font-weight:700;margin-bottom:0.28em;' +
+                'display:-webkit-box;display:-webkit-flex;display:-moz-box;display:-ms-flexbox;display:flex;' +
+                '-webkit-box-align:center;-webkit-align-items:center;-moz-box-align:center;-ms-flex-align:center;align-items:center;' +
+                'white-space:nowrap;line-height:1.2' +
+            '}' +
             '.cio-status-icon{margin-right:0.3em;-webkit-flex-shrink:0;-ms-flex-negative:0;flex-shrink:0}' +
             '.cio-status-text{overflow:hidden;-o-text-overflow:ellipsis;text-overflow:ellipsis;white-space:nowrap}' +
-            '.cio-title{font-size:0.9em;font-weight:700;margin-bottom:0.2em;line-height:1.2;display:-webkit-box;-webkit-line-clamp:2;line-clamp:2;-webkit-box-orient:vertical;max-height:2.4em;overflow:hidden;-o-text-overflow:ellipsis;text-overflow:ellipsis}' +
-            '.cio-meta{font-size:0.68em;opacity:0.9;white-space:nowrap;overflow:hidden;-o-text-overflow:ellipsis;text-overflow:ellipsis;line-height:1.3;display:-webkit-box;display:-webkit-flex;display:-moz-box;display:-ms-flexbox;display:flex;-webkit-box-align:center;-webkit-align-items:center;-moz-box-align:center;-ms-flex-align:center;align-items:center}' +
-            '.cio-rating{display:-webkit-inline-box;display:-webkit-inline-flex;display:-moz-inline-box;display:-ms-inline-flexbox;display:inline-flex;-webkit-box-align:center;-webkit-align-items:center;-moz-box-align:center;-ms-flex-align:center;align-items:center}' +
-            '.cio-kp-icon{display:inline-block;width:9px;height:9px;margin-left:2px;-webkit-flex-shrink:0;-ms-flex-negative:0;flex-shrink:0;background-repeat:no-repeat;background-position:center;-webkit-background-size:contain;-moz-background-size:contain;background-size:contain;background-image:url("data:image/svg+xml,%3Csvg width=\'300\' height=\'300\' viewBox=\'0 0 300 300\' fill=\'none\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cmask id=\'m\' style=\'mask-type:alpha\' maskUnits=\'userSpaceOnUse\' x=\'0\' y=\'0\' width=\'300\' height=\'300\'%3E%3Ccircle cx=\'150\' cy=\'150\' r=\'150\' fill=\'white\'/%3E%3C/mask%3E%3Cg mask=\'url(%23m)\'%3E%3Ccircle cx=\'150\' cy=\'150\' r=\'150\' fill=\'black\'/%3E%3Cpath d=\'M300 45L145.26 127.827L225.9 45H181.2L126.3 121.203V45H89.9999V255H126.3V178.92L181.2 255H225.9L147.354 174.777L300 255V216L160.776 160.146L300 169.5V130.5L161.658 139.494L300 84V45Z\' fill=\'url(%23g)\'/%3E%3C/g%3E%3Cdefs%3E%3CradialGradient id=\'g\' cx=\'0\' cy=\'0\' r=\'1\' gradientUnits=\'userSpaceOnUse\' gradientTransform=\'translate(89.9999 45) rotate(45) scale(296.985)\'%3E%3Cstop offset=\'0.5\' stop-color=\'%23FF5500\'/%3E%3Cstop offset=\'1\' stop-color=\'%23BBFF00\'/%3E%3C/radialGradient%3E%3C/defs%3E%3C/svg%3E")}' +
+            '.cio-title{' +
+                'font-size:1.0em;font-weight:700;margin-bottom:0.22em;line-height:1.25;' +
+                'display:-webkit-box;-webkit-line-clamp:2;line-clamp:2;-webkit-box-orient:vertical;' +
+                'max-height:2.5em;overflow:hidden;-o-text-overflow:ellipsis;text-overflow:ellipsis' +
+            '}' +
+            '.cio-meta{' +
+                'font-size:0.82em;opacity:0.95;white-space:nowrap;overflow:hidden;' +
+                '-o-text-overflow:ellipsis;text-overflow:ellipsis;line-height:1.3;' +
+                'display:-webkit-box;display:-webkit-flex;display:-moz-box;display:-ms-flexbox;display:flex;' +
+                '-webkit-box-align:center;-webkit-align-items:center;-moz-box-align:center;-ms-flex-align:center;align-items:center' +
+            '}' +
+            '.cio-meta > span + span{margin-left:0.4em}' +
+            '.cio-rating{' +
+                'display:-webkit-inline-box;display:-webkit-inline-flex;display:-moz-inline-box;display:-ms-inline-flexbox;display:inline-flex;' +
+                '-webkit-box-align:center;-webkit-align-items:center;-moz-box-align:center;-ms-flex-align:center;align-items:center;' +
+                'font-weight:700' +
+            '}' +
+            '.cio-kp-icon{' +
+                'display:inline-block;width:10px;height:10px;' +
+                '-webkit-flex-shrink:0;-ms-flex-negative:0;flex-shrink:0;' +
+                'background-repeat:no-repeat;background-position:center;' +
+                '-webkit-background-size:contain;-moz-background-size:contain;background-size:contain;' +
+                'background-image:url("data:image/svg+xml,%3Csvg width=\'300\' height=\'300\' viewBox=\'0 0 300 300\' fill=\'none\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cmask id=\'m\' style=\'mask-type:alpha\' maskUnits=\'userSpaceOnUse\' x=\'0\' y=\'0\' width=\'300\' height=\'300\'%3E%3Ccircle cx=\'150\' cy=\'150\' r=\'150\' fill=\'white\'/%3E%3C/mask%3E%3Cg mask=\'url(%23m)\'%3E%3Ccircle cx=\'150\' cy=\'150\' r=\'150\' fill=\'black\'/%3E%3Cpath d=\'M300 45L145.26 127.827L225.9 45H181.2L126.3 121.203V45H89.9999V255H126.3V178.92L181.2 255H225.9L147.354 174.777L300 255V216L160.776 160.146L300 169.5V130.5L161.658 139.494L300 84V45Z\' fill=\'url(%23g)\'/%3E%3C/g%3E%3Cdefs%3E%3CradialGradient id=\'g\' cx=\'0\' cy=\'0\' r=\'1\' gradientUnits=\'userSpaceOnUse\' gradientTransform=\'translate(89.9999 45) rotate(45) scale(296.985)\'%3E%3Cstop offset=\'0.5\' stop-color=\'%23FF5500\'/%3E%3Cstop offset=\'1\' stop-color=\'%23BBFF00\'/%3E%3C/radialGradient%3E%3C/defs%3E%3C/svg%3E")' +
+            '}' +
         '</style>');
     }
 
     function init() {
         addStyles();
-
         if (typeof IntersectionObserver !== 'undefined') {
             intersectionObserver = new IntersectionObserver(function(entries) {
                 for (var i = 0; i < entries.length; i++) {
@@ -528,7 +581,6 @@
                 }
             }, { threshold: 0.1 });
         }
-
         mutationObserver = new MutationObserver(function(mutations) {
             for (var i = 0; i < mutations.length; i++) {
                 var nodes = mutations[i].addedNodes;
@@ -544,7 +596,6 @@
             }
         });
         mutationObserver.observe(document.body, { childList: true, subtree: true });
-
         [].forEach.call(document.querySelectorAll('.card'), processCard);
     }
 
