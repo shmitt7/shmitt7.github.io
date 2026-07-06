@@ -1,3 +1,4 @@
+// пропо
 (function() {
     if (window.cardInfoOverlay) return;
     window.cardInfoOverlay = true;
