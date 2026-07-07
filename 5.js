@@ -39,27 +39,27 @@
         var next = info.next_episode_to_air;  
         var seasons = info.seasons || [];  
         if (!last) return null;  
-        var curS = last.season_number;  
+        var currentSeason = last.season_number;  
         var airedTotal = 0;  
         for (var i = 0; i < seasons.length; i++) {  
             var season = seasons[i];  
-            if (season.season_number > 0 && season.season_number < curS) {  
+            if (season.season_number > 0 && season.season_number < currentSeason) {  
                 airedTotal += season.episode_count;  
             }  
         }  
         airedTotal += last.episode_number;  
-        var sPart = 'S' + curS;  
-        var ePart = 'E' + airedTotal;  
+        var seasonPart = 'S' + currentSeason;  
+        var episodePart = 'E' + airedTotal;  
         if (next) {  
-            var totalAll = info.number_of_episodes;  
-            if (next.season_number > curS) {  
-                sPart += '/S' + next.season_number;  
-                if (totalAll && totalAll > airedTotal) ePart += '/E' + totalAll;  
-            } else if (next.season_number === curS && totalAll && totalAll > airedTotal) {  
-                ePart += '/E' + totalAll;  
+            var totalEpisodes = info.number_of_episodes;  
+            if (next.season_number > currentSeason) {  
+                seasonPart += '/S' + next.season_number;  
+                if (totalEpisodes && totalEpisodes > airedTotal) episodePart += '/E' + totalEpisodes;  
+            } else if (next.season_number === currentSeason && totalEpisodes && totalEpisodes > airedTotal) {  
+                episodePart += '/E' + totalEpisodes;  
             }  
         }  
-        return sPart + ':' + ePart;  
+        return seasonPart + ':' + episodePart;  
     }  
     function getTVLabelInfo(info) {  
         var last = info.last_episode_to_air;  
@@ -145,15 +145,15 @@
             viewElem.appendChild(label);  
         }  
     }  
-    function isPersonData(data) {  
+    function isPersonCard(data) {  
         return !!(  
             data.known_for_department !== undefined ||  
             (data.profile_path && !data.poster_path && !data.backdrop_path)  
         );  
     }  
-    function fetchAndApply(cardElem, data) {  
+    function loadCardStatus(cardElem, data) {  
         if (cardElem._tvsDone) return;  
-        if (isPersonData(data)) return;  
+        if (isPersonCard(data)) return;  
         var isTV = !!(data.original_name || data.first_air_date);  
         if (isTV) {  
             var tvNetwork = new Lampa.Reguest();  
@@ -179,32 +179,17 @@
             );  
         }  
     }  
-    function attachToCard(cardElem) {  
+    function observeCard(cardElem) {  
         if (cardElem._tvsAttached) return;  
         cardElem._tvsAttached = true;  
         if (intersectionObserver) {  
             intersectionObserver.observe(cardElem);  
         } else {  
             var cardData = cardElem.card_data;  
-            if (cardData) fetchAndApply(cardElem, cardData);  
+            if (cardData) loadCardStatus(cardElem, cardData);  
         }  
     }  
-    function wrapOldCard() {  
-        var Orig = Lampa.Card;  
-        Lampa.Card = function(data, params) {  
-            var inst = new Orig(data, params);  
-            if (data && (data.original_name || data.first_air_date || data.release_date || data.original_title)) {  
-                var origBuild = inst.build;  
-                inst.build = function() {  
-                    origBuild.call(inst);  
-                    if (inst.card) inst.card.card_data = data;  
-                };  
-            }  
-            return inst;  
-        };  
-        Lampa.Card.prototype = Orig.prototype;  
-    }  
-    function startMutationObserver() {  
+    function initMutationObserver() {  
         mutationObserver = new MutationObserver(function(mutations) {  
             for (var i = 0; i < mutations.length; i++) {  
                 var nodes = mutations[i].addedNodes;  
@@ -212,12 +197,12 @@
                     var node = nodes[j];  
                     if (node.nodeType !== 1) continue;  
                     if (node.classList && node.classList.contains('card')) {  
-                        attachToCard(node);  
+                        observeCard(node);  
                     }  
                     if (node.querySelectorAll) {  
                         var cards = node.querySelectorAll('.card');  
                         for (var k = 0; k < cards.length; k++) {  
-                            attachToCard(cards[k]);  
+                            observeCard(cards[k]);  
                         }  
                     }  
                 }  
@@ -225,7 +210,7 @@
         });  
         mutationObserver.observe(document.body, { childList: true, subtree: true });  
     }  
-    function addStyles() {  
+    function injectStyles() {  
         document.head.insertAdjacentHTML('beforeend', '<style>.tvs-label{position:absolute;left:-0.8em;top:3.4em;padding:0.3em 0.5em;background:rgba(0,0,0,0.80);color:#fff;font-size:0.75em;border-radius:0.3em;z-index:2;display:flex;align-items:center;white-space:nowrap;line-height:1;pointer-events:none;}.tvs-icon{font-size:1.15em;line-height:1;margin-right:0.3em;}.tvs-text{font-size:0.85em;font-weight:700;letter-spacing:0.03em;}</style>');  
     }  
     function destroy() {  
@@ -241,7 +226,7 @@
     function init() {  
         if (initialized) return;  
         initialized = true;  
-        addStyles();  
+        injectStyles();  
         if (typeof IntersectionObserver !== 'undefined') {  
             intersectionObserver = new IntersectionObserver(function(entries) {  
                 for (var i = 0; i < entries.length; i++) {  
@@ -250,12 +235,11 @@
                     var cardElem = entry.target;  
                     intersectionObserver.unobserve(cardElem);  
                     var cardData = cardElem.card_data;  
-                    if (cardData) fetchAndApply(cardElem, cardData);  
+                    if (cardData) loadCardStatus(cardElem, cardData);  
                 }  
             }, { threshold: 0.1 });  
         }  
-        wrapOldCard();  
-        startMutationObserver();  
+        initMutationObserver();  
     }  
     Lampa.Listener.follow('app', function(e) {  
         if (e.type === 'ready') init();  
