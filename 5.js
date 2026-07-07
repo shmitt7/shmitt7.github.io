@@ -115,17 +115,17 @@
   
         if (status === 'Rumored') {  
             var year = formatYearLabel(releaseDate);  
-            return { text: 'По слухам' + (year ? ' ' + year : ''), icon: '⚙', color: '#9C27B0' };  
+            return { text: 'По слухам' + (year ? ' ' + year : ''), icon: '❱', color: '#9C27B0' };  
         }  
         if (status === 'Planned') {  
             var year = formatYearLabel(releaseDate);  
-            return { text: 'Запланировано' + (year ? ' ' + year : ''), icon: '⚙', color: '#9C27B0' };  
+            return { text: 'Запланировано' + (year ? ' ' + year : ''), icon: '❱', color: '#9C27B0' };  
         }  
         if (status === 'In Production') {  
-            return { text: formatPremiereLabel(releaseDate), icon: '★', color: '#9C27B0' };  
+            return { text: formatPremiereLabel(releaseDate), icon: '✦', color: '#9C27B0' };  
         }  
         if (status === 'Post Production') {  
-            return { text: formatPremiereLabel(releaseDate), icon: '★', color: '#9C27B0' };  
+            return { text: formatPremiereLabel(releaseDate), icon: '✦', color: '#9C27B0' };  
         }  
         if (status === 'Released') return null;  
         if (status === 'Canceled') return { text: 'Отменён', icon: '✘', color: '#f44336' };  
