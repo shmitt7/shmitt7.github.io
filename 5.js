@@ -141,7 +141,7 @@
         if (!viewElem) return;  
         var label = document.createElement('div');  
         label.className = 'tvs-label';  
-        label.style.borderLeftColor = labelInfo.color;  
+        // border-left убран — строка label.style.borderLeftColor удалена  
         var iconSpan = document.createElement('span');  
         iconSpan.className = 'tvs-icon';  
         iconSpan.style.color = labelInfo.color;  
@@ -159,7 +159,6 @@
         }  
     }  
   
-    // Проверка: это карточка актёра/персоны, а не фильма/сериала  
     function isPersonData(data) {  
         return !!(  
             data.known_for_department !== undefined ||  
@@ -169,8 +168,6 @@
   
     function fetchAndApply(cardElem, data) {  
         if (cardElem._tvsDone) return;  
-        // Пропускаем карточки актёров — у них есть original_name (имя),  
-        // что иначе ошибочно определялось бы как сериал  
         if (isPersonData(data)) return;  
         var isTV = !!(data.original_name || data.first_air_date);  
         if (isTV) {  
@@ -248,7 +245,34 @@
     }  
   
     function addStyles() {  
-        document.head.insertAdjacentHTML('beforeend', '<style>.tvs-label{position:absolute;left:-0.8em;top:3.4em;padding:0.3em 0.5em;background:rgba(0,0,0,0.80);color:#fff;font-size:0.75em;border-radius:0.3em;border-left:2px solid #fff;z-index:2;display:flex;align-items:center;white-space:nowrap;line-height:1;pointer-events:none;}.tvs-icon{font-size:0.9em;line-height:1;margin-right:0.3em;}.tvs-text{font-size:0.85em;font-weight:700;letter-spacing:0.03em;}</style>');  
+        document.head.insertAdjacentHTML('beforeend', '<style>' +  
+            '.tvs-label{' +  
+                'position:absolute;' +  
+                'left:-0.8em;' +  
+                'top:3.4em;' +  
+                'padding:0.3em 0.5em;' +  
+                'background:rgba(0,0,0,0.80);' +  
+                'color:#fff;' +  
+                'font-size:0.75em;' +  
+                'border-radius:0.3em;' +  
+                'z-index:2;' +  
+                'display:flex;' +  
+                'align-items:center;' +  
+                'white-space:nowrap;' +  
+                'line-height:1;' +  
+                'pointer-events:none;' +  
+            '}' +  
+            '.tvs-icon{' +  
+                'font-size:1.15em;' +  
+                'line-height:1;' +  
+                'margin-right:0.3em;' +  
+            '}' +  
+            '.tvs-text{' +  
+                'font-size:0.85em;' +  
+                'font-weight:700;' +  
+                'letter-spacing:0.03em;' +  
+            '}' +  
+        '</style>');  
     }  
   
     function destroy() {  
