@@ -1,11 +1,9 @@
 (function() {  
-    if (window.plugin_tv_status_ready) return;  
-    window.plugin_tv_status_ready = true;  
-  
+    if (window.cardStatus) return;  
+    window.cardStatus = true;  
     var intersectionObserver = null;  
     var mutationObserver = null;  
     var initialized = false;  
-  
     function daysUntil(dateStr) {  
         if (!dateStr) return -1;  
         var today = new Date();  
@@ -13,7 +11,6 @@
         var target = Lampa.Utils.parseToDate(dateStr);  
         return Math.round((target.getTime() - today.getTime()) / 86400000);  
     }  
-  
     function formatDateLabel(dateStr) {  
         if (!dateStr) return null;  
         var parts = dateStr.split('-');  
@@ -24,7 +21,6 @@
         if (days <= 30) return 'Премьера ' + days + 'дн.';  
         return parts[2] + '.' + parts[1] + '.' + parts[0].slice(2);  
     }  
-  
     function formatPremiereLabel(dateStr) {  
         if (!dateStr) return 'Премьера';  
         var parts = dateStr.split('-');  
@@ -34,12 +30,10 @@
         if (days > 0 && days <= 30) return 'Премьера ' + days + 'дн.';  
         return 'Премьера ' + parts[2] + '.' + parts[1] + '.' + parts[0].slice(2);  
     }  
-  
     function formatYearLabel(dateStr) {  
         if (!dateStr) return null;  
         return dateStr.split('-')[0];  
     }  
-  
     function buildEpisodeText(info) {  
         var last = info.last_episode_to_air;  
         var next = info.next_episode_to_air;  
@@ -67,71 +61,65 @@
         }  
         return sPart + ':' + ePart;  
     }  
-  
     function getTVLabelInfo(info) {  
         var last = info.last_episode_to_air;  
         var next = info.next_episode_to_air;  
         var status = info.status;  
         var episodeText = buildEpisodeText(info);  
-  
         if (!last) {  
             if (status === 'Returning Series') {  
                 var dateLabel = formatDateLabel(info.first_air_date);  
-                return { text: dateLabel || 'Онгоинг', icon: '▶', color: '#4CAF50' };  
+                return { text: dateLabel || 'Онгоинг', icon: '▶', color: '#69F0AE' };  
             }  
             if (status === 'In Production') {  
-                return { text: formatPremiereLabel(info.first_air_date), icon: '✦', color: '#9C27B0' };  
+                return { text: formatPremiereLabel(info.first_air_date), icon: '✦', color: '#CE93D8' };  
             }  
             if (status === 'Planned') {  
                 var year = formatYearLabel(info.first_air_date);  
-                return { text: 'Запланировано' + (year ? ' ' + year : ''), icon: '❱', color: '#9C27B0' };  
+                return { text: 'Запланировано' + (year ? ' ' + year : ''), icon: '❱', color: '#CE93D8' };  
             }  
             return null;  
         }  
-  
         if (status === 'Returning Series') {  
             var nextDays = (next && next.air_date) ? daysUntil(next.air_date) : 999;  
             if (nextDays >= 0 && nextDays <= 8) {  
-                return { text: episodeText, icon: '▶', color: '#4CAF50' };  
+                return { text: episodeText, icon: '▶', color: '#69F0AE' };  
             }  
-            return { text: episodeText, icon: '⏯︎', color: '#2196F3' };  
+            return { text: episodeText, icon: '⏯︎', color: '#64B5F6' };  
         }  
-        if (status === 'Ended')    return { text: episodeText, icon: '✔', color: '#FFC107' };  
-        if (status === 'Canceled') return { text: episodeText, icon: '✘', color: '#f44336' };  
-        if (status === 'Pilot')    return { text: 'Пилот',     icon: '✔', color: '#FFC107' };  
+        if (status === 'Ended')    return { text: episodeText, icon: '✔', color: '#FFD54F' };  
+        if (status === 'Canceled') return { text: episodeText, icon: '✘', color: '#EF5350' };  
+        if (status === 'Pilot')    return { text: 'Пилот',     icon: '✔', color: '#FFD54F' };  
         if (status === 'In Production') {  
-            return { text: formatPremiereLabel(info.first_air_date), icon: '✦', color: '#9C27B0' };  
+            return { text: formatPremiereLabel(info.first_air_date), icon: '✦', color: '#CE93D8' };  
         }  
         if (status === 'Planned') {  
             var year = formatYearLabel(info.first_air_date);  
-            return { text: 'Запланировано' + (year ? ' ' + year : ''), icon: '❱', color: '#9C27B0' };  
+            return { text: 'Запланировано' + (year ? ' ' + year : ''), icon: '❱', color: '#CE93D8' };  
         }  
-        return { text: episodeText, icon: '⏯︎', color: '#2196F3' };  
+        return { text: episodeText, icon: '⏯︎', color: '#64B5F6' };  
     }  
-  
     function getMovieLabelInfo(info) {  
         var status = info.status;  
         var releaseDate = info.release_date;  
-  
         if (status === 'Rumored') {  
             var year = formatYearLabel(releaseDate);  
-            return { text: 'По слухам' + (year ? ' ' + year : ''), icon: '❱', color: '#9C27B0' };  
+            return { text: 'По слухам' + (year ? ' ' + year : ''), icon: '❱', color: '#CE93D8' };  
         }  
         if (status === 'Planned') {  
             var year = formatYearLabel(releaseDate);  
-            return { text: 'Запланировано' + (year ? ' ' + year : ''), icon: '❱', color: '#9C27B0' };  
+            return { text: 'Запланировано' + (year ? ' ' + year : ''), icon: '❱', color: '#CE93D8' };  
         }  
         if (status === 'In Production') {  
-            return { text: formatPremiereLabel(releaseDate), icon: '✦', color: '#9C27B0' };  
+            return { text: formatPremiereLabel(releaseDate), icon: '✦', color: '#CE93D8' };  
         }  
         if (status === 'Post Production') {  
-            return { text: formatPremiereLabel(releaseDate), icon: '✦', color: '#9C27B0' };  
+            return { text: formatPremiereLabel(releaseDate), icon: '✦', color: '#CE93D8' };  
         }  
         if (status === 'Released') return null;  
-        if (status === 'Canceled') return { text: 'Отменён', icon: '✘', color: '#f44336' };  
+        if (status === 'Canceled') return { text: 'Отменён', icon: '✘', color: '#EF5350' };  
         return null;  
     }  
-  
     function applyLabel(cardElem, info, isTV) {  
         if (cardElem._tvsDone) return;  
         cardElem._tvsDone = true;  
@@ -141,7 +129,6 @@
         if (!viewElem) return;  
         var label = document.createElement('div');  
         label.className = 'tvs-label';  
-        // border-left убран — строка label.style.borderLeftColor удалена  
         var iconSpan = document.createElement('span');  
         iconSpan.className = 'tvs-icon';  
         iconSpan.style.color = labelInfo.color;  
@@ -158,14 +145,12 @@
             viewElem.appendChild(label);  
         }  
     }  
-  
     function isPersonData(data) {  
         return !!(  
             data.known_for_department !== undefined ||  
             (data.profile_path && !data.poster_path && !data.backdrop_path)  
         );  
     }  
-  
     function fetchAndApply(cardElem, data) {  
         if (cardElem._tvsDone) return;  
         if (isPersonData(data)) return;  
@@ -179,7 +164,7 @@
                 },  
                 function() {},  
                 false,  
-                { cache: { life: 30 } }  
+                { cache: { life: 1440 } }  
             );  
         } else if (data.release_date || data.original_title) {  
             var movieNetwork = new Lampa.Reguest();  
@@ -190,11 +175,10 @@
                 },  
                 function() {},  
                 false,  
-                { cache: { life: 30 } }  
+                { cache: { life: 1440 } }  
             );  
         }  
     }  
-  
     function attachToCard(cardElem) {  
         if (cardElem._tvsAttached) return;  
         cardElem._tvsAttached = true;  
@@ -205,7 +189,6 @@
             if (cardData) fetchAndApply(cardElem, cardData);  
         }  
     }  
-  
     function wrapOldCard() {  
         var Orig = Lampa.Card;  
         Lampa.Card = function(data, params) {  
@@ -221,7 +204,6 @@
         };  
         Lampa.Card.prototype = Orig.prototype;  
     }  
-  
     function startMutationObserver() {  
         mutationObserver = new MutationObserver(function(mutations) {  
             for (var i = 0; i < mutations.length; i++) {  
@@ -243,38 +225,9 @@
         });  
         mutationObserver.observe(document.body, { childList: true, subtree: true });  
     }  
-  
     function addStyles() {  
-        document.head.insertAdjacentHTML('beforeend', '<style>' +  
-            '.tvs-label{' +  
-                'position:absolute;' +  
-                'left:-0.8em;' +  
-                'top:3.4em;' +  
-                'padding:0.3em 0.5em;' +  
-                'background:rgba(0,0,0,0.80);' +  
-                'color:#fff;' +  
-                'font-size:0.75em;' +  
-                'border-radius:0.3em;' +  
-                'z-index:2;' +  
-                'display:flex;' +  
-                'align-items:center;' +  
-                'white-space:nowrap;' +  
-                'line-height:1;' +  
-                'pointer-events:none;' +  
-            '}' +  
-            '.tvs-icon{' +  
-                'font-size:1.15em;' +  
-                'line-height:1;' +  
-                'margin-right:0.3em;' +  
-            '}' +  
-            '.tvs-text{' +  
-                'font-size:0.85em;' +  
-                'font-weight:700;' +  
-                'letter-spacing:0.03em;' +  
-            '}' +  
-        '</style>');  
+        document.head.insertAdjacentHTML('beforeend', '<style>.tvs-label{position:absolute;left:-0.8em;top:3.4em;padding:0.3em 0.5em;background:rgba(0,0,0,0.80);color:#fff;font-size:0.75em;border-radius:0.3em;z-index:2;display:flex;align-items:center;white-space:nowrap;line-height:1;pointer-events:none;}.tvs-icon{font-size:1.15em;line-height:1;margin-right:0.3em;}.tvs-text{font-size:0.85em;font-weight:700;letter-spacing:0.03em;}</style>');  
     }  
-  
     function destroy() {  
         if (mutationObserver) {  
             mutationObserver.disconnect();  
@@ -285,7 +238,6 @@
             intersectionObserver = null;  
         }  
     }  
-  
     function init() {  
         if (initialized) return;  
         initialized = true;  
@@ -305,11 +257,9 @@
         wrapOldCard();  
         startMutationObserver();  
     }  
-  
     Lampa.Listener.follow('app', function(e) {  
         if (e.type === 'ready') init();  
         if (e.type === 'destroy') destroy();  
     });  
-  
     if (window.appready) init();  
 })();
