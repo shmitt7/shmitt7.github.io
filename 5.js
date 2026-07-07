@@ -69,55 +69,55 @@
         if (!last) {  
             if (status === 'Returning Series') {  
                 var dateLabel = formatDateLabel(info.first_air_date);  
-                return { text: dateLabel || 'Онгоинг', icon: '▶', color: '#69F0AE' };  
+                return { text: dateLabel || 'Онгоинг', icon: '▶', color: '#00E676' };  
             }  
             if (status === 'In Production') {  
-                return { text: formatPremiereLabel(info.first_air_date), icon: '✦', color: '#CE93D8' };  
+                return { text: formatPremiereLabel(info.first_air_date), icon: '✦', color: '#E040FB' };  
             }  
             if (status === 'Planned') {  
                 var year = formatYearLabel(info.first_air_date);  
-                return { text: 'Запланировано' + (year ? ' ' + year : ''), icon: '❱', color: '#CE93D8' };  
+                return { text: 'Запланировано' + (year ? ' ' + year : ''), icon: '❱', color: '#E040FB' };  
             }  
             return null;  
         }  
         if (status === 'Returning Series') {  
             var nextDays = (next && next.air_date) ? daysUntil(next.air_date) : 999;  
             if (nextDays >= 0 && nextDays <= 8) {  
-                return { text: episodeText, icon: '▶', color: '#69F0AE' };  
+                return { text: episodeText, icon: '▶', color: '#00E676' };  
             }  
-            return { text: episodeText, icon: '⏯︎', color: '#64B5F6' };  
+            return { text: episodeText, icon: '⏯︎', color: '#40C4FF' };  
         }  
-        if (status === 'Ended')    return { text: episodeText, icon: '✔', color: '#FFD54F' };  
-        if (status === 'Canceled') return { text: episodeText, icon: '✘', color: '#EF5350' };  
-        if (status === 'Pilot')    return { text: 'Пилот',     icon: '✔', color: '#FFD54F' };  
+        if (status === 'Ended')    return { text: episodeText, icon: '✔', color: '#FFD740' };  
+        if (status === 'Canceled') return { text: episodeText, icon: '✘', color: '#FF5252' };  
+        if (status === 'Pilot')    return { text: 'Пилот',     icon: '✔', color: '#FFD740' };  
         if (status === 'In Production') {  
-            return { text: formatPremiereLabel(info.first_air_date), icon: '✦', color: '#CE93D8' };  
+            return { text: formatPremiereLabel(info.first_air_date), icon: '✦', color: '#E040FB' };  
         }  
         if (status === 'Planned') {  
             var year = formatYearLabel(info.first_air_date);  
-            return { text: 'Запланировано' + (year ? ' ' + year : ''), icon: '❱', color: '#CE93D8' };  
+            return { text: 'Запланировано' + (year ? ' ' + year : ''), icon: '❱', color: '#E040FB' };  
         }  
-        return { text: episodeText, icon: '⏯︎', color: '#64B5F6' };  
+        return { text: episodeText, icon: '⏯︎', color: '#40C4FF' };  
     }  
     function getMovieLabelInfo(info) {  
         var status = info.status;  
         var releaseDate = info.release_date;  
         if (status === 'Rumored') {  
             var year = formatYearLabel(releaseDate);  
-            return { text: 'По слухам' + (year ? ' ' + year : ''), icon: '❱', color: '#CE93D8' };  
+            return { text: 'По слухам' + (year ? ' ' + year : ''), icon: '❱', color: '#E040FB' };  
         }  
         if (status === 'Planned') {  
             var year = formatYearLabel(releaseDate);  
-            return { text: 'Запланировано' + (year ? ' ' + year : ''), icon: '❱', color: '#CE93D8' };  
+            return { text: 'Запланировано' + (year ? ' ' + year : ''), icon: '❱', color: '#E040FB' };  
         }  
         if (status === 'In Production') {  
-            return { text: formatPremiereLabel(releaseDate), icon: '✦', color: '#CE93D8' };  
+            return { text: formatPremiereLabel(releaseDate), icon: '✦', color: '#E040FB' };  
         }  
         if (status === 'Post Production') {  
-            return { text: formatPremiereLabel(releaseDate), icon: '✦', color: '#CE93D8' };  
+            return { text: formatPremiereLabel(releaseDate), icon: '✦', color: '#E040FB' };  
         }  
         if (status === 'Released') return null;  
-        if (status === 'Canceled') return { text: 'Отменён', icon: '✘', color: '#EF5350' };  
+        if (status === 'Canceled') return { text: 'Отменён', icon: '✘', color: '#FF5252' };  
         return null;  
     }  
     function applyLabel(cardElem, info, isTV) {  
