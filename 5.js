@@ -80,11 +80,11 @@
                 return { text: dateLabel || 'Онгоинг', icon: '▶', color: '#4CAF50' };  
             }  
             if (status === 'In Production') {  
-                return { text: formatPremiereLabel(info.first_air_date), icon: '★', color: '#9C27B0' };  
+                return { text: formatPremiereLabel(info.first_air_date), icon: '✦', color: '#9C27B0' };  
             }  
             if (status === 'Planned') {  
                 var year = formatYearLabel(info.first_air_date);  
-                return { text: 'Запланировано' + (year ? ' ' + year : ''), icon: '⚙', color: '#9C27B0' };  
+                return { text: 'Запланировано' + (year ? ' ' + year : ''), icon: '❱', color: '#9C27B0' };  
             }  
             return null;  
         }  
@@ -94,19 +94,19 @@
             if (nextDays >= 0 && nextDays <= 8) {  
                 return { text: episodeText, icon: '▶', color: '#4CAF50' };  
             }  
-            return { text: episodeText, icon: 'Ⅱ', color: '#2196F3' };  
+            return { text: episodeText, icon: '⏯︎', color: '#2196F3' };  
         }  
         if (status === 'Ended')    return { text: episodeText, icon: '✔', color: '#FFC107' };  
         if (status === 'Canceled') return { text: episodeText, icon: '✘', color: '#f44336' };  
         if (status === 'Pilot')    return { text: 'Пилот',     icon: '✔', color: '#FFC107' };  
         if (status === 'In Production') {  
-            return { text: formatPremiereLabel(info.first_air_date), icon: '★', color: '#9C27B0' };  
+            return { text: formatPremiereLabel(info.first_air_date), icon: '✦', color: '#9C27B0' };  
         }  
         if (status === 'Planned') {  
             var year = formatYearLabel(info.first_air_date);  
-            return { text: 'Запланировано' + (year ? ' ' + year : ''), icon: '⚙', color: '#9C27B0' };  
+            return { text: 'Запланировано' + (year ? ' ' + year : ''), icon: '❱', color: '#9C27B0' };  
         }  
-        return { text: episodeText, icon: 'Ⅱ', color: '#2196F3' };  
+        return { text: episodeText, icon: '⏯︎', color: '#2196F3' };  
     }  
   
     function getMovieLabelInfo(info) {  
