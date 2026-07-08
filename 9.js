@@ -98,7 +98,7 @@
             '.cp-bottom .card__vote {',  
             '    margin-left: auto !important;',  
             '}',  
-  
+            '.cp-bottom .card__age { margin-top: 0 !important; }',
             /* Маркер (просмотрено/запланировано) — поверх всего */  
             '.card__marker { z-index: 3 !important; }'  
         ].join('\n')  
