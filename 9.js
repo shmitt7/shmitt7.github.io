@@ -101,7 +101,10 @@
             '}',  
             '.cp-bottom .card__age { margin-top: 0 !important; }',
             /* Маркер (просмотрено/запланировано) — поверх всего */  
-            '.card__marker { z-index: 3 !important; }'  
+            '.card__marker { z-index: 3 !important; }' 
+            '.cp-overlay .card__title { text-shadow: 0 1px 4px rgba(0,0,0,1), 0 0 8px rgba(0,0,0,1) !important; }',  
+            '.cp-bottom * { text-shadow: 0 1px 3px rgba(0,0,0,1) !important; }',  
+            '.cp-row1 * { text-shadow: 0 1px 3px rgba(0,0,0,1) !important; }',
         ].join('\n')  
         document.head.appendChild(style)  
     }  
