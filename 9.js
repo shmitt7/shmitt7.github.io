@@ -9,6 +9,7 @@
         var style = document.createElement('style')  
         style.id = PLUGIN_ID  
         style.textContent = [  
+            /* Убираем отступ снизу карточки */  
             '.card__view { margin-bottom: 0 !important; }',  
   
             /* Иконки — верхний правый угол */  
@@ -31,7 +32,28 @@
             '    z-index: 2;',  
             '}',  
   
-            /* Название */  
+            /* Строка 1: качество */  
+            '.cp-row1 {',  
+            '    margin-bottom: 0.25em;',  
+            '    min-height: 1em;',  
+            '}',  
+  
+            /* Сброс позиционирования quality в строке 1 */  
+            '.cp-row1 .card__quality {',  
+            '    position: static !important;',  
+            '    left: auto !important; right: auto !important;',  
+            '    top: auto !important; bottom: auto !important;',  
+            '    background: none !important;',  
+            '    padding: 0 !important;',  
+            '    border-radius: 0 !important;',  
+            '    color: rgba(255,255,255,0.75) !important;',  
+            '    font-size: 0.8em !important;',  
+            '    font-weight: 400 !important;',  
+            '    text-transform: uppercase !important;',  
+            '}',  
+            '.cp-row1 .card__quality > div { display: inline !important; }',  
+  
+            /* Строка 2: название */  
             '.cp-overlay .card__title {',  
             '    color: #fff;',  
             '    font-size: 1.1em;',  
@@ -45,7 +67,7 @@
             '    word-break: break-word;',  
             '}',  
   
-            /* Нижняя строка — flex с выравниванием по центру */  
+            /* Строка 3: год + TV слева, рейтинг справа */  
             '.cp-bottom {',  
             '    display: flex;',  
             '    align-items: center;',  
@@ -53,18 +75,12 @@
             '    gap: 0.4em;',  
             '}',  
   
-            /* Рейтинг — прижат к правому краю */  
-            '.cp-bottom .card__vote {',  
-            '    margin-left: auto !important;',  
-            '}',  
-  
-            /* Сброс бейджевого оформления — единый стиль текста */  
+            /* Сброс стилей для всех элементов в нижней строке */  
+            '.cp-bottom .card__age,',  
             '.cp-bottom .card__type,',  
             '.card--tv .cp-bottom .card__type,',  
             '.card--movie .cp-bottom .card__type,',  
-            '.cp-bottom .card__vote,',  
-            '.cp-bottom .card__quality,',  
-            '.cp-bottom .card__age {',  
+            '.cp-bottom .card__vote {',  
             '    position: static !important;',  
             '    background: none !important;',  
             '    padding: 0 !important;',  
@@ -72,19 +88,18 @@
             '    color: rgba(255,255,255,0.85) !important;',  
             '    font-size: 0.85em !important;',  
             '    font-weight: 400 !important;',  
-            '    text-transform: none !important;',  
             '    line-height: 1 !important;',  
             '    vertical-align: middle !important;',  
             '    left: auto !important; right: auto !important;',  
             '    top: auto !important; bottom: auto !important;',  
             '}',  
   
-            /* Внутренний div у quality */  
-            '.cp-bottom .card__quality > div { display: inline !important; }',  
+            /* Рейтинг — прижат вправо */  
+            '.cp-bottom .card__vote {',  
+            '    margin-left: auto !important;',  
+            '}',  
   
-            /* Качество — uppercase */  
-            '.cp-bottom .card__quality { text-transform: uppercase !important; }',  
-  
+            /* Маркер (просмотрено/запланировано) — поверх всего */  
             '.card__marker { z-index: 3 !important; }'  
         ].join('\n')  
         document.head.appendChild(style)  
@@ -99,6 +114,7 @@
             '            <div class="card__icons-inner"></div>',  
             '        </div>',  
             '        <div class="cp-overlay">',  
+            '            <div class="cp-row1"></div>',  
             '            <div class="card__title"></div>',  
             '            <div class="cp-bottom">',  
             '                <div class="card__age"></div>',  
@@ -112,45 +128,44 @@
     function patchModules(){  
         var map = Lampa.Maker.map('Card')  
   
-        if(!map || !map.Card || !map.Icons || !map.Ratting){  
+        if(!map || !map.Card){  
             console.warn('[CleanPoster] Lampa.Maker.map("Card") недоступен')  
             return  
         }  
   
-        // Icons.onCreate — перемещаем type и quality в cp-bottom  
+        // Icons.onCreate: quality → cp-row1, type → cp-bottom после года  
         var orig_icons_onCreate = map.Icons.onCreate  
         map.Icons.onCreate = function(){  
             orig_icons_onCreate.call(this)  
             try {  
                 var bottom = this.html.querySelector('.cp-bottom')  
-                if(!bottom) return  
+                var row1   = this.html.querySelector('.cp-row1')  
+                var age    = bottom ? bottom.querySelector('.card__age') : null  
   
-                var age     = bottom.querySelector('.card__age')  
-                var type    = this.html.querySelector('.card__type')  
+                // Качество — в первую строку  
                 var quality = this.html.querySelector('.card__quality')  
+                if(quality && row1) row1.appendChild(quality)  
   
-                // Порядок: [age][type][quality] → рейтинг добавится последним  
-                if(type)    bottom.insertBefore(type, age ? age.nextSibling : null)  
-                if(quality) bottom.appendChild(quality)  
+                // Тип (TV) — в нижнюю строку после года  
+                var type = this.html.querySelector('.card__type')  
+                if(type && bottom && age) bottom.insertBefore(type, age.nextSibling)  
             }  
             catch(e){ console.warn('[CleanPoster] Icons.onCreate:', e) }  
         }  
   
-        // Ratting.onCreate — рейтинг последним (прижат вправо через margin-left: auto)  
+        // Ratting.onCreate: vote → cp-bottom последним (прижат вправо)  
         var orig_ratting_onCreate = map.Ratting.onCreate  
         map.Ratting.onCreate = function(){  
             orig_ratting_onCreate.call(this)  
             try {  
                 var bottom = this.html.querySelector('.cp-bottom')  
-                if(!bottom) return  
-  
-                var vote = this.html.querySelector('.card__vote')  
-                if(vote) bottom.appendChild(vote)  
+                var vote   = this.html.querySelector('.card__vote')  
+                if(vote && bottom) bottom.appendChild(vote)  
             }  
             catch(e){ console.warn('[CleanPoster] Ratting.onCreate:', e) }  
         }  
   
-        // Card.onVisible — загружаем чистый постер с TMDB  
+        // Card.onVisible: загружаем чистый постер с TMDB  
         var orig_card_onVisible = map.Card.onVisible  
         map.Card.onVisible = function(){  
             orig_card_onVisible.call(this)  
@@ -214,22 +229,17 @@
                         if(cls.contains(SKIP[i])) return  
                     }  
   
+                    var row1   = parent.querySelector('.cp-row1')  
                     var bottom = parent.querySelector('.cp-bottom')  
-                    if(!bottom) return  
+                    var age    = bottom ? bottom.querySelector('.card__age') : null  
   
-                    var age = bottom.querySelector('.card__age')  
-  
-                    if(cls.contains('card__type')){  
-                        // После года  
-                        bottom.insertBefore(node, age ? age.nextSibling : null)  
+                    if(cls.contains('card__quality') && row1){  
+                        row1.appendChild(node)  
                     }  
-                    else if(cls.contains('card__quality')){  
-                        // Перед рейтингом (или в конец)  
-                        var vote = bottom.querySelector('.card__vote')  
-                        bottom.insertBefore(node, vote || null)  
+                    else if(cls.contains('card__type') && bottom && age){  
+                        bottom.insertBefore(node, age.nextSibling)  
                     }  
-                    else if(cls.contains('card__vote')){  
-                        // Последним  
+                    else if(cls.contains('card__vote') && bottom){  
                         bottom.appendChild(node)  
                     }  
                 })  
