@@ -57,7 +57,7 @@
             '.cp-overlay .card__title {',
             '    color: #fff;',
             '    font-size: 1.1em;',
-            '    font-weight: 700 !important;,               
+            '    font-weight: 700 !important;',               
             '    line-height: 1.2;',
             '    max-height: 3.6em;',
             '    overflow: hidden;',
