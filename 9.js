@@ -47,7 +47,7 @@
             '    padding: 0 !important;',  
             '    border-radius: 0 !important;',  
             '    color: rgba(255,255,255,0.75) !important;',  
-            '    font-size: 0.8em !important;',  
+            '    font-size: 0.9em !important;',  
             '    font-weight: 600 !important;',  
             '    text-transform: uppercase !important;',  
             '}',  
@@ -57,7 +57,7 @@
             '.cp-overlay .card__title {',  
             '    color: #fff;',
             '    font-weight: 700 !important;',
-            '    font-size: 1.2em;',  
+            '    font-size: 1.3em;',  
             '    line-height: 1.2;',  
             '    max-height: 3.6em;',  
             '    overflow: hidden;',  
@@ -87,7 +87,7 @@
             '    padding: 0 !important;',  
             '    border-radius: 0 !important;',  
             '    color: rgba(255,255,255,0.85) !important;',  
-            '    font-size: 0.85em !important;',  
+            '    font-size: 0.95em !important;',  
             '    font-weight: 600 !important;',  
             '    line-height: 1 !important;',  
             '    vertical-align: middle !important;',  
@@ -101,10 +101,7 @@
             '}',  
             '.cp-bottom .card__age { margin-top: 0 !important; }',
             /* Маркер (просмотрено/запланировано) — поверх всего */  
-            '.card__marker { z-index: 3 !important; }', 
-            '.cp-overlay .card__title { text-shadow: 0 1px 4px rgba(0,0,0,1), 0 0 8px rgba(0,0,0,1) !important; }',  
-            '.cp-bottom { text-shadow: 0 1px 3px rgba(0,0,0,1) !important; }',  
-            '.cp-row1 { text-shadow: 0 1px 3px rgba(0,0,0,1) !important; }'
+            '.card__marker { z-index: 3 !important; }'
         ].join('\n')  
         document.head.appendChild(style)  
     }  
