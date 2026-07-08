@@ -12,7 +12,17 @@
             /* Убираем отступ снизу карточки */  
             '.card__view { margin-bottom: 0 !important; }',  
   
-            /* Градиентный оверлей снизу постера */  
+            /* Иконки — верхний правый угол */  
+            '.card__icons {',  
+            '    position: absolute !important;',  
+            '    top: 0.5em !important;',  
+            '    right: 0.5em !important;',  
+            '    left: auto !important;',  
+            '    width: auto !important;',  
+            '}',  
+            '.card__icons-inner { justify-content: flex-end !important; }',  
+  
+            /* Градиентный оверлей снизу */  
             '.cp-overlay {',  
             '    position: absolute; left: 0; bottom: 0; right: 0;',  
             '    padding: 0.5em 0.7em 0.6em;',  
@@ -22,25 +32,8 @@
             '    z-index: 2;',  
             '}',  
   
-            /* Первая строка: качество, рейтинг, иконки — flex слева */  
-            '.cp-row1 {',  
-            '    display: flex;',  
-            '    align-items: center;',  
-            '    gap: 0.3em;',  
-            '    margin-bottom: 0.3em;',  
-            '}',  
-  
-            /* Сброс абсолютного позиционирования для элементов в row1 */  
-            '.cp-row1 .card__quality,',  
-            '.cp-row1 .card__vote,',  
-            '.cp-row1 .card__icons {',  
-            '    position: static !important;',  
-            '    left: auto !important; right: auto !important;',  
-            '    top: auto !important; bottom: auto !important;',  
-            '}',  
-  
             /* Название — 3 строки с обрезкой */  
-            '.cp-overlay .card__title {',  
+            '.card__title {',  
             '    color: #fff; font-size: 1.1em; line-height: 1.2;',  
             '    max-height: 3.6em; overflow: hidden;',  
             '    display: -webkit-box; -webkit-line-clamp: 3;',  
@@ -48,35 +41,41 @@
             '    margin-bottom: 0.3em; word-break: break-word;',  
             '}',  
   
-            /* Нижняя строка: тип слева, год справа */  
-            '.cp-bottom { display: flex; align-items: center; font-size: 0.8em; }',  
-            '.cp-bottom .card__type {',  
-            '    position: static !important;',  
-            '    left: auto !important; top: auto !important;',  
+            /* Нижняя строка */  
+            '.cp-bottom {',  
+            '    display: flex;',  
+            '    align-items: center;',  
+            '    gap: 0.3em;',  
+            '    font-size: 0.85em;',  
             '}',  
+  
+            /* Сброс абсолютного позиционирования для элементов в cp-bottom */  
+            '.cp-bottom .card__type, .cp-bottom .card__vote, .cp-bottom .card__quality {',  
+            '    position: static !important;',  
+            '    left: auto !important; right: auto !important;',  
+            '    top: auto !important; bottom: auto !important;',  
+            '}',  
+  
             /* Год — прижат вправо */  
             '.cp-bottom .card__age {',  
             '    margin-left: auto;',  
             '    color: rgba(255,255,255,0.75);',  
             '}',  
+  
             '.card__marker { z-index: 3 !important; }'  
         ].join('\n')  
         document.head.appendChild(style)  
     }  
   
     function patchTemplate(){  
-        // ВАЖНО: .card__icons теперь внутри .cp-row1,  
-        // чтобы insertBefore(quality, icons) работал корректно  
         Lampa.Template.add('card', [  
             '<div class="card selector layer--visible layer--render">',  
             '    <div class="card__view">',  
             '        <img src="./img/img_load.svg" class="card__img" />',  
+            '        <div class="card__icons">',  
+            '            <div class="card__icons-inner"></div>',  
+            '        </div>',  
             '        <div class="cp-overlay">',  
-            '            <div class="cp-row1">',  
-            '                <div class="card__icons">',  
-            '                    <div class="card__icons-inner"></div>',  
-            '                </div>',  
-            '            </div>',  
             '            <div class="card__title"></div>',  
             '            <div class="cp-bottom">',  
             '                <div class="card__age"></div>',  
@@ -95,37 +94,36 @@
             return  
         }  
   
-        // Icons.onCreate: quality → перед icons в row1; type → перед age в cp-bottom  
+        // Icons.onCreate: type и quality → cp-bottom перед годом  
         var orig_icons_onCreate = map.Icons.onCreate  
         map.Icons.onCreate = function(){  
             orig_icons_onCreate.call(this)  
             try {  
-                var row1    = this.html.find('.cp-row1')  
                 var bottom  = this.html.find('.cp-bottom')  
-                // icons и age — дочерние узлы row1/bottom, insertBefore работает корректно  
-                var icons   = row1   ? row1.find('.card__icons')  : null  
-                var age     = bottom ? bottom.find('.card__age')   : null  
+                var age     = bottom ? bottom.querySelector('.card__age') : null  
                 var quality = this.html.find('.card__quality')  
                 var type    = this.html.find('.card__type')  
   
-                // [quality][icons]  
-                if(quality && row1 && icons) row1.insertBefore(quality, icons)  
-                // [type][age]  
-                if(type && bottom && age) bottom.insertBefore(type, age)  
+                // Порядок: type первый, quality после него, оба перед годом  
+                if(type    && bottom) bottom.insertBefore(type,    age)  
+                if(quality && bottom) bottom.insertBefore(quality, age)  
             }  
             catch(e){ console.warn('[CleanPoster] Icons.onCreate:', e) }  
         }  
   
-        // Ratting.onCreate: vote → перед icons в row1 → [quality][vote][icons]  
+        // Ratting.onCreate: vote → cp-bottom между type и quality  
         var orig_ratting_onCreate = map.Ratting.onCreate  
         map.Ratting.onCreate = function(){  
             orig_ratting_onCreate.call(this)  
             try {  
-                var row1  = this.html.find('.cp-row1')  
-                var icons = row1 ? row1.find('.card__icons') : null  
-                var vote  = this.html.find('.card__vote')  
+                var bottom  = this.html.find('.cp-bottom')  
+                var quality = bottom ? bottom.querySelector('.card__quality') : null  
+                var age     = bottom ? bottom.querySelector('.card__age')     : null  
+                var vote    = this.html.find('.card__vote')  
   
-                if(vote && row1 && icons) row1.insertBefore(vote, icons)  
+                // Вставляем перед quality если есть, иначе перед годом  
+                var ref = quality || age  
+                if(vote && bottom) bottom.insertBefore(vote, ref)  
             }  
             catch(e){ console.warn('[CleanPoster] Ratting.onCreate:', e) }  
         }  
@@ -175,7 +173,6 @@
     }  
   
     // MutationObserver — для внешних плагинов (content labels и др.)  
-    // Элементы добавляются в .card__view уже после вставки в DOM  
     function startObserver(){  
         var SKIP = ['cp-overlay', 'card__img', 'card__marker', 'card__img-broken']  
   
@@ -195,21 +192,23 @@
                         if(cls.contains(SKIP[i])) return  
                     }  
   
-                    var row1   = parent.querySelector('.cp-row1')  
-                    var bottom = parent.querySelector('.cp-bottom')  
-                    var icons  = row1   ? row1.querySelector('.card__icons')  : null  
-                    var age    = bottom ? bottom.querySelector('.card__age')   : null  
+                    var bottom  = parent.querySelector('.cp-bottom')  
+                    if(!bottom) return  
   
-                    if(!row1 || !bottom) return  
+                    var quality = bottom.querySelector('.card__quality')  
+                    var age     = bottom.querySelector('.card__age')  
   
                     if(cls.contains('card__type')){  
-                        bottom.insertBefore(node, age)  
+                        // type — самый первый  
+                        bottom.insertBefore(node, bottom.firstChild)  
                     }  
                     else if(cls.contains('card__quality')){  
-                        row1.insertBefore(node, icons)  
+                        // quality — перед годом  
+                        bottom.insertBefore(node, age)  
                     }  
                     else if(cls.contains('card__vote')){  
-                        row1.insertBefore(node, icons)  
+                        // vote — перед quality (или перед годом если quality нет)  
+                        bottom.insertBefore(node, quality || age)  
                     }  
                 })  
             })  
