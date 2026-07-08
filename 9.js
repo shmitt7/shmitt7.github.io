@@ -4,80 +4,88 @@
     var PLUGIN_ID = 'clean-poster-plugin'  
     var cleanPosterCache = {}  
   
-    function getYear(data){  
-        var date = data.release_date || data.first_air_date || data.birthday || ''  
-        var year = (date + '').slice(0, 4)  
-        return (year.length === 4 && year !== '0000') ? year : ''  
-    }  
-  
+    // ---- Стили ----  
     function addStyles(){  
         if(document.getElementById(PLUGIN_ID)) return  
+  
         var style = document.createElement('style')  
         style.id = PLUGIN_ID  
         style.textContent = [  
+            /* Убираем отступ снизу — текст теперь на постере */  
             '.card__view { margin-bottom: 0 !important; }',  
   
-            /* Верхняя строка */  
-            '.cp-top-bar {',  
-            '    position: absolute; top: 0.5em; left: 0; right: 0;',  
-            '    display: flex; align-items: center;',  
-            '    padding: 0 0.5em; gap: 0.3em;',  
-            '    z-index: 3; pointer-events: none;',  
-            '}',  
-            '.cp-top-bar .card__quality {',  
-            '    position: static !important; left: auto !important; bottom: auto !important;',  
-            '}',  
-            '.cp-top-bar .card__vote {',  
-            '    position: static !important; right: auto !important; bottom: auto !important;',  
-            '    background: transparent !important; font-size: 1em !important; padding: 0.1em 0.3em !important;',  
-            '}',  
-            '.cp-top-bar .card__icons {',  
-            '    position: static !important; margin-left: auto; width: auto !important;',  
-            '}',  
-  
-            /* Градиентный оверлей */  
+            /* Градиентный оверлей снизу постера */  
             '.cp-overlay {',  
             '    position: absolute; left: 0; bottom: 0; right: 0;',  
-            '    padding: 3em 0.7em 0.6em;',  
-            '    background: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.9) 100%);',  
+            '    padding: 3.5em 0.7em 0.6em;',  
+            '    background: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.88) 100%);',  
             '    border-bottom-left-radius: 1em; border-bottom-right-radius: 1em;',  
             '    z-index: 2; pointer-events: none;',  
             '}',  
+  
+            /* Строка 1: качество и рейтинг — прижаты к правому краю */  
+            '.cp-row1 {',  
+            '    display: flex; justify-content: flex-end; align-items: center;',  
+            '    gap: 0.3em; margin-bottom: 0.3em;',  
+            '}',  
+            '.cp-row1 .card__quality {',  
+            '    position: static !important; left: auto !important; bottom: auto !important;',  
+            '}',  
+            '.cp-row1 .card__vote {',  
+            '    position: static !important; right: auto !important; bottom: auto !important;',  
+            '    background: transparent !important; font-size: 1em !important;',  
+            '    padding: 0.1em 0.3em !important;',  
+            '}',  
+  
+            /* Строка 2: название — оригинальная логика 3 строки */  
             '.cp-overlay .card__title {',  
-            '    display: -webkit-box !important;',  
             '    font-size: 1.1em; color: #fff; font-weight: 600;',  
             '    line-height: 1.2; max-height: 3.6em; overflow: hidden;',  
+            '    display: -webkit-box !important;',  
             '    -webkit-line-clamp: 3; line-clamp: 3;',  
             '    -webkit-box-orient: vertical;',  
             '    margin-bottom: 0.3em; word-break: break-word;',  
             '}',  
-            '.cp-bottom { display: flex; align-items: center; font-size: 0.8em; }',  
   
+            /* Строка 3: бейдж слева, год справа */  
+            '.cp-bottom {',  
+            '    display: flex; align-items: center; font-size: 0.8em;',  
+            '}',  
             /* Бейдж типа — сбрасываем абсолютное позиционирование,  
-               цвет/фон сохраняется из .card--tv .card__type и других плагинов */  
+               оригинальные цвета (.card--tv .card__type и т.д.) сохраняются */  
             '.cp-bottom .card__type {',  
             '    position: static !important; left: auto !important; top: auto !important;',  
             '}',  
-            '.cp-year { margin-left: auto; color: rgba(255,255,255,0.75); }',  
+            /* Год — оригинальный .card__age, прижат к правому краю */  
+            '.cp-bottom .card__age {',  
+            '    position: static !important; right: auto !important; bottom: auto !important;',  
+            '    margin-left: auto; color: rgba(255,255,255,0.75); font-size: 1em;',  
+            '}',  
+  
+            /* Маркер просмотра — поверх оверлея */  
             '.card__marker { z-index: 3 !important; }'  
         ].join('\n')  
+  
         document.head.appendChild(style)  
     }  
   
+    // ---- Шаблон ----  
+    // .card__title и .card__age перемещены внутрь .cp-overlay.  
+    // Оригинальные модули card.js и release.js найдут их через find() и сами установят текст.  
+    // .card__icons остаётся на оригинальной позиции (вверху постера).  
     function patchTemplate(){  
         Lampa.Template.add('card', [  
             '<div class="card selector layer--visible layer--render">',  
             '    <div class="card__view">',  
             '        <img src="./img/img_load.svg" class="card__img" />',  
-            '        <div class="cp-top-bar">',  
-            '            <div class="card__icons">',  
-            '                <div class="card__icons-inner"></div>',  
-            '            </div>',  
+            '        <div class="card__icons">',  
+            '            <div class="card__icons-inner"></div>',  
             '        </div>',  
             '        <div class="cp-overlay">',  
+            '            <div class="cp-row1"></div>',  
             '            <div class="card__title"></div>',  
             '            <div class="cp-bottom">',  
-            '                <div class="cp-year"></div>',  
+            '                <div class="card__age"></div>',  
             '            </div>',  
             '        </div>',  
             '    </div>',  
@@ -85,12 +93,12 @@
         ].join(''))  
     }  
   
-    // -------------------------------------------------------  
-    // MutationObserver: перехватываем ВСЕ элементы добавленные  
-    // в .card__view — от любого плагина — и маршрутизируем их.  
-    // -------------------------------------------------------  
+    // ---- MutationObserver ----  
+    // Перехватывает ВСЕ элементы, добавленные в .card__view любым плагином,  
+    // и маршрутизирует их в нужное место.  
     function startObserver(){  
-        var SKIP = ['cp-top-bar','cp-overlay','card__img','card__marker','card__img-broken']  
+        // Элементы, которые уже в шаблоне — не трогаем  
+        var SKIP = ['cp-overlay', 'card__img', 'card__icons', 'card__marker', 'card__img-broken']  
   
         var observer = new MutationObserver(function(mutations){  
             mutations.forEach(function(mutation){  
@@ -105,32 +113,29 @@
                     // Реагируем только на прямые дочерние .card__view  
                     if(!parent.classList.contains('card__view')) return  
   
-                    // Пропускаем наши служебные элементы  
                     var cls = node.classList  
                     for(var i = 0; i < SKIP.length; i++){  
                         if(cls.contains(SKIP[i])) return  
                     }  
   
-                    var topBar = parent.querySelector('.cp-top-bar')  
+                    var row1   = parent.querySelector('.cp-row1')  
                     var bottom = parent.querySelector('.cp-bottom')  
-                    var icons  = parent.querySelector('.card__icons')  
   
                     // Нет нашего шаблона — не трогаем  
-                    if(!topBar || !bottom) return  
+                    if(!row1 || !bottom) return  
   
                     if(cls.contains('card__type')){  
-                        // Любой бейдж типа (TV, Аниме, Боевик...) → cp-bottom перед годом  
-                        var year = bottom.querySelector('.cp-year')  
-                        bottom.insertBefore(node, year)  
+                        // Бейдж типа → cp-bottom перед годом (.card__age)  
+                        var age = bottom.querySelector('.card__age')  
+                        bottom.insertBefore(node, age)  
                     }  
                     else if(cls.contains('card__quality')){  
-                        // Качество → в начало top-bar (самый левый)  
-                        topBar.insertBefore(node, topBar.firstChild)  
+                        // Качество → в начало row1 (левее рейтинга)  
+                        row1.insertBefore(node, row1.firstChild)  
                     }  
                     else if(cls.contains('card__vote')){  
-                        // Рейтинг → перед иконками  
-                        if(icons) topBar.insertBefore(node, icons)  
-                        else topBar.appendChild(node)  
+                        // Рейтинг → в конец row1 (правее качества)  
+                        row1.appendChild(node)  
                     }  
                 })  
             })  
@@ -143,6 +148,8 @@
         })  
     }  
   
+    // ---- Чистый постер ----  
+    // Единственный патч модуля — только для загрузки чистого постера с TMDB.  
     function patchModules(){  
         var map = Lampa.Maker.map('Card')  
   
@@ -151,22 +158,9 @@
             return  
         }  
   
-        // Только год — first_air_date для сериалов не обрабатывается в release.js  
-        var orig_card_onCreate = map.Card.onCreate  
-        map.Card.onCreate = function(){  
-            orig_card_onCreate.call(this)  
-            try {  
-                var yearEl = this.html.find('.cp-year')  
-                if(yearEl) yearEl.textContent = getYear(this.data)  
-            } catch(e) {  
-                console.warn('[CleanPoster] Card.onCreate:', e)  
-            }  
-        }  
-  
-        // Чистый постер с TMDB  
-        var orig_card_onVisible = map.Card.onVisible  
+        var orig_onVisible = map.Card.onVisible  
         map.Card.onVisible = function(){  
-            orig_card_onVisible.call(this)  
+            orig_onVisible.call(this)  
   
             var self = this  
             var data = this.data  
@@ -175,11 +169,13 @@
   
             if(!id) return  
   
+            // Уже в кэше  
             if(cleanPosterCache[id] !== undefined){  
                 if(cleanPosterCache[id]) self.img.src = cleanPosterCache[id]  
                 return  
             }  
   
+            // Помечаем как "запрос в процессе"  
             cleanPosterCache[id] = null  
   
             var posterSize = Lampa.Storage.field('poster_size') || 'w300'  
@@ -191,14 +187,18 @@
             new Lampa.Reguest().silent(url, function(images){  
                 var posters = (images && Array.isArray(images.posters)) ? images.posters : []  
                 var clean = null  
+  
                 for(var i = 0; i < posters.length; i++){  
                     if(posters[i].iso_639_1 === null){ clean = posters[i]; break }  
                 }  
+  
                 if(clean){  
                     var src = Lampa.TMDB.image('t/p/' + posterSize + clean.file_path)  
                     cleanPosterCache[id] = src  
                     if(self.img) self.img.src = src  
-                } else {  
+                }  
+                else{  
+                    // Чистого постера нет — оставляем обычный (уже загружен)  
                     cleanPosterCache[id] = ''  
                 }  
             }, function(){  
