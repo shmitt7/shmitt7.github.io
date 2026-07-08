@@ -1,94 +1,122 @@
 (function(){  
     'use strict'  
   
-    // =============================================  
-    // Плагин: Чистые постеры с информацией  
-    // Требует Lampa >= 3.0.0 (Manifest.app_digital >= 300)  
-    // =============================================  
-  
     var PLUGIN_ID = 'clean-poster-plugin'  
     var cleanPosterCache = {}  
   
-    // Вычисляем год — учитываем и фильмы (release_date) и сериалы (first_air_date)  
     function getYear(data){  
         var date = data.release_date || data.first_air_date || data.birthday || ''  
         var year = (date + '').slice(0, 4)  
         return (year.length === 4 && year !== '0000') ? year : ''  
     }  
   
-    // ---- CSS ----  
     function addStyles(){  
         if(document.getElementById(PLUGIN_ID)) return  
   
         var style = document.createElement('style')  
         style.id = PLUGIN_ID  
-        style.textContent = [  
-            /* Убираем отступ снизу — текст теперь на постере */  
-            '.card__view { margin-bottom: 0 !important; }',  
+        style.textContent = `  
+            /* Убираем отступ снизу карточки */  
+            .card__view { margin-bottom: 0 !important; }  
   
-            /* Градиентный оверлей снизу постера */  
-            '.cp-overlay {',  
-            '    position: absolute; left: 0; bottom: 0; right: 0;',  
-            '    padding: 3em 0.7em 0.6em;',  
-            '    background: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.9) 100%);',  
-            '    border-bottom-left-radius: 1em; border-bottom-right-radius: 1em;',  
-            '    z-index: 2; pointer-events: none;',  
-            '}',  
+            /* ---- Верхняя строка: [4K] [рейтинг] [иконки →] ---- */  
+            .cp-top-bar {  
+                position: absolute;  
+                top: 0.5em; left: 0; right: 0;  
+                display: flex;  
+                align-items: center;  
+                padding: 0 0.5em;  
+                gap: 0.3em;  
+                z-index: 3;  
+                pointer-events: none;  
+            }  
   
-            /* Название — максимум 3 строки, третья обрезается */  
-            '.cp-overlay .card__title {',  
-            '    display: -webkit-box !important;',  
-            '    font-size: 1.1em; color: #fff; font-weight: 600;',  
-            '    line-height: 1.2; max-height: 3.6em; overflow: hidden;',  
-            '    -webkit-line-clamp: 3; line-clamp: 3;',  
-            '    -webkit-box-orient: vertical;',  
-            '    margin-bottom: 0.3em; word-break: break-word;',  
-            '}',  
+            /* Качество — сбрасываем абсолютное позиционирование */  
+            .cp-top-bar .card__quality {  
+                position: static !important;  
+                left: auto !important; bottom: auto !important;  
+            }  
+  
+            /* Рейтинг — сразу после качества */  
+            .cp-top-bar .card__vote {  
+                position: static !important;  
+                right: auto !important; bottom: auto !important;  
+                background: transparent !important;  
+                font-size: 1em !important;  
+                padding: 0.1em 0.3em !important;  
+            }  
+  
+            /* Иконки — прижаты к правому краю */  
+            .cp-top-bar .card__icons {  
+                position: static !important;  
+                margin-left: auto;  
+                width: auto !important;  
+            }  
+  
+            /* ---- Градиентный оверлей снизу ---- */  
+            .cp-overlay {  
+                position: absolute;  
+                left: 0; bottom: 0; right: 0;  
+                padding: 3em 0.7em 0.6em;  
+                background: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.9) 100%);  
+                border-bottom-left-radius: 1em;  
+                border-bottom-right-radius: 1em;  
+                z-index: 2;  
+                pointer-events: none;  
+            }  
+  
+            /* Название — 3 строки максимум, третья обрезается */  
+            .cp-overlay .card__title {  
+                display: -webkit-box !important;  
+                font-size: 1.1em; color: #fff; font-weight: 600;  
+                line-height: 1.2; max-height: 3.6em; overflow: hidden;  
+                -webkit-line-clamp: 3; line-clamp: 3;  
+                -webkit-box-orient: vertical;  
+                margin-bottom: 0.3em; word-break: break-word;  
+            }  
   
             /* Нижняя строка: тип слева, год справа */  
-            '.cp-bottom { display: flex; justify-content: space-between; align-items: center; font-size: 0.8em; }',  
-            '.cp-type   { font-weight: 700; color: #fff; }',  
-            '.cp-year   { color: rgba(255,255,255,0.75); }',  
+            .cp-bottom {  
+                display: flex;  
+                align-items: center;  
+                font-size: 0.8em;  
+            }  
   
-            /* ---- Верхняя строка: 4K | рейтинг | иконки ---- */  
+            /* Бейдж TV — сбрасываем абсолютное позиционирование,  
+               красный фон сохраняется из .card--tv .card__type */  
+            .cp-bottom .card__type {  
+                position: static !important;  
+                left: auto !important; top: auto !important;  
+            }  
   
-            /* Качество — верхний левый угол */  
-            '.card__quality { left: 0.5em !important; top: 0.5em !important; bottom: auto !important; z-index: 3 !important; }',  
-  
-            /* Рейтинг — верхний центр, прозрачный фон */  
-            '.card__vote {',  
-            '    left: 0 !important; right: 0 !important;',  
-            '    top: 0.5em !important; bottom: auto !important;',  
-            '    text-align: center !important; background: transparent !important;',  
-            '    font-size: 1em !important; z-index: 3 !important;',  
-            '}',  
-  
-            /* Иконки — верхний правый угол */  
-            '.card__icons { top: 0.3em !important; left: auto !important; right: 0.3em !important; width: auto !important; z-index: 3 !important; }',  
+            /* Год — прижат к правому краю */  
+            .cp-year {  
+                margin-left: auto;  
+                color: rgba(255, 255, 255, 0.75);  
+            }  
   
             /* Маркер просмотра — поверх оверлея */  
-            '.card__marker { z-index: 3 !important; }'  
-        ].join('\n')  
-  
+            .card__marker { z-index: 3 !important; }  
+        `  
         document.head.appendChild(style)  
     }  
   
-    // ---- Шаблон карточки ----  
-    // .card__title внутри .cp-overlay — card.js сам установит текст через find('.card__title')  
-    // .cp-year вместо .card__age — release.js не найдёт .card__age и ничего не сделает,  
-    //   год устанавливаем сами в Card.onCreate  
     function patchTemplate(){  
+        // .card__icons перемещён в .cp-top-bar  
+        // .cp-bottom содержит только .cp-year  
+        // .card__type будет перемещён туда из Icons.onCreate  
         Lampa.Template.add('card', [  
             '<div class="card selector layer--visible layer--render">',  
             '    <div class="card__view">',  
             '        <img src="./img/img_load.svg" class="card__img" />',  
-            '        <div class="card__icons">',  
-            '            <div class="card__icons-inner"></div>',  
+            '        <div class="cp-top-bar">',  
+            '            <div class="card__icons">',  
+            '                <div class="card__icons-inner"></div>',  
+            '            </div>',  
             '        </div>',  
             '        <div class="cp-overlay">',  
             '            <div class="card__title"></div>',  
             '            <div class="cp-bottom">',  
-            '                <div class="cp-type"></div>',  
             '                <div class="cp-year"></div>',  
             '            </div>',  
             '        </div>',  
@@ -97,34 +125,59 @@
         ].join(''))  
     }  
   
-    // ---- Патч модулей ----  
     function patchModules(){  
         var map = Lampa.Maker.map('Card')  
   
         if(!map || !map.Card){  
-            console.warn('[CleanPoster] Lampa.Maker.map("Card") недоступен — нужна Lampa >= 3.0.0')  
+            console.warn('[CleanPoster] Lampa.Maker.map("Card") недоступен')  
             return  
         }  
   
-        // --- Card.onCreate: добавляем тип (TV) и год ---  
-        var orig_onCreate = map.Card.onCreate  
+        // --- Card.onCreate: устанавливаем год ---  
+        var orig_card_onCreate = map.Card.onCreate  
         map.Card.onCreate = function(){  
-            orig_onCreate.call(this)  
+            orig_card_onCreate.call(this)  
+            this.html.find('.cp-year').text(getYear(this.data))  
+        }  
   
-            var data = this.data  
-            var view = this.html.find('.card__view')  
+        // --- Icons.onCreate: перемещаем card__quality в top-bar,  
+        //     card__type (красный бейдж) — в cp-bottom ---  
+        var orig_icons_onCreate = map.Icons.onCreate  
+        map.Icons.onCreate = function(){  
+            orig_icons_onCreate.call(this)  // создаёт .card__type и .card__quality в .card__view  
   
-            // TV — только если есть original_name (признак сериала)  
-            view.find('.cp-type').text(data.original_name ? 'TV' : '')  
+            var view   = this.html.find('.card__view')  
+            var topBar = view.find('.cp-top-bar')  
+            var bottom = view.find('.cp-bottom')  
+            var icons  = topBar.find('.card__icons')  
   
-            // Год с учётом first_air_date для сериалов  
-            view.find('.cp-year').text(getYear(data))  
+            // Перемещаем качество в top-bar перед иконками: [quality][icons]  
+            var quality = view.children('.card__quality')  
+            if(quality.length) quality.insertBefore(icons)  
+  
+            // Перемещаем существующий красный бейдж TV в cp-bottom  
+            var type = view.children('.card__type')  
+            if(type.length) bottom.prepend(type)  
+        }  
+  
+        // --- Ratting.onCreate: перемещаем card__vote в top-bar между quality и icons ---  
+        var orig_ratting_onCreate = map.Ratting.onCreate  
+        map.Ratting.onCreate = function(){  
+            orig_ratting_onCreate.call(this)  // создаёт .card__vote в .card__view  
+  
+            var view   = this.html.find('.card__view')  
+            var topBar = view.find('.cp-top-bar')  
+            var icons  = topBar.find('.card__icons')  
+  
+            // Вставляем vote перед иконками: [quality][vote][icons]  
+            var vote = view.children('.card__vote')  
+            if(vote.length) vote.insertBefore(icons)  
         }  
   
         // --- Card.onVisible: загружаем чистый постер с TMDB ---  
-        var orig_onVisible = map.Card.onVisible  
+        var orig_card_onVisible = map.Card.onVisible  
         map.Card.onVisible = function(){  
-            orig_onVisible.call(this)  
+            orig_card_onVisible.call(this)  
   
             var self = this  
             var data = this.data  
@@ -133,13 +186,11 @@
   
             if(!id) return  
   
-            // Уже в кэше — применяем сразу  
             if(cleanPosterCache[id] !== undefined){  
                 if(cleanPosterCache[id]) self.img.src = cleanPosterCache[id]  
                 return  
             }  
   
-            // Помечаем как "запрос в процессе" чтобы не дублировать  
             cleanPosterCache[id] = null  
   
             var posterSize = Lampa.Storage.field('poster_size') || 'w300'  
@@ -152,7 +203,6 @@
                 var posters = (images && Array.isArray(images.posters)) ? images.posters : []  
                 var clean   = null  
   
-                // Ищем постер без текста (iso_639_1 === null)  
                 for(var i = 0; i < posters.length; i++){  
                     if(posters[i].iso_639_1 === null){ clean = posters[i]; break }  
                 }  
@@ -163,17 +213,14 @@
                     if(self.img) self.img.src = src  
                 }  
                 else{  
-                    // Чистого постера нет — оставляем обычный (уже загружен)  
                     cleanPosterCache[id] = ''  
                 }  
             }, function(){  
-                // Ошибка сети — оставляем обычный постер  
                 cleanPosterCache[id] = ''  
             })  
         }  
     }  
   
-    // ---- Инициализация ----  
     function init(){  
         addStyles()  
         patchTemplate()  
