@@ -17,13 +17,13 @@
         style.textContent = [  
             '.card__view { margin-bottom: 0 !important; }',  
   
+            /* Верхняя строка */  
             '.cp-top-bar {',  
             '    position: absolute; top: 0.5em; left: 0; right: 0;',  
             '    display: flex; align-items: center;',  
             '    padding: 0 0.5em; gap: 0.3em;',  
             '    z-index: 3; pointer-events: none;',  
             '}',  
-  
             '.cp-top-bar .card__quality {',  
             '    position: static !important; left: auto !important; bottom: auto !important;',  
             '}',  
@@ -35,6 +35,7 @@
             '    position: static !important; margin-left: auto; width: auto !important;',  
             '}',  
   
+            /* Градиентный оверлей */  
             '.cp-overlay {',  
             '    position: absolute; left: 0; bottom: 0; right: 0;',  
             '    padding: 3em 0.7em 0.6em;',  
@@ -42,7 +43,6 @@
             '    border-bottom-left-radius: 1em; border-bottom-right-radius: 1em;',  
             '    z-index: 2; pointer-events: none;',  
             '}',  
-  
             '.cp-overlay .card__title {',  
             '    display: -webkit-box !important;',  
             '    font-size: 1.1em; color: #fff; font-weight: 600;',  
@@ -51,9 +51,13 @@
             '    -webkit-box-orient: vertical;',  
             '    margin-bottom: 0.3em; word-break: break-word;',  
             '}',  
-  
             '.cp-bottom { display: flex; align-items: center; font-size: 0.8em; }',  
-            '.cp-bottom .card__type { position: static !important; left: auto !important; top: auto !important; }',  
+  
+            /* Бейдж типа — сбрасываем абсолютное позиционирование,  
+               цвет/фон сохраняется из .card--tv .card__type и других плагинов */  
+            '.cp-bottom .card__type {',  
+            '    position: static !important; left: auto !important; top: auto !important;',  
+            '}',  
             '.cp-year { margin-left: auto; color: rgba(255,255,255,0.75); }',  
             '.card__marker { z-index: 3 !important; }'  
         ].join('\n')  
@@ -81,15 +85,73 @@
         ].join(''))  
     }  
   
+    // -------------------------------------------------------  
+    // MutationObserver: перехватываем ВСЕ элементы добавленные  
+    // в .card__view — от любого плагина — и маршрутизируем их.  
+    // -------------------------------------------------------  
+    function startObserver(){  
+        var SKIP = ['cp-top-bar','cp-overlay','card__img','card__marker','card__img-broken']  
+  
+        var observer = new MutationObserver(function(mutations){  
+            mutations.forEach(function(mutation){  
+                if(mutation.type !== 'childList') return  
+  
+                mutation.addedNodes.forEach(function(node){  
+                    if(node.nodeType !== 1) return  
+  
+                    var parent = node.parentNode  
+                    if(!parent || !parent.classList) return  
+  
+                    // Реагируем только на прямые дочерние .card__view  
+                    if(!parent.classList.contains('card__view')) return  
+  
+                    // Пропускаем наши служебные элементы  
+                    var cls = node.classList  
+                    for(var i = 0; i < SKIP.length; i++){  
+                        if(cls.contains(SKIP[i])) return  
+                    }  
+  
+                    var topBar = parent.querySelector('.cp-top-bar')  
+                    var bottom = parent.querySelector('.cp-bottom')  
+                    var icons  = parent.querySelector('.card__icons')  
+  
+                    // Нет нашего шаблона — не трогаем  
+                    if(!topBar || !bottom) return  
+  
+                    if(cls.contains('card__type')){  
+                        // Любой бейдж типа (TV, Аниме, Боевик...) → cp-bottom перед годом  
+                        var year = bottom.querySelector('.cp-year')  
+                        bottom.insertBefore(node, year)  
+                    }  
+                    else if(cls.contains('card__quality')){  
+                        // Качество → в начало top-bar (самый левый)  
+                        topBar.insertBefore(node, topBar.firstChild)  
+                    }  
+                    else if(cls.contains('card__vote')){  
+                        // Рейтинг → перед иконками  
+                        if(icons) topBar.insertBefore(node, icons)  
+                        else topBar.appendChild(node)  
+                    }  
+                })  
+            })  
+        })  
+  
+        observer.observe(document.body, { childList: true, subtree: true })  
+  
+        Lampa.Listener.follow('app', function(e){  
+            if(e.type === 'destroy') observer.disconnect()  
+        })  
+    }  
+  
     function patchModules(){  
         var map = Lampa.Maker.map('Card')  
   
-        if(!map || !map.Card || !map.Icons || !map.Ratting){  
+        if(!map || !map.Card){  
             console.warn('[CleanPoster] Lampa.Maker.map("Card") недоступен')  
             return  
         }  
   
-        // --- Card.onCreate: устанавливаем год ---  
+        // Только год — first_air_date для сериалов не обрабатывается в release.js  
         var orig_card_onCreate = map.Card.onCreate  
         map.Card.onCreate = function(){  
             orig_card_onCreate.call(this)  
@@ -101,40 +163,7 @@
             }  
         }  
   
-        // --- Icons.onCreate: перемещаем card__quality в top-bar, card__type в cp-bottom ---  
-        var orig_icons_onCreate = map.Icons.onCreate  
-        map.Icons.onCreate = function(){  
-            orig_icons_onCreate.call(this)  
-            try {  
-                var icons   = this.html.find('.card__icons')  
-                var quality = this.html.find('.card__quality')  
-                var type    = this.html.find('.card__type')  
-                var year    = this.html.find('.cp-year')  
-  
-                // [quality] → перед [icons] в top-bar  
-                if(quality) $(quality).insertBefore($(icons))  
-  
-                // [type] → перед [year] в cp-bottom  
-                if(type) $(type).insertBefore($(year))  
-            }  
-            catch(e){ console.warn('[CleanPoster] Icons.onCreate:', e) }  
-        }  
-  
-        // --- Ratting.onCreate: перемещаем card__vote в top-bar между quality и icons ---  
-        var orig_ratting_onCreate = map.Ratting.onCreate  
-        map.Ratting.onCreate = function(){  
-            orig_ratting_onCreate.call(this)  
-            try {  
-                var icons = this.html.find('.card__icons')  
-                var vote  = this.html.find('.card__vote')  
-  
-                // [quality][vote] → перед [icons]  
-                if(vote) $(vote).insertBefore($(icons))  
-            }  
-            catch(e){ console.warn('[CleanPoster] Ratting.onCreate:', e) }  
-        }  
-  
-        // --- Card.onVisible: загружаем чистый постер ---  
+        // Чистый постер с TMDB  
         var orig_card_onVisible = map.Card.onVisible  
         map.Card.onVisible = function(){  
             orig_card_onVisible.call(this)  
@@ -161,7 +190,7 @@
   
             new Lampa.Reguest().silent(url, function(images){  
                 var posters = (images && Array.isArray(images.posters)) ? images.posters : []  
-                var clean   = null  
+                var clean = null  
                 for(var i = 0; i < posters.length; i++){  
                     if(posters[i].iso_639_1 === null){ clean = posters[i]; break }  
                 }  
@@ -169,15 +198,19 @@
                     var src = Lampa.TMDB.image('t/p/' + posterSize + clean.file_path)  
                     cleanPosterCache[id] = src  
                     if(self.img) self.img.src = src  
+                } else {  
+                    cleanPosterCache[id] = ''  
                 }  
-                else{ cleanPosterCache[id] = '' }  
-            }, function(){ cleanPosterCache[id] = '' })  
+            }, function(){  
+                cleanPosterCache[id] = ''  
+            })  
         }  
     }  
   
     function init(){  
         addStyles()  
         patchTemplate()  
+        startObserver()  
         patchModules()  
     }  
   
