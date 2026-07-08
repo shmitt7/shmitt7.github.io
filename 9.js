@@ -13,19 +13,19 @@
             '.card__view { margin-bottom: 0 !important; }',  
   
             /* Иконки — верхний правый угол */  
-            '.card__icons {',  
+            '.card__view .card__icons {',  
             '    position: absolute !important;',  
             '    top: 0.5em !important;',  
             '    right: 0.5em !important;',  
             '    left: auto !important;',  
             '    width: auto !important;',  
+            '    z-index: 3;',  
             '}',  
-            '.card__icons-inner { justify-content: flex-end !important; }',  
   
             /* Градиентный оверлей снизу */  
             '.cp-overlay {',  
             '    position: absolute; left: 0; bottom: 0; right: 0;',  
-            '    padding: 0.5em 0.7em 0.6em;',  
+            '    padding: 2em 0.7em 0.6em;',  
             '    background: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.9) 100%);',  
             '    border-bottom-left-radius: 1em;',  
             '    border-bottom-right-radius: 1em;',  
@@ -33,33 +33,72 @@
             '}',  
   
             /* Название — 3 строки с обрезкой */  
-            '.card__title {',  
-            '    color: #fff; font-size: 1.1em; line-height: 1.2;',  
-            '    max-height: 3.6em; overflow: hidden;',  
-            '    display: -webkit-box; -webkit-line-clamp: 3;',  
+            '.cp-overlay .card__title {',  
+            '    color: #fff;',  
+            '    font-size: 1.1em;',  
+            '    line-height: 1.2;',  
+            '    max-height: 3.6em;',  
+            '    overflow: hidden;',  
+            '    display: -webkit-box;',  
+            '    -webkit-line-clamp: 3;',  
             '    -webkit-box-orient: vertical;',  
-            '    margin-bottom: 0.3em; word-break: break-word;',  
+            '    margin-bottom: 0.3em;',  
+            '    word-break: break-word;',  
             '}',  
   
             /* Нижняя строка */  
             '.cp-bottom {',  
             '    display: flex;',  
             '    align-items: center;',  
-            '    gap: 0.3em;',  
-            '    font-size: 0.85em;',  
-            '}',  
-  
-            /* Сброс абсолютного позиционирования для элементов в cp-bottom */  
-            '.cp-bottom .card__type, .cp-bottom .card__vote, .cp-bottom .card__quality {',  
-            '    position: static !important;',  
-            '    left: auto !important; right: auto !important;',  
-            '    top: auto !important; bottom: auto !important;',  
+            '    gap: 0.4em;',  
             '}',  
   
             /* Год — прижат вправо */  
             '.cp-bottom .card__age {',  
             '    margin-left: auto;',  
-            '    color: rgba(255,255,255,0.75);',  
+            '    color: rgba(255,255,255,0.85) !important;',  
+            '    font-size: 0.85em !important;',  
+            '    font-weight: 400 !important;',  
+            '}',  
+  
+            /* Убираем бейджевое оформление — единый стиль текста */  
+            '.cp-bottom .card__type,',  
+            '.card--tv .cp-bottom .card__type,',  
+            '.card--movie .cp-bottom .card__type {',  
+            '    position: static !important;',  
+            '    background: none !important;',  
+            '    padding: 0 !important;',  
+            '    border-radius: 0 !important;',  
+            '    color: rgba(255,255,255,0.85) !important;',  
+            '    font-size: 0.85em !important;',  
+            '    font-weight: 400 !important;',  
+            '    text-transform: none !important;',  
+            '}',  
+  
+            '.cp-bottom .card__vote {',  
+            '    position: static !important;',  
+            '    background: none !important;',  
+            '    padding: 0 !important;',  
+            '    border-radius: 0 !important;',  
+            '    color: rgba(255,255,255,0.85) !important;',  
+            '    font-size: 0.85em !important;',  
+            '    font-weight: 400 !important;',  
+            '}',  
+  
+            '.cp-bottom .card__quality {',  
+            '    position: static !important;',  
+            '    background: none !important;',  
+            '    padding: 0 !important;',  
+            '    border-radius: 0 !important;',  
+            '    color: rgba(255,255,255,0.85) !important;',  
+            '    font-size: 0.85em !important;',  
+            '    font-weight: 400 !important;',  
+            '    text-transform: uppercase !important;',  
+            '}',  
+  
+            /* Внутренний div у quality */  
+            '.cp-bottom .card__quality > div {',  
+            '    display: inline !important;',  
             '}',  
   
             '.card__marker { z-index: 3 !important; }'  
@@ -94,44 +133,45 @@
             return  
         }  
   
-        // Icons.onCreate: type и quality → cp-bottom перед годом  
+        // Icons.onCreate: перемещаем card__type и card__quality в cp-bottom  
         var orig_icons_onCreate = map.Icons.onCreate  
         map.Icons.onCreate = function(){  
             orig_icons_onCreate.call(this)  
             try {  
-                var bottom  = this.html.find('.cp-bottom')  
+                var bottom  = this.html.querySelector('.cp-bottom')  
                 var age     = bottom ? bottom.querySelector('.card__age') : null  
-                var quality = this.html.find('.card__quality')  
-                var type    = this.html.find('.card__type')  
+                var type    = this.html.querySelector('.card__type')  
+                var quality = this.html.querySelector('.card__quality')  
   
-                // Порядок: type первый, quality после него, оба перед годом  
-                if(type    && bottom) bottom.insertBefore(type,    age)  
-                if(quality && bottom) bottom.insertBefore(quality, age)  
+                // type — самый первый в cp-bottom  
+                if(type && bottom) bottom.insertBefore(type, bottom.firstChild)  
+  
+                // quality — перед годом  
+                if(quality && bottom && age) bottom.insertBefore(quality, age)  
             }  
             catch(e){ console.warn('[CleanPoster] Icons.onCreate:', e) }  
         }  
   
-        // Ratting.onCreate: vote → cp-bottom между type и quality  
+        // Ratting.onCreate: перемещаем card__vote в cp-bottom перед quality  
         var orig_ratting_onCreate = map.Ratting.onCreate  
         map.Ratting.onCreate = function(){  
             orig_ratting_onCreate.call(this)  
             try {  
-                var bottom  = this.html.find('.cp-bottom')  
+                var bottom  = this.html.querySelector('.cp-bottom')  
                 var quality = bottom ? bottom.querySelector('.card__quality') : null  
                 var age     = bottom ? bottom.querySelector('.card__age')     : null  
-                var vote    = this.html.find('.card__vote')  
+                var vote    = this.html.querySelector('.card__vote')  
   
-                // Вставляем перед quality если есть, иначе перед годом  
-                var ref = quality || age  
-                if(vote && bottom) bottom.insertBefore(vote, ref)  
+                // vote — перед quality (или перед годом если quality нет)  
+                if(vote && bottom) bottom.insertBefore(vote, quality || age)  
             }  
             catch(e){ console.warn('[CleanPoster] Ratting.onCreate:', e) }  
         }  
   
         // Card.onVisible: загружаем чистый постер с TMDB  
-        var orig_onVisible = map.Card.onVisible  
+        var orig_card_onVisible = map.Card.onVisible  
         map.Card.onVisible = function(){  
-            orig_onVisible.call(this)  
+            orig_card_onVisible.call(this)  
   
             var self = this  
             var data = this.data  
@@ -173,8 +213,9 @@
     }  
   
     // MutationObserver — для внешних плагинов (content labels и др.)  
+    // Перехватывает элементы добавленные в .card__view уже после вставки в DOM  
     function startObserver(){  
-        var SKIP = ['cp-overlay', 'card__img', 'card__marker', 'card__img-broken']  
+        var SKIP = ['cp-overlay', 'card__img', 'card__marker', 'card__img-broken', 'card__icons']  
   
         var observer = new MutationObserver(function(mutations){  
             mutations.forEach(function(mutation){  
@@ -199,15 +240,12 @@
                     var age     = bottom.querySelector('.card__age')  
   
                     if(cls.contains('card__type')){  
-                        // type — самый первый  
                         bottom.insertBefore(node, bottom.firstChild)  
                     }  
                     else if(cls.contains('card__quality')){  
-                        // quality — перед годом  
                         bottom.insertBefore(node, age)  
                     }  
                     else if(cls.contains('card__vote')){  
-                        // vote — перед quality (или перед годом если quality нет)  
                         bottom.insertBefore(node, quality || age)  
                     }  
                 })  
