@@ -3,8 +3,8 @@
     var cleanPosterCache = {};  
     var cardObserver = null;  
   
-    // Желаемый порядок элементов в .cp-info  
-    var INFO_ORDER = ['card__age', 'card__vote', 'card__quality'];  
+    // Порядок: качество → рейтинг → год  
+    var INFO_ORDER = ['card__quality', 'card__vote', 'card__age'];  
   
     function insertInOrder(cpInfo, node){  
         var nodeOrder = -1;  
@@ -36,13 +36,16 @@
   
             '.cp-overlay{position:absolute;left:0;bottom:0;right:0;padding:3em 0.5em 0.5em 0.4em;background:linear-gradient(to bottom,transparent 0%,rgba(0,0,0,0.6) 35%,rgba(0,0,0,0.92) 70%,rgba(0,0,0,0.97) 100%);border-bottom-left-radius:1em;border-bottom-right-radius:1em;z-index:2}',  
   
-            '.cp-info{display:flex;align-items:center;justify-content:flex-end;gap:0.35em;margin-bottom:0.2em;min-height:1em}',  
+            /* gap между строкой инфо и названием уменьшен до 0.08em */  
+            '.cp-info{display:flex;align-items:center;justify-content:flex-end;gap:0.35em;margin-bottom:0.08em;min-height:1em}',  
   
-            '.cp-info .card__age{position:static!important;color:rgba(255,255,255,0.65)!important;font-size:0.8em!important;font-weight:600!important;line-height:1!important;margin:0!important;text-shadow:0 1px 3px rgba(0,0,0,0.9)!important;background:none!important;padding:0!important;border-radius:0!important}',  
+            /* font-size увеличен до 0.9em, иконка KP скрыта */  
+            '.cp-info .card__age{position:static!important;color:rgba(255,255,255,0.65)!important;font-size:0.9em!important;font-weight:600!important;line-height:1!important;margin:0!important;text-shadow:0 1px 3px rgba(0,0,0,0.9)!important;background:none!important;padding:0!important;border-radius:0!important}',  
   
-            '.cp-info .card__vote{position:static!important;background:none!important;padding:0!important;border-radius:0!important;color:rgba(255,255,255,0.65)!important;font-size:0.8em!important;font-weight:600!important;left:auto!important;right:auto!important;top:auto!important;bottom:auto!important;text-shadow:0 1px 3px rgba(0,0,0,0.9)!important}',  
+            '.cp-info .card__vote{position:static!important;background:none!important;padding:0!important;border-radius:0!important;color:rgba(255,255,255,0.65)!important;font-size:0.9em!important;font-weight:600!important;left:auto!important;right:auto!important;top:auto!important;bottom:auto!important;text-shadow:0 1px 3px rgba(0,0,0,0.9)!important}',  
+            '.cp-info .card__vote .source--name{display:none!important}',  
   
-            '.cp-info .card__quality{position:static!important;left:auto!important;right:auto!important;top:auto!important;bottom:auto!important;background:none!important;padding:0!important;border-radius:0!important;color:rgba(255,255,255,0.65)!important;font-size:0.8em!important;font-weight:600!important;text-transform:uppercase!important;margin:0!important;text-shadow:0 1px 3px rgba(0,0,0,0.9)!important}',  
+            '.cp-info .card__quality{position:static!important;left:auto!important;right:auto!important;top:auto!important;bottom:auto!important;background:none!important;padding:0!important;border-radius:0!important;color:rgba(255,255,255,0.65)!important;font-size:0.9em!important;font-weight:600!important;text-transform:uppercase!important;margin:0!important;text-shadow:0 1px 3px rgba(0,0,0,0.9)!important}',  
             '.cp-info .card__quality>div{display:inline!important}',  
   
             '.cp-overlay .card__title{color:#fff!important;font-size:1.2em!important;font-weight:700!important;line-height:1.2!important;max-height:3.6em!important;overflow:hidden!important;display:-webkit-box!important;-webkit-line-clamp:3!important;-webkit-box-orient:vertical!important;margin-bottom:0!important;word-break:break-word!important;text-shadow:0 1px 6px rgba(0,0,0,1),0 2px 12px rgba(0,0,0,0.8)!important}',  
