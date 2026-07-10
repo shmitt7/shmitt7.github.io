@@ -3,6 +3,28 @@
     var cleanPosterCache = {};  
     var cardObserver = null;  
   
+    // Желаемый порядок элементов в .cp-info  
+    var INFO_ORDER = ['card__age', 'card__vote', 'card__quality'];  
+  
+    function insertInOrder(cpInfo, node){  
+        var nodeOrder = -1;  
+        for(var oi = 0; oi < INFO_ORDER.length; oi++){  
+            if(node.classList.contains(INFO_ORDER[oi])){ nodeOrder = oi; break; }  
+        }  
+        if(nodeOrder === -1){ cpInfo.appendChild(node); return; }  
+        var children = cpInfo.children;  
+        var insertBefore = null;  
+        for(var ci = 0; ci < children.length; ci++){  
+            var childOrder = -1;  
+            for(var oi2 = 0; oi2 < INFO_ORDER.length; oi2++){  
+                if(children[ci].classList.contains(INFO_ORDER[oi2])){ childOrder = oi2; break; }  
+            }  
+            if(childOrder !== -1 && childOrder > nodeOrder){ insertBefore = children[ci]; break; }  
+        }  
+        if(insertBefore) cpInfo.insertBefore(node, insertBefore);  
+        else cpInfo.appendChild(node);  
+    }  
+  
     function addStyles(){  
         if(document.getElementById(PLUGIN_ID)) return;  
         var style = document.createElement('style');  
@@ -103,7 +125,7 @@
                 quality = this.html.querySelector('.card__quality');  
                 cpInfo  = this.html.querySelector('.cp-info');  
                 if(quality && cpInfo){  
-                    cpInfo.appendChild(quality);  
+                    insertInOrder(cpInfo, quality);  
                 }  
             };  
         }  
@@ -116,7 +138,7 @@
                 cpInfo = this.html.querySelector('.cp-info');  
                 vote   = this.html.querySelector('.card__vote');  
                 if(vote && cpInfo){  
-                    cpInfo.appendChild(vote);  
+                    insertInOrder(cpInfo, vote);  
                 }  
             };  
         }  
@@ -146,7 +168,7 @@
                     cpInfo = parent.querySelector('.cp-info');  
                     if(!cpInfo) continue;  
                     if(cls.contains('card__quality') || cls.contains('card__vote') || cls.contains('card__age')){  
-                        cpInfo.appendChild(node);  
+                        insertInOrder(cpInfo, node);  
                     }  
                 }  
             }  
