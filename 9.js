@@ -14,15 +14,16 @@
   
             '.cp-overlay{position:absolute;left:0;bottom:0;right:0;padding:3em 0.5em 0.5em 0.4em;background:linear-gradient(to bottom,transparent 0%,rgba(0,0,0,0.6) 35%,rgba(0,0,0,0.92) 70%,rgba(0,0,0,0.97) 100%);border-bottom-left-radius:1em;border-bottom-right-radius:1em;z-index:2}',  
   
-            '.cp-row1{display:flex;align-items:center;margin-bottom:0.2em;min-height:1em}',  
-            '.cp-row1 .card__quality{position:static!important;left:auto!important;right:auto!important;top:auto!important;bottom:auto!important;background:none!important;padding:0!important;border-radius:0!important;color:rgba(255,255,255,0.9)!important;font-size:0.8em!important;font-weight:600!important;text-transform:uppercase!important;margin-right:0.4em;text-shadow:0 1px 3px rgba(0,0,0,0.9)!important}',  
-            '.cp-row1 .card__quality>div{display:inline!important}',  
-            '.cp-row1 .card__vote{position:static!important;background:none!important;padding:0!important;border-radius:0!important;color:rgba(255,255,255,0.9)!important;font-size:0.8em!important;font-weight:600!important;left:auto!important;right:auto!important;top:auto!important;bottom:auto!important;text-shadow:0 1px 3px rgba(0,0,0,0.9)!important}',  
+            '.cp-info{display:flex;align-items:center;justify-content:flex-end;gap:0.35em;margin-bottom:0.2em;min-height:1em}',  
   
-            '.cp-year{margin-bottom:0.15em;min-height:1em}',  
-            '.cp-year .card__age{color:rgba(255,255,255,0.5)!important;font-size:0.8em!important;font-weight:400!important;line-height:1!important;margin-top:0!important;text-shadow:0 1px 3px rgba(0,0,0,0.9)!important}',  
+            '.cp-info .card__age{position:static!important;color:rgba(255,255,255,0.65)!important;font-size:0.8em!important;font-weight:600!important;line-height:1!important;margin:0!important;text-shadow:0 1px 3px rgba(0,0,0,0.9)!important;background:none!important;padding:0!important;border-radius:0!important}',  
   
-            '.cp-overlay .card__title{color:#fff!important;font-size:1.2em!important;font-weight:600!important;line-height:1.2!important;max-height:3.6em!important;overflow:hidden!important;display:-webkit-box!important;-webkit-line-clamp:3!important;-webkit-box-orient:vertical!important;margin-bottom:0!important;word-break:break-word!important;text-shadow:0 1px 6px rgba(0,0,0,1),0 2px 12px rgba(0,0,0,0.8)!important}',  
+            '.cp-info .card__vote{position:static!important;background:none!important;padding:0!important;border-radius:0!important;color:rgba(255,255,255,0.65)!important;font-size:0.8em!important;font-weight:600!important;left:auto!important;right:auto!important;top:auto!important;bottom:auto!important;text-shadow:0 1px 3px rgba(0,0,0,0.9)!important}',  
+  
+            '.cp-info .card__quality{position:static!important;left:auto!important;right:auto!important;top:auto!important;bottom:auto!important;background:none!important;padding:0!important;border-radius:0!important;color:rgba(255,255,255,0.65)!important;font-size:0.8em!important;font-weight:600!important;text-transform:uppercase!important;margin:0!important;text-shadow:0 1px 3px rgba(0,0,0,0.9)!important}',  
+            '.cp-info .card__quality>div{display:inline!important}',  
+  
+            '.cp-overlay .card__title{color:#fff!important;font-size:1.2em!important;font-weight:700!important;line-height:1.2!important;max-height:3.6em!important;overflow:hidden!important;display:-webkit-box!important;-webkit-line-clamp:3!important;-webkit-box-orient:vertical!important;margin-bottom:0!important;word-break:break-word!important;text-shadow:0 1px 6px rgba(0,0,0,1),0 2px 12px rgba(0,0,0,0.8)!important}',  
   
             '.card__type{display:none!important}',  
         ].join('\n');  
@@ -36,8 +37,7 @@
             '<img src="./img/img_load.svg" class="card__img" />' +  
             '<div class="card__icons"><div class="card__icons-inner"></div></div>' +  
             '<div class="cp-overlay">' +  
-            '<div class="cp-row1"></div>' +  
-            '<div class="cp-year"><div class="card__age"></div></div>' +  
+            '<div class="cp-info"><div class="card__age"></div></div>' +  
             '<div class="card__title"></div>' +  
             '</div>' +  
             '</div>' +  
@@ -98,12 +98,12 @@
         if(map.Icons && map.Icons.onCreate){  
             origIconsOnCreate = map.Icons.onCreate;  
             map.Icons.onCreate = function(){  
-                var quality, row1;  
+                var quality, cpInfo;  
                 origIconsOnCreate.call(this);  
                 quality = this.html.querySelector('.card__quality');  
-                row1    = this.html.querySelector('.cp-row1');  
-                if(quality && row1){  
-                    row1.appendChild(quality);  
+                cpInfo  = this.html.querySelector('.cp-info');  
+                if(quality && cpInfo){  
+                    cpInfo.appendChild(quality);  
                 }  
             };  
         }  
@@ -111,22 +111,22 @@
         if(map.Ratting && map.Ratting.onCreate){  
             origRattingOnCreate = map.Ratting.onCreate;  
             map.Ratting.onCreate = function(){  
-                var row1, vote;  
+                var cpInfo, vote;  
                 origRattingOnCreate.call(this);  
-                row1 = this.html.querySelector('.cp-row1');  
-                vote = this.html.querySelector('.card__vote');  
-                if(vote && row1){  
-                    row1.appendChild(vote);  
+                cpInfo = this.html.querySelector('.cp-info');  
+                vote   = this.html.querySelector('.card__vote');  
+                if(vote && cpInfo){  
+                    cpInfo.appendChild(vote);  
                 }  
             };  
         }  
     }  
   
     function startObserver(){  
-        var SKIP = ['card__img','card__marker','card__img-broken','card__icons','cp-overlay','cp-row1','cp-year','card__title','card__age','card__type'];  
+        var SKIP = ['card__img','card__marker','card__img-broken','card__icons','cp-overlay','cp-info','card__title','card__age','card__type'];  
   
         cardObserver = new MutationObserver(function(mutations){  
-            var mi, ni, mutation, addedNodes, node, parent, cls, i, found, row1, cpYear;  
+            var mi, ni, mutation, addedNodes, node, parent, cls, i, found, cpInfo;  
             for(mi = 0; mi < mutations.length; mi++){  
                 mutation = mutations[mi];  
                 if(mutation.type !== 'childList') continue;  
@@ -143,16 +143,10 @@
                         if(cls.contains(SKIP[i])){ found = true; break; }  
                     }  
                     if(found) continue;  
-                    row1   = parent.querySelector('.cp-row1');  
-                    cpYear = parent.querySelector('.cp-year');  
-                    if(cls.contains('card__quality') && row1){  
-                        row1.appendChild(node);  
-                    }  
-                    else if(cls.contains('card__vote') && row1){  
-                        row1.appendChild(node);  
-                    }  
-                    else if(cls.contains('card__age') && cpYear){  
-                        cpYear.appendChild(node);  
+                    cpInfo = parent.querySelector('.cp-info');  
+                    if(!cpInfo) continue;  
+                    if(cls.contains('card__quality') || cls.contains('card__vote') || cls.contains('card__age')){  
+                        cpInfo.appendChild(node);  
                     }  
                 }  
             }  
