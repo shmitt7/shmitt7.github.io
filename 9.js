@@ -10,13 +10,13 @@
             padding-right: 0.5em;  
         }  
   
-        /* Маркер статуса (Смотрю/Просмотрено) → левый верхний угол */  
+        /* Маркер статуса → левый верхний угол */  
         .card__marker {  
             top: 0.4em !important;  
             bottom: auto !important;  
         }  
   
-        /* Нижняя панель постера */  
+        /* Нижняя панель постера — без затемнения */  
         .card__bottom-bar {  
             position: absolute;  
             bottom: 0;  
@@ -26,9 +26,6 @@
             align-items: center;  
             justify-content: space-between;  
             padding: 0.4em 0.5em;  
-            background: linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 100%);  
-            border-bottom-left-radius: 1em;  
-            border-bottom-right-radius: 1em;  
             z-index: 2;  
             pointer-events: none;  
             min-height: 2.2em;  
@@ -37,21 +34,27 @@
         .card__bottom-bar > * {  
             pointer-events: auto;  
         }  
+        .card__bottom-bar-left,  
+        .card__bottom-bar-right {  
+            display: flex;  
+            align-items: center;  
+            gap: 0.3em;  
+        }  
   
-        /* Единый стиль для обоих бейджей */  
+        /* Единый стиль бейджей — чуть заострённые углы */  
         .card__badge {  
-            background: rgba(0, 0, 0, 0.55);  
+            background: rgba(0, 0, 0, 0.6);  
             color: #fff;  
             font-size: 0.75em;  
             font-weight: 400;  
             font-family: inherit;  
             padding: 0.2em 0.55em;  
-            border-radius: 1em;  
+            border-radius: 0.35em;  
             white-space: nowrap;  
             line-height: 1.4;  
         }  
   
-        /* Скрываем оригинальные элементы — данные берём из них, но показываем свои бейджи */  
+        /* Скрываем оригинальные элементы */  
         .card__type,  
         .card__vote,  
         .card__quality {  
@@ -61,17 +64,30 @@
             display: none !important;  
         }  
   
-        /* Название → ближе к постеру, по центру */  
+        /* Название → ближе к постеру, по центру, 4 строки */  
         .card__view {  
             margin-bottom: 0.3em !important;  
         }  
         .card__title {  
             text-align: center !important;  
+            -webkit-line-clamp: 4 !important;  
+            line-clamp: 4 !important;  
+            max-height: 4.8em !important;  
         }  
     `;  
     document.head.appendChild(style);  
   
-    // ─── Логика ───────────────────────────────────────────────────────────────  
+    // ─── Вспомогательные функции ──────────────────────────────────────────────  
+  
+    // Читаем текст элемента, который НЕ находится внутри нашего бара  
+    function getTextOutsideBar(view, bar, selector) {  
+        var all = view.querySelectorAll(selector);  
+        var result = '';  
+        all.forEach(function (el) {  
+            if (!bar.contains(el)) result = el.textContent.trim();  
+        });  
+        return result;  
+    }  
   
     function getOrCreateBar(card) {  
         var view = card.querySelector('.card__view');  
@@ -95,10 +111,6 @@
         return bar;  
     }  
   
-    function getText(el) {  
-        return el ? el.textContent.trim() : '';  
-    }  
-  
     function fillBar(card) {  
         var view = card.querySelector('.card__view');  
         if (!view) return;  
@@ -109,11 +121,14 @@
         var left  = bar.querySelector('.card__bottom-bar-left');  
         var right = bar.querySelector('.card__bottom-bar-right');  
   
-        // Читаем данные из оригинальных (скрытых) элементов  
-        var typeText    = getText(view.querySelector('.card__type'));  
-        var qualityText = getText(view.querySelector('.card__quality'));  
-        var voteText    = getText(view.querySelector('.card__vote'));  
-        var ageText     = getText(card.querySelector('.card__age'));  
+        // Читаем данные из оригинальных (скрытых) элементов, которые НЕ в нашем баре  
+        var typeText    = getTextOutsideBar(view, bar, '.card__type');  
+        // Качество: применяем toUpperCase() т.к. CSS text-transform не влияет на textContent  
+        var qualityText = getTextOutsideBar(view, bar, '.card__quality').toUpperCase();  
+        // Рейтинг: ищем вне бара — так плагин КП не будет конфликтовать  
+        var voteText    = getTextOutsideBar(view, bar, '.card__vote');  
+        var ageText     = (card.querySelector('.card__age') || {}).textContent || '';  
+        ageText = ageText.trim();  
   
         // ── Левый бейдж: TV / MOV ──────────────────────────────────────────  
         var typeBadge = bar.querySelector('.card__badge--type');  
@@ -150,14 +165,14 @@
         getOrCreateBar(card);  
         fillBar(card);  
   
-        // Следим за добавлением card__type / card__vote / card__quality в view  
         var view = card.querySelector('.card__view');  
         if (view) {  
+            // subtree: true — ловим и добавление новых элементов (плагин КП),  
+            // и изменение их текста  
             new MutationObserver(function () { fillBar(card); })  
-                .observe(view, { childList: true });  
+                .observe(view, { childList: true, subtree: true, characterData: true });  
         }  
   
-        // Следим за изменением текста года  
         var age = card.querySelector('.card__age');  
         if (age) {  
             new MutationObserver(function () { fillBar(card); })  
@@ -165,7 +180,6 @@
         }  
     }  
   
-    // Следим за появлением новых карточек  
     new MutationObserver(function (mutations) {  
         mutations.forEach(function (m) {  
             m.addedNodes.forEach(function (node) {  
