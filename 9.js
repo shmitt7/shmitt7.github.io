@@ -4,7 +4,7 @@
     // ─── CSS ──────────────────────────────────────────────────────────────────  
     var style = document.createElement('style');  
     style.textContent = `  
-        /* 1. Иконки закладок/просмотра → правый верхний угол */  
+        /* Иконки → правый верхний угол */  
         .card__icons {  
             justify-content: flex-end !important;  
             padding-right: 0.5em;  
@@ -16,7 +16,7 @@
             bottom: auto !important;  
         }  
   
-        /* 2. Нижняя панель постера */  
+        /* Нижняя панель постера */  
         .card__bottom-bar {  
             position: absolute;  
             bottom: 0;  
@@ -37,49 +37,31 @@
         .card__bottom-bar > * {  
             pointer-events: auto;  
         }  
-        .card__bottom-bar-left {  
-            display: flex;  
-            align-items: center;  
-        }  
-        .card__bottom-bar-right {  
-            display: flex;  
-            align-items: center;  
-            gap: 0.3em;  
-        }  
   
-        /* Сбрасываем абсолютное позиционирование перемещённых элементов */  
-        .card__bottom-bar .card__type {  
-            position: static !important;  
-            font-size: 0.75em;  
-        }  
-        .card__bottom-bar .card__vote {  
-            position: static !important;  
-            font-size: 0.9em !important;  
-            padding: 0.15em 0.4em !important;  
-        }  
-        .card__bottom-bar .card__quality {  
-            position: static !important;  
-            font-size: 0.75em;  
-            bottom: auto !important;  
-            left: auto !important;  
-        }  
-  
-        /* Год внутри постера */  
-        .card__age-in-poster {  
-            background: rgba(0, 0, 0, 0.5);  
+        /* Единый стиль для обоих бейджей */  
+        .card__badge {  
+            background: rgba(0, 0, 0, 0.55);  
             color: #fff;  
             font-size: 0.75em;  
-            padding: 0.2em 0.5em;  
+            font-weight: 400;  
+            font-family: inherit;  
+            padding: 0.2em 0.55em;  
             border-radius: 1em;  
             white-space: nowrap;  
+            line-height: 1.4;  
         }  
   
-        /* Скрываем оригинальный год под постером */  
+        /* Скрываем оригинальные элементы — данные берём из них, но показываем свои бейджи */  
+        .card__type,  
+        .card__vote,  
+        .card__quality {  
+            display: none !important;  
+        }  
         .card > .card__age {  
             display: none !important;  
         }  
   
-        /* 3. Название → ближе к постеру, по центру */  
+        /* Название → ближе к постеру, по центру */  
         .card__view {  
             margin-bottom: 0.3em !important;  
         }  
@@ -113,41 +95,51 @@
         return bar;  
     }  
   
+    function getText(el) {  
+        return el ? el.textContent.trim() : '';  
+    }  
+  
     function fillBar(card) {  
         var view = card.querySelector('.card__view');  
         if (!view) return;  
   
-        var bar   = getOrCreateBar(card);  
+        var bar = getOrCreateBar(card);  
         if (!bar) return;  
   
         var left  = bar.querySelector('.card__bottom-bar-left');  
         var right = bar.querySelector('.card__bottom-bar-right');  
   
-        // TV badge → левая часть  
-        var type = view.querySelector('.card__type');  
-        if (type && !bar.contains(type)) {  
-            left.appendChild(type);  
+        // Читаем данные из оригинальных (скрытых) элементов  
+        var typeText    = getText(view.querySelector('.card__type'));  
+        var qualityText = getText(view.querySelector('.card__quality'));  
+        var voteText    = getText(view.querySelector('.card__vote'));  
+        var ageText     = getText(card.querySelector('.card__age'));  
+  
+        // ── Левый бейдж: TV / MOV ──────────────────────────────────────────  
+        var typeBadge = bar.querySelector('.card__badge--type');  
+        if (typeText) {  
+            if (!typeBadge) {  
+                typeBadge = document.createElement('span');  
+                typeBadge.className = 'card__badge card__badge--type';  
+                left.appendChild(typeBadge);  
+            }  
+            typeBadge.textContent = typeText;  
+        } else if (typeBadge) {  
+            typeBadge.remove();  
         }  
   
-        // Качество → правая часть (первым)  
-        var quality = view.querySelector('.card__quality');  
-        if (quality && !bar.contains(quality)) {  
-            right.appendChild(quality);  
-        }  
-  
-        // Рейтинг → правая часть  
-        var vote = view.querySelector('.card__vote');  
-        if (vote && !bar.contains(vote)) {  
-            right.appendChild(vote);  
-        }  
-  
-        // Год → правая часть (копируем из .card__age под постером)  
-        var age = card.querySelector('.card__age');  
-        if (age && age.textContent.trim() && !bar.querySelector('.card__age-in-poster')) {  
-            var agePoster = document.createElement('span');  
-            agePoster.className = 'card__age-in-poster';  
-            agePoster.textContent = age.textContent.trim();  
-            right.appendChild(agePoster);  
+        // ── Правый бейдж: качество · рейтинг · год ────────────────────────  
+        var parts = [qualityText, voteText, ageText].filter(Boolean);  
+        var infoBadge = bar.querySelector('.card__badge--info');  
+        if (parts.length) {  
+            if (!infoBadge) {  
+                infoBadge = document.createElement('span');  
+                infoBadge.className = 'card__badge card__badge--info';  
+                right.appendChild(infoBadge);  
+            }  
+            infoBadge.textContent = parts.join(' · ');  
+        } else if (infoBadge) {  
+            infoBadge.remove();  
         }  
     }  
   
@@ -155,49 +147,35 @@
         if (!card || card._crd_redesign) return;  
         card._crd_redesign = true;  
   
-        // Создаём панель сразу  
         getOrCreateBar(card);  
         fillBar(card);  
   
-        // Наблюдаем за добавлением элементов в .card__view  
-        // (card__type, card__vote, card__quality добавляются позже через модули)  
+        // Следим за добавлением card__type / card__vote / card__quality в view  
         var view = card.querySelector('.card__view');  
         if (view) {  
-            var viewObs = new MutationObserver(function () {  
-                fillBar(card);  
-            });  
-            viewObs.observe(view, { childList: true });  
+            new MutationObserver(function () { fillBar(card); })  
+                .observe(view, { childList: true });  
         }  
   
-        // Наблюдаем за изменением текста года  
+        // Следим за изменением текста года  
         var age = card.querySelector('.card__age');  
         if (age) {  
-            var ageObs = new MutationObserver(function () {  
-                var agePoster = card.querySelector('.card__age-in-poster');  
-                if (agePoster) agePoster.textContent = age.textContent.trim();  
-            });  
-            ageObs.observe(age, { childList: true, characterData: true, subtree: true });  
+            new MutationObserver(function () { fillBar(card); })  
+                .observe(age, { childList: true, characterData: true, subtree: true });  
         }  
     }  
   
-    // Наблюдаем за появлением новых карточек в DOM  
-    var bodyObs = new MutationObserver(function (mutations) {  
+    // Следим за появлением новых карточек  
+    new MutationObserver(function (mutations) {  
         mutations.forEach(function (m) {  
             m.addedNodes.forEach(function (node) {  
                 if (node.nodeType !== 1) return;  
-                if (node.classList && node.classList.contains('card')) {  
-                    processCard(node);  
-                }  
-                if (node.querySelectorAll) {  
-                    node.querySelectorAll('.card').forEach(processCard);  
-                }  
+                if (node.classList && node.classList.contains('card')) processCard(node);  
+                if (node.querySelectorAll) node.querySelectorAll('.card').forEach(processCard);  
             });  
         });  
-    });  
+    }).observe(document.body, { childList: true, subtree: true });  
   
-    bodyObs.observe(document.body, { childList: true, subtree: true });  
-  
-    // Обрабатываем карточки, которые уже есть в DOM  
     document.querySelectorAll('.card').forEach(processCard);  
   
 })();
