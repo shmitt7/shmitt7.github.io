@@ -1,174 +1,203 @@
-(function(){  
-    var PLUGIN_ID = 'clean-poster-plugin';  
-    var cardObserver = null;  
+(function () {  
+    'use strict';  
   
-    // Порядок: тип → качество → рейтинг → год  
-    var INFO_ORDER = ['card__type', 'card__quality', 'card__vote', 'card__age'];  
-  
-    function insertInOrder(cpInfo, node){  
-        var nodeOrder = -1;  
-        for(var oi = 0; oi < INFO_ORDER.length; oi++){  
-            if(node.classList.contains(INFO_ORDER[oi])){ nodeOrder = oi; break; }  
+    // ─── CSS ──────────────────────────────────────────────────────────────────  
+    var style = document.createElement('style');  
+    style.textContent = `  
+        /* 1. Иконки закладок/просмотра → правый верхний угол */  
+        .card__icons {  
+            justify-content: flex-end !important;  
+            padding-right: 0.5em;  
         }  
-        if(nodeOrder === -1){ cpInfo.appendChild(node); return; }  
-        var children = cpInfo.children;  
-        var insertBefore = null;  
-        for(var ci = 0; ci < children.length; ci++){  
-            var childOrder = -1;  
-            for(var oi2 = 0; oi2 < INFO_ORDER.length; oi2++){  
-                if(children[ci].classList.contains(INFO_ORDER[oi2])){ childOrder = oi2; break; }  
-            }  
-            if(childOrder !== -1 && childOrder > nodeOrder){ insertBefore = children[ci]; break; }  
+  
+        /* Маркер статуса (Смотрю/Просмотрено) → левый верхний угол */  
+        .card__marker {  
+            top: 0.4em !important;  
+            bottom: auto !important;  
         }  
-        if(insertBefore) cpInfo.insertBefore(node, insertBefore);  
-        else cpInfo.appendChild(node);  
+  
+        /* 2. Нижняя панель постера */  
+        .card__bottom-bar {  
+            position: absolute;  
+            bottom: 0;  
+            left: 0;  
+            right: 0;  
+            display: flex;  
+            align-items: center;  
+            justify-content: space-between;  
+            padding: 0.4em 0.5em;  
+            background: linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 100%);  
+            border-bottom-left-radius: 1em;  
+            border-bottom-right-radius: 1em;  
+            z-index: 2;  
+            pointer-events: none;  
+            min-height: 2.2em;  
+            box-sizing: border-box;  
+        }  
+        .card__bottom-bar > * {  
+            pointer-events: auto;  
+        }  
+        .card__bottom-bar-left {  
+            display: flex;  
+            align-items: center;  
+        }  
+        .card__bottom-bar-right {  
+            display: flex;  
+            align-items: center;  
+            gap: 0.3em;  
+        }  
+  
+        /* Сбрасываем абсолютное позиционирование перемещённых элементов */  
+        .card__bottom-bar .card__type {  
+            position: static !important;  
+            font-size: 0.75em;  
+        }  
+        .card__bottom-bar .card__vote {  
+            position: static !important;  
+            font-size: 0.9em !important;  
+            padding: 0.15em 0.4em !important;  
+        }  
+        .card__bottom-bar .card__quality {  
+            position: static !important;  
+            font-size: 0.75em;  
+            bottom: auto !important;  
+            left: auto !important;  
+        }  
+  
+        /* Год внутри постера */  
+        .card__age-in-poster {  
+            background: rgba(0, 0, 0, 0.5);  
+            color: #fff;  
+            font-size: 0.75em;  
+            padding: 0.2em 0.5em;  
+            border-radius: 1em;  
+            white-space: nowrap;  
+        }  
+  
+        /* Скрываем оригинальный год под постером */  
+        .card > .card__age {  
+            display: none !important;  
+        }  
+  
+        /* 3. Название → ближе к постеру, по центру */  
+        .card__view {  
+            margin-bottom: 0.3em !important;  
+        }  
+        .card__title {  
+            text-align: center !important;  
+        }  
+    `;  
+    document.head.appendChild(style);  
+  
+    // ─── Логика ───────────────────────────────────────────────────────────────  
+  
+    function getOrCreateBar(card) {  
+        var view = card.querySelector('.card__view');  
+        if (!view) return null;  
+  
+        var existing = view.querySelector('.card__bottom-bar');  
+        if (existing) return existing;  
+  
+        var bar   = document.createElement('div');  
+        var left  = document.createElement('div');  
+        var right = document.createElement('div');  
+  
+        bar.className   = 'card__bottom-bar';  
+        left.className  = 'card__bottom-bar-left';  
+        right.className = 'card__bottom-bar-right';  
+  
+        bar.appendChild(left);  
+        bar.appendChild(right);  
+        view.appendChild(bar);  
+  
+        return bar;  
     }  
   
-    function addStyles(){  
-        if(document.getElementById(PLUGIN_ID)) return;  
-        var style = document.createElement('style');  
-        style.id = PLUGIN_ID;  
-        style.textContent = [  
-            // Иконки — правый верхний угол  
-            '.card__view .card__icons{position:absolute!important;top:0.5em!important;right:0.5em!important;left:auto!important;width:auto!important;justify-content:flex-end!important;z-index:3}',  
+    function fillBar(card) {  
+        var view = card.querySelector('.card__view');  
+        if (!view) return;  
   
-            // Оверлей внизу постера  
-            '.cp-overlay{position:absolute;left:0;bottom:0;right:0;padding:2.5em 0.5em 0.5em 0.5em;background:linear-gradient(to bottom,transparent 0%,rgba(0,0,0,0.6) 35%,rgba(0,0,0,0.92) 70%,rgba(0,0,0,0.97) 100%);border-bottom-left-radius:1em;border-bottom-right-radius:1em;z-index:2}',  
+        var bar   = getOrCreateBar(card);  
+        if (!bar) return;  
   
-            // Строка инфо — по левому краю  
-            '.cp-info{display:flex;align-items:center;justify-content:flex-start;gap:0.4em;flex-wrap:wrap;min-height:1em}',  
+        var left  = bar.querySelector('.card__bottom-bar-left');  
+        var right = bar.querySelector('.card__bottom-bar-right');  
   
-            // Тип — красный бейдж  
-            '.cp-info .card__type{position:static!important;background:rgba(210,30,30,0.9)!important;color:#fff!important;font-size:0.75em!important;font-weight:700!important;padding:0.15em 0.45em!important;border-radius:0.3em!important;text-transform:uppercase!important;left:auto!important;right:auto!important;top:auto!important;bottom:auto!important;line-height:1.4!important;text-shadow:none!important}',  
+        // TV badge → левая часть  
+        var type = view.querySelector('.card__type');  
+        if (type && !bar.contains(type)) {  
+            left.appendChild(type);  
+        }  
   
-            // Качество  
-            '.cp-info .card__quality{position:static!important;left:auto!important;right:auto!important;top:auto!important;bottom:auto!important;background:none!important;padding:0!important;border-radius:0!important;color:rgba(255,255,255,0.8)!important;font-size:0.85em!important;font-weight:600!important;text-transform:uppercase!important;margin:0!important;text-shadow:0 1px 3px rgba(0,0,0,0.9)!important}',  
-            '.cp-info .card__quality>div{display:inline!important}',  
+        // Качество → правая часть (первым)  
+        var quality = view.querySelector('.card__quality');  
+        if (quality && !bar.contains(quality)) {  
+            right.appendChild(quality);  
+        }  
   
-            // Рейтинг (иконка KP скрыта)  
-            '.cp-info .card__vote{position:static!important;background:none!important;padding:0!important;border-radius:0!important;color:rgba(255,255,255,0.8)!important;font-size:0.85em!important;font-weight:600!important;left:auto!important;right:auto!important;top:auto!important;bottom:auto!important;text-shadow:0 1px 3px rgba(0,0,0,0.9)!important}',  
-            '.cp-info .card__vote .source--name{display:none!important}',  
+        // Рейтинг → правая часть  
+        var vote = view.querySelector('.card__vote');  
+        if (vote && !bar.contains(vote)) {  
+            right.appendChild(vote);  
+        }  
   
-            // Год — менее выразительный  
-            '.cp-info .card__age{position:static!important;color:rgba(255,255,255,0.55)!important;font-size:0.85em!important;font-weight:400!important;line-height:1!important;margin:0!important;text-shadow:0 1px 3px rgba(0,0,0,0.9)!important;background:none!important;padding:0!important;border-radius:0!important}',  
-        ].join('\n');  
-        document.head.appendChild(style);  
+        // Год → правая часть (копируем из .card__age под постером)  
+        var age = card.querySelector('.card__age');  
+        if (age && age.textContent.trim() && !bar.querySelector('.card__age-in-poster')) {  
+            var agePoster = document.createElement('span');  
+            agePoster.className = 'card__age-in-poster';  
+            agePoster.textContent = age.textContent.trim();  
+            right.appendChild(agePoster);  
+        }  
     }  
   
-    function patchTemplate(){  
-        // Стандартная структура: title и age — под постером, оверлей — внутри card__view  
-        Lampa.Template.add('card',  
-            '<div class="card selector layer--visible layer--render">' +  
-            '<div class="card__view">' +  
-            '<img src="./img/img_load.svg" class="card__img" />' +  
-            '<div class="card__icons"><div class="card__icons-inner"></div></div>' +  
-            '<div class="cp-overlay"><div class="cp-info"></div></div>' +  
-            '</div>' +  
-            '<div class="card__title"></div>' +  
-            '<div class="card__age"></div>' +  
-            '</div>'  
-        );  
+    function processCard(card) {  
+        if (!card || card._crd_redesign) return;  
+        card._crd_redesign = true;  
+  
+        // Создаём панель сразу  
+        getOrCreateBar(card);  
+        fillBar(card);  
+  
+        // Наблюдаем за добавлением элементов в .card__view  
+        // (card__type, card__vote, card__quality добавляются позже через модули)  
+        var view = card.querySelector('.card__view');  
+        if (view) {  
+            var viewObs = new MutationObserver(function () {  
+                fillBar(card);  
+            });  
+            viewObs.observe(view, { childList: true });  
+        }  
+  
+        // Наблюдаем за изменением текста года  
+        var age = card.querySelector('.card__age');  
+        if (age) {  
+            var ageObs = new MutationObserver(function () {  
+                var agePoster = card.querySelector('.card__age-in-poster');  
+                if (agePoster) agePoster.textContent = age.textContent.trim();  
+            });  
+            ageObs.observe(age, { childList: true, characterData: true, subtree: true });  
+        }  
     }  
   
-    function patchModules(){  
-        var map = Lampa.Maker.map('Card');  
-        if(!map || !map.Card) return;  
-  
-        // После создания карточки — перемещаем card__age из-под постера в оверлей  
-        if(map.Card.onCreate){  
-            var origCardOnCreate = map.Card.onCreate;  
-            map.Card.onCreate = function(){  
-                origCardOnCreate.call(this);  
-                var cpInfo = this.html.querySelector('.cp-info');  
-                var age = this.html.querySelector('.card__age');  
-                // Если год не заполнен шаблонизатором — ставим сами  
-                if(age && !age.textContent && this.data && this.data.release_year && this.data.release_year !== '0000'){  
-                    age.textContent = this.data.release_year;  
+    // Наблюдаем за появлением новых карточек в DOM  
+    var bodyObs = new MutationObserver(function (mutations) {  
+        mutations.forEach(function (m) {  
+            m.addedNodes.forEach(function (node) {  
+                if (node.nodeType !== 1) return;  
+                if (node.classList && node.classList.contains('card')) {  
+                    processCard(node);  
                 }  
-                if(cpInfo && age && age.textContent) insertInOrder(cpInfo, age);  
-            };  
-        }  
-  
-        // Тип и качество — перемещаем в оверлей  
-        if(map.Icons && map.Icons.onCreate){  
-            var origIconsOnCreate = map.Icons.onCreate;  
-            map.Icons.onCreate = function(){  
-                origIconsOnCreate.call(this);  
-                var cpInfo = this.html.querySelector('.cp-info');  
-                var type    = this.html.querySelector('.card__type');  
-                var quality = this.html.querySelector('.card__quality');  
-                if(type    && cpInfo) insertInOrder(cpInfo, type);  
-                if(quality && cpInfo) insertInOrder(cpInfo, quality);  
-            };  
-        }  
-  
-        // Рейтинг — перемещаем в оверлей  
-        if(map.Ratting && map.Ratting.onCreate){  
-            var origRattingOnCreate = map.Ratting.onCreate;  
-            map.Ratting.onCreate = function(){  
-                origRattingOnCreate.call(this);  
-                var cpInfo = this.html.querySelector('.cp-info');  
-                var vote   = this.html.querySelector('.card__vote');  
-                if(vote && cpInfo) insertInOrder(cpInfo, vote);  
-            };  
-        }  
-    }  
-  
-    function startObserver(){  
-        // Пропускаем элементы, которые не нужно трогать  
-        var SKIP = ['card__img','card__marker','card__img-broken','card__icons','cp-overlay','cp-info','card__title'];  
-  
-        cardObserver = new MutationObserver(function(mutations){  
-            var mi, ni, mutation, addedNodes, node, parent, cls, i, found, cpInfo;  
-            for(mi = 0; mi < mutations.length; mi++){  
-                mutation = mutations[mi];  
-                if(mutation.type !== 'childList') continue;  
-                addedNodes = mutation.addedNodes;  
-                for(ni = 0; ni < addedNodes.length; ni++){  
-                    node = addedNodes[ni];  
-                    if(node.nodeType !== 1) continue;  
-                    parent = node.parentNode;  
-                    if(!parent || !parent.classList) continue;  
-                    if(!parent.classList.contains('card__view')) continue;  
-                    cls = node.classList;  
-                    found = false;  
-                    for(i = 0; i < SKIP.length; i++){  
-                        if(cls.contains(SKIP[i])){ found = true; break; }  
-                    }  
-                    if(found) continue;  
-                    cpInfo = parent.querySelector('.cp-info');  
-                    if(!cpInfo) continue;  
-                    if(  
-                        cls.contains('card__type')    ||  
-                        cls.contains('card__quality') ||  
-                        cls.contains('card__vote')    ||  
-                        cls.contains('card__age')  
-                    ){  
-                        insertInOrder(cpInfo, node);  
-                    }  
+                if (node.querySelectorAll) {  
+                    node.querySelectorAll('.card').forEach(processCard);  
                 }  
-            }  
+            });  
         });  
-  
-        cardObserver.observe(document.body, { childList: true, subtree: true });  
-  
-        Lampa.Listener.follow('app', function(e){  
-            if(e.type === 'destroy' && cardObserver){  
-                cardObserver.disconnect();  
-                cardObserver = null;  
-            }  
-        });  
-    }  
-  
-    function init(){  
-        addStyles();  
-        patchTemplate();  
-        patchModules();  
-        startObserver();  
-    }  
-  
-    if(window.appready) init();  
-    else Lampa.Listener.follow('app', function(e){  
-        if(e.type == 'ready') init();  
     });  
+  
+    bodyObs.observe(document.body, { childList: true, subtree: true });  
+  
+    // Обрабатываем карточки, которые уже есть в DOM  
+    document.querySelectorAll('.card').forEach(processCard);  
+  
 })();
