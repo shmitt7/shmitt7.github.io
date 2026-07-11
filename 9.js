@@ -1,10 +1,9 @@
 (function(){  
     var PLUGIN_ID = 'clean-poster-plugin';  
-    var cleanPosterCache = {};  
     var cardObserver = null;  
   
-    // Порядок: качество → рейтинг → год  
-    var INFO_ORDER = ['card__quality', 'card__vote', 'card__age'];  
+    // Порядок: тип → качество → рейтинг → год  
+    var INFO_ORDER = ['card__type', 'card__quality', 'card__vote', 'card__age'];  
   
     function insertInOrder(cpInfo, node){  
         var nodeOrder = -1;  
@@ -30,125 +29,94 @@
         var style = document.createElement('style');  
         style.id = PLUGIN_ID;  
         style.textContent = [  
-            '.card{overflow:visible!important}',  
-            '.card__view{overflow:visible!important;margin-bottom:0!important}',  
-            '.card__view .card__icons{position:absolute!important;top:0.5em!important;right:0.5em!important;left:auto!important;width:auto!important;z-index:3}',  
+            // Иконки — правый верхний угол  
+            '.card__view .card__icons{position:absolute!important;top:0.5em!important;right:0.5em!important;left:auto!important;width:auto!important;justify-content:flex-end!important;z-index:3}',  
   
-            '.cp-overlay{position:absolute;left:0;bottom:0;right:0;padding:3em 0.5em 0.5em 0.4em;background:linear-gradient(to bottom,transparent 0%,rgba(0,0,0,0.6) 35%,rgba(0,0,0,0.92) 70%,rgba(0,0,0,0.97) 100%);border-bottom-left-radius:1em;border-bottom-right-radius:1em;z-index:2}',  
+            // Оверлей внизу постера  
+            '.cp-overlay{position:absolute;left:0;bottom:0;right:0;padding:2.5em 0.5em 0.5em 0.5em;background:linear-gradient(to bottom,transparent 0%,rgba(0,0,0,0.6) 35%,rgba(0,0,0,0.92) 70%,rgba(0,0,0,0.97) 100%);border-bottom-left-radius:1em;border-bottom-right-radius:1em;z-index:2}',  
   
-            /* gap между строкой инфо и названием уменьшен до 0.08em */  
-            '.cp-info{display:flex;align-items:center;justify-content:flex-end;gap:0.35em;margin-bottom:0.08em;min-height:1em}',  
+            // Строка инфо — по левому краю  
+            '.cp-info{display:flex;align-items:center;justify-content:flex-start;gap:0.4em;flex-wrap:wrap;min-height:1em}',  
   
-            /* font-size увеличен до 0.9em, иконка KP скрыта */  
-            '.cp-info .card__age{position:static!important;color:rgba(255,255,255,0.65)!important;font-size:0.9em!important;font-weight:600!important;line-height:1!important;margin:0!important;text-shadow:0 1px 3px rgba(0,0,0,0.9)!important;background:none!important;padding:0!important;border-radius:0!important}',  
+            // Тип — красный бейдж  
+            '.cp-info .card__type{position:static!important;background:rgba(210,30,30,0.9)!important;color:#fff!important;font-size:0.75em!important;font-weight:700!important;padding:0.15em 0.45em!important;border-radius:0.3em!important;text-transform:uppercase!important;left:auto!important;right:auto!important;top:auto!important;bottom:auto!important;line-height:1.4!important;text-shadow:none!important}',  
   
-            '.cp-info .card__vote{position:static!important;background:none!important;padding:0!important;border-radius:0!important;color:rgba(255,255,255,0.65)!important;font-size:0.9em!important;font-weight:600!important;left:auto!important;right:auto!important;top:auto!important;bottom:auto!important;text-shadow:0 1px 3px rgba(0,0,0,0.9)!important}',  
-            '.cp-info .card__vote .source--name{display:none!important}',  
-  
-            '.cp-info .card__quality{position:static!important;left:auto!important;right:auto!important;top:auto!important;bottom:auto!important;background:none!important;padding:0!important;border-radius:0!important;color:rgba(255,255,255,0.65)!important;font-size:0.9em!important;font-weight:600!important;text-transform:uppercase!important;margin:0!important;text-shadow:0 1px 3px rgba(0,0,0,0.9)!important}',  
+            // Качество  
+            '.cp-info .card__quality{position:static!important;left:auto!important;right:auto!important;top:auto!important;bottom:auto!important;background:none!important;padding:0!important;border-radius:0!important;color:rgba(255,255,255,0.8)!important;font-size:0.85em!important;font-weight:600!important;text-transform:uppercase!important;margin:0!important;text-shadow:0 1px 3px rgba(0,0,0,0.9)!important}',  
             '.cp-info .card__quality>div{display:inline!important}',  
   
-            '.cp-overlay .card__title{color:#fff!important;font-size:1.2em!important;font-weight:700!important;line-height:1.2!important;max-height:3.6em!important;overflow:hidden!important;display:-webkit-box!important;-webkit-line-clamp:3!important;-webkit-box-orient:vertical!important;margin-bottom:0!important;word-break:break-word!important;text-shadow:0 1px 6px rgba(0,0,0,1),0 2px 12px rgba(0,0,0,0.8)!important}',  
+            // Рейтинг (иконка KP скрыта)  
+            '.cp-info .card__vote{position:static!important;background:none!important;padding:0!important;border-radius:0!important;color:rgba(255,255,255,0.8)!important;font-size:0.85em!important;font-weight:600!important;left:auto!important;right:auto!important;top:auto!important;bottom:auto!important;text-shadow:0 1px 3px rgba(0,0,0,0.9)!important}',  
+            '.cp-info .card__vote .source--name{display:none!important}',  
   
-            '.card__type{display:none!important}',  
+            // Год — менее выразительный  
+            '.cp-info .card__age{position:static!important;color:rgba(255,255,255,0.55)!important;font-size:0.85em!important;font-weight:400!important;line-height:1!important;margin:0!important;text-shadow:0 1px 3px rgba(0,0,0,0.9)!important;background:none!important;padding:0!important;border-radius:0!important}',  
         ].join('\n');  
         document.head.appendChild(style);  
     }  
   
     function patchTemplate(){  
+        // Стандартная структура: title и age — под постером, оверлей — внутри card__view  
         Lampa.Template.add('card',  
             '<div class="card selector layer--visible layer--render">' +  
             '<div class="card__view">' +  
             '<img src="./img/img_load.svg" class="card__img" />' +  
             '<div class="card__icons"><div class="card__icons-inner"></div></div>' +  
-            '<div class="cp-overlay">' +  
-            '<div class="cp-info"><div class="card__age"></div></div>' +  
+            '<div class="cp-overlay"><div class="cp-info"></div></div>' +  
+            '</div>' +  
             '<div class="card__title"></div>' +  
-            '</div>' +  
-            '</div>' +  
+            '<div class="card__age"></div>' +  
             '</div>'  
         );  
     }  
   
-    function loadCleanPoster(card){  
-        var data = card.data;  
-        var id, type, posterSize, url, self;  
-        if(!data || !data.id) return;  
-        id = data.id;  
-        type = data.original_name ? 'tv' : 'movie';  
-        self = card;  
-        if(cleanPosterCache[id] === null) return;  
-        if(cleanPosterCache[id]){  
-            if(self.img) self.img.src = cleanPosterCache[id];  
-            return;  
-        }  
-        if(cleanPosterCache[id] === '') return;  
-        cleanPosterCache[id] = null;  
-        posterSize = Lampa.Storage.field('poster_size') || 'w300';  
-        url = Lampa.TMDB.api(  
-            type + '/' + id +  
-            '/images?include_image_language=null&api_key=' + Lampa.TMDB.key()  
-        );  
-        new Lampa.Reguest().silent(url, function(images){  
-            var posters = (images && Array.isArray(images.posters)) ? images.posters : [];  
-            var clean = null;  
-            var i;  
-            for(i = 0; i < posters.length; i++){  
-                if(posters[i].iso_639_1 === null){ clean = posters[i]; break; }  
-            }  
-            if(clean){  
-                var src = Lampa.TMDB.image('t/p/' + posterSize + clean.file_path);  
-                cleanPosterCache[id] = src;  
-                if(self.img) self.img.src = src;  
-            }  
-            else{  
-                cleanPosterCache[id] = '';  
-            }  
-        }, function(){  
-            cleanPosterCache[id] = '';  
-        });  
-    }  
-  
     function patchModules(){  
         var map = Lampa.Maker.map('Card');  
-        var origCardOnVisible, origIconsOnCreate, origRattingOnCreate;  
         if(!map || !map.Card) return;  
   
-        origCardOnVisible = map.Card.onVisible;  
-        map.Card.onVisible = function(){  
-            origCardOnVisible.call(this);  
-            loadCleanPoster(this);  
-        };  
-  
-        if(map.Icons && map.Icons.onCreate){  
-            origIconsOnCreate = map.Icons.onCreate;  
-            map.Icons.onCreate = function(){  
-                var quality, cpInfo;  
-                origIconsOnCreate.call(this);  
-                quality = this.html.querySelector('.card__quality');  
-                cpInfo  = this.html.querySelector('.cp-info');  
-                if(quality && cpInfo){  
-                    insertInOrder(cpInfo, quality);  
+        // После создания карточки — перемещаем card__age из-под постера в оверлей  
+        if(map.Card.onCreate){  
+            var origCardOnCreate = map.Card.onCreate;  
+            map.Card.onCreate = function(){  
+                origCardOnCreate.call(this);  
+                var cpInfo = this.html.querySelector('.cp-info');  
+                var age = this.html.querySelector('.card__age');  
+                // Если год не заполнен шаблонизатором — ставим сами  
+                if(age && !age.textContent && this.data && this.data.release_year && this.data.release_year !== '0000'){  
+                    age.textContent = this.data.release_year;  
                 }  
+                if(cpInfo && age && age.textContent) insertInOrder(cpInfo, age);  
             };  
         }  
   
+        // Тип и качество — перемещаем в оверлей  
+        if(map.Icons && map.Icons.onCreate){  
+            var origIconsOnCreate = map.Icons.onCreate;  
+            map.Icons.onCreate = function(){  
+                origIconsOnCreate.call(this);  
+                var cpInfo = this.html.querySelector('.cp-info');  
+                var type    = this.html.querySelector('.card__type');  
+                var quality = this.html.querySelector('.card__quality');  
+                if(type    && cpInfo) insertInOrder(cpInfo, type);  
+                if(quality && cpInfo) insertInOrder(cpInfo, quality);  
+            };  
+        }  
+  
+        // Рейтинг — перемещаем в оверлей  
         if(map.Ratting && map.Ratting.onCreate){  
-            origRattingOnCreate = map.Ratting.onCreate;  
+            var origRattingOnCreate = map.Ratting.onCreate;  
             map.Ratting.onCreate = function(){  
-                var cpInfo, vote;  
                 origRattingOnCreate.call(this);  
-                cpInfo = this.html.querySelector('.cp-info');  
-                vote   = this.html.querySelector('.card__vote');  
-                if(vote && cpInfo){  
-                    insertInOrder(cpInfo, vote);  
-                }  
+                var cpInfo = this.html.querySelector('.cp-info');  
+                var vote   = this.html.querySelector('.card__vote');  
+                if(vote && cpInfo) insertInOrder(cpInfo, vote);  
             };  
         }  
     }  
   
     function startObserver(){  
-        var SKIP = ['card__img','card__marker','card__img-broken','card__icons','cp-overlay','cp-info','card__title','card__age','card__type'];  
+        // Пропускаем элементы, которые не нужно трогать  
+        var SKIP = ['card__img','card__marker','card__img-broken','card__icons','cp-overlay','cp-info','card__title'];  
   
         cardObserver = new MutationObserver(function(mutations){  
             var mi, ni, mutation, addedNodes, node, parent, cls, i, found, cpInfo;  
@@ -170,7 +138,12 @@
                     if(found) continue;  
                     cpInfo = parent.querySelector('.cp-info');  
                     if(!cpInfo) continue;  
-                    if(cls.contains('card__quality') || cls.contains('card__vote') || cls.contains('card__age')){  
+                    if(  
+                        cls.contains('card__type')    ||  
+                        cls.contains('card__quality') ||  
+                        cls.contains('card__vote')    ||  
+                        cls.contains('card__age')  
+                    ){  
                         insertInOrder(cpInfo, node);  
                     }  
                 }  
