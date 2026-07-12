@@ -10,7 +10,7 @@
             padding-right: 0.5em;  
         }  
   
-        /* Маркер статуса → левый верхний угол */  
+        /* Маркер статуса (Смотрю/Просмотрено) → левый верхний угол */  
         .card__marker {  
             top: 0.4em !important;  
             bottom: auto !important;  
@@ -121,14 +121,14 @@
         var left  = bar.querySelector('.card__bottom-bar-left');  
         var right = bar.querySelector('.card__bottom-bar-right');  
   
-        // Читаем данные из оригинальных (скрытых) элементов, которые НЕ в нашем баре  
+        // Читаем данные из оригинальных (скрытых) элементов вне нашего бара  
         var typeText    = getTextOutsideBar(view, bar, '.card__type');  
-        // Качество: применяем toUpperCase() т.к. CSS text-transform не влияет на textContent  
+        // toUpperCase() т.к. CSS text-transform не влияет на textContent  
         var qualityText = getTextOutsideBar(view, bar, '.card__quality').toUpperCase();  
-        // Рейтинг: ищем вне бара — так плагин КП не будет конфликтовать  
+        // Рейтинг вне бара — так плагин КП не конфликтует  
         var voteText    = getTextOutsideBar(view, bar, '.card__vote');  
-        var ageText     = (card.querySelector('.card__age') || {}).textContent || '';  
-        ageText = ageText.trim();  
+        var ageEl       = card.querySelector('.card__age');  
+        var ageText     = ageEl ? ageEl.textContent.trim() : '';  
   
         // ── Левый бейдж: TV / MOV ──────────────────────────────────────────  
         var typeBadge = bar.querySelector('.card__badge--type');  
@@ -167,19 +167,32 @@
   
         var view = card.querySelector('.card__view');  
         if (view) {  
-            // subtree: true — ловим и добавление новых элементов (плагин КП),  
-            // и изменение их текста  
-            new MutationObserver(function () { fillBar(card); })  
-                .observe(view, { childList: true, subtree: true, characterData: true });  
+            // Флаг защиты от бесконечного цикла  
+            var filling = false;  
+            new MutationObserver(function () {  
+                if (filling) return;  
+                filling = true;  
+                fillBar(card);  
+                filling = false;  
+            // childList + subtree: ловим добавление новых элементов (в т.ч. от плагина КП)  
+            // characterData НЕ используем — он вызывал бесконечный цикл  
+            }).observe(view, { childList: true, subtree: true });  
         }  
   
+        // Следим за изменением текста года отдельно  
         var age = card.querySelector('.card__age');  
         if (age) {  
-            new MutationObserver(function () { fillBar(card); })  
-                .observe(age, { childList: true, characterData: true, subtree: true });  
+            var ageFilling = false;  
+            new MutationObserver(function () {  
+                if (ageFilling) return;  
+                ageFilling = true;  
+                fillBar(card);  
+                ageFilling = false;  
+            }).observe(age, { childList: true, characterData: true, subtree: true });  
         }  
     }  
   
+    // Следим за появлением новых карточек в DOM  
     new MutationObserver(function (mutations) {  
         mutations.forEach(function (m) {  
             m.addedNodes.forEach(function (node) {  
@@ -190,6 +203,7 @@
         });  
     }).observe(document.body, { childList: true, subtree: true });  
   
+    // Обрабатываем карточки, которые уже есть в DOM  
     document.querySelectorAll('.card').forEach(processCard);  
   
 })();
