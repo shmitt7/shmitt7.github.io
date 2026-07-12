@@ -1,22 +1,16 @@
 (function () {  
     'use strict';  
   
-    // ─── CSS ──────────────────────────────────────────────────────────────────  
     var style = document.createElement('style');  
     style.textContent = `  
-        /* Иконки → правый верхний угол */  
         .card__icons {  
             justify-content: flex-end !important;  
             padding-right: 0.5em;  
         }  
-  
-        /* Маркер статуса (Смотрю/Просмотрено) → левый верхний угол */  
         .card__marker {  
             top: 0.4em !important;  
             bottom: auto !important;  
         }  
-  
-        /* Нижняя панель постера — без затемнения */  
         .card__bottom-bar {  
             position: absolute;  
             bottom: 0;  
@@ -31,17 +25,13 @@
             min-height: 2.2em;  
             box-sizing: border-box;  
         }  
-        .card__bottom-bar > * {  
-            pointer-events: auto;  
-        }  
+        .card__bottom-bar > * { pointer-events: auto; }  
         .card__bottom-bar-left,  
         .card__bottom-bar-right {  
             display: flex;  
             align-items: center;  
             gap: 0.3em;  
         }  
-  
-        /* Единый стиль бейджей — чуть заострённые углы */  
         .card__badge {  
             background: rgba(0, 0, 0, 0.6);  
             color: #fff;  
@@ -53,8 +43,6 @@
             white-space: nowrap;  
             line-height: 1.4;  
         }  
-  
-        /* Скрываем оригинальные элементы */  
         .card__type,  
         .card__vote,  
         .card__quality {  
@@ -63,8 +51,6 @@
         .card > .card__age {  
             display: none !important;  
         }  
-  
-        /* Название → ближе к постеру, по центру, 4 строки */  
         .card__view {  
             margin-bottom: 0.3em !important;  
         }  
@@ -77,9 +63,6 @@
     `;  
     document.head.appendChild(style);  
   
-    // ─── Вспомогательные функции ──────────────────────────────────────────────  
-  
-    // Читаем текст элемента, который НЕ находится внутри нашего бара  
     function getTextOutsideBar(view, bar, selector) {  
         var all = view.querySelectorAll(selector);  
         var result = '';  
@@ -111,6 +94,12 @@
         return bar;  
     }  
   
+    // Устанавливаем textContent только если текст изменился —  
+    // это предотвращает бесконечный цикл MutationObserver  
+    function setText(el, text) {  
+        if (el.textContent !== text) el.textContent = text;  
+    }  
+  
     function fillBar(card) {  
         var view = card.querySelector('.card__view');  
         if (!view) return;  
@@ -121,16 +110,13 @@
         var left  = bar.querySelector('.card__bottom-bar-left');  
         var right = bar.querySelector('.card__bottom-bar-right');  
   
-        // Читаем данные из оригинальных (скрытых) элементов вне нашего бара  
         var typeText    = getTextOutsideBar(view, bar, '.card__type');  
-        // toUpperCase() т.к. CSS text-transform не влияет на textContent  
         var qualityText = getTextOutsideBar(view, bar, '.card__quality').toUpperCase();  
-        // Рейтинг вне бара — так плагин КП не конфликтует  
         var voteText    = getTextOutsideBar(view, bar, '.card__vote');  
         var ageEl       = card.querySelector('.card__age');  
         var ageText     = ageEl ? ageEl.textContent.trim() : '';  
   
-        // ── Левый бейдж: TV / MOV ──────────────────────────────────────────  
+        // Левый бейдж: TV / MOV  
         var typeBadge = bar.querySelector('.card__badge--type');  
         if (typeText) {  
             if (!typeBadge) {  
@@ -138,12 +124,12 @@
                 typeBadge.className = 'card__badge card__badge--type';  
                 left.appendChild(typeBadge);  
             }  
-            typeBadge.textContent = typeText;  
+            setText(typeBadge, typeText);  
         } else if (typeBadge) {  
             typeBadge.remove();  
         }  
   
-        // ── Правый бейдж: качество · рейтинг · год ────────────────────────  
+        // Правый бейдж: качество · рейтинг · год  
         var parts = [qualityText, voteText, ageText].filter(Boolean);  
         var infoBadge = bar.querySelector('.card__badge--info');  
         if (parts.length) {  
@@ -152,7 +138,7 @@
                 infoBadge.className = 'card__badge card__badge--info';  
                 right.appendChild(infoBadge);  
             }  
-            infoBadge.textContent = parts.join(' · ');  
+            setText(infoBadge, parts.join(' · '));  
         } else if (infoBadge) {  
             infoBadge.remove();  
         }  
@@ -167,32 +153,19 @@
   
         var view = card.querySelector('.card__view');  
         if (view) {  
-            // Флаг защиты от бесконечного цикла  
-            var filling = false;  
             new MutationObserver(function () {  
-                if (filling) return;  
-                filling = true;  
                 fillBar(card);  
-                filling = false;  
-            // childList + subtree: ловим добавление новых элементов (в т.ч. от плагина КП)  
-            // characterData НЕ используем — он вызывал бесконечный цикл  
             }).observe(view, { childList: true, subtree: true });  
         }  
   
-        // Следим за изменением текста года отдельно  
         var age = card.querySelector('.card__age');  
         if (age) {  
-            var ageFilling = false;  
             new MutationObserver(function () {  
-                if (ageFilling) return;  
-                ageFilling = true;  
                 fillBar(card);  
-                ageFilling = false;  
             }).observe(age, { childList: true, characterData: true, subtree: true });  
         }  
     }  
   
-    // Следим за появлением новых карточек в DOM  
     new MutationObserver(function (mutations) {  
         mutations.forEach(function (m) {  
             m.addedNodes.forEach(function (node) {  
@@ -203,7 +176,6 @@
         });  
     }).observe(document.body, { childList: true, subtree: true });  
   
-    // Обрабатываем карточки, которые уже есть в DOM  
     document.querySelectorAll('.card').forEach(processCard);  
   
 })();
