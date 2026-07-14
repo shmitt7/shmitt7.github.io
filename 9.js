@@ -6,6 +6,17 @@
   
     var network = new Lampa.Reguest();  
   
+    /**  
+     * Нормализует значение quality/release_quality.  
+     * CUB может вернуть: строку "WEB-DL", пустой массив [], null, undefined.  
+     */  
+    function normalizeQuality(val) {  
+        if (!val) return null;  
+        if (Array.isArray(val)) return val.length ? val[0] : null;  
+        if (typeof val === 'string' && val.trim()) return val.trim();  
+        return null;  
+    }  
+  
     function fetchQuality(id, method, cb) {  
         var url = Lampa.Utils.protocol()  
             + Lampa.Manifest.cub_domain  
@@ -13,14 +24,10 @@
   
         network.silent(  
             url,  
-            function (json) {   
-                console.log('[Quality Plugin] CUB response:', json);  
-                cb((json && json.release_quality) || null);   
+            function (json) {  
+                cb(normalizeQuality(json && json.release_quality));  
             },  
-            function ()     {   
-                console.log('[Quality Plugin] CUB error');  
-                cb(null);   
-            },  
+            function () { cb(null); },  
             false,  
             { timeout: 5000 }  
         );  
@@ -31,7 +38,6 @@
         var tag = body.find('.tag--quality');  
         if (tag.length) {  
             tag.removeClass('hide').find('> div').text(quality);  
-            console.log('[Quality Plugin] Applied to full page:', quality);  
         }  
     }  
   
@@ -45,16 +51,9 @@
         inner.innerText = quality.toUpperCase();  
         wrap.appendChild(inner);  
         view.appendChild(wrap);  
-        console.log('[Quality Plugin] Applied to card:', quality);  
     }  
   
     function initPlugin() {  
-        console.log('[Quality Plugin] Initializing...');  
-  
-        // Проверяем настройку  
-        var cardQualityEnabled = Lampa.Storage.field('card_quality');  
-        console.log('[Quality Plugin] card_quality setting:', cardQualityEnabled);  
-  
         // Хук на страницу фильма/сериала  
         Lampa.Listener.follow('full', function (e) {  
             if (e.type !== 'start') return;  
@@ -63,19 +62,24 @@
             var body    = e.body;  
             var isTv    = !!movie.first_air_date;  
             var method  = isTv ? 'tv' : 'movie';  
-            var quality = movie.release_quality || movie.quality;  
   
-            console.log('[Quality Plugin] Full page:', movie.title, 'isTv:', isTv, 'quality:', quality);  
+            // Нормализуем — пустой массив [] превращается в null  
+            var quality = normalizeQuality(movie.release_quality)  
+                       || normalizeQuality(movie.quality);  
+  
+            console.log('[Quality Plugin]', movie.title || movie.name,  
+                        'isTv:', isTv, 'quality:', quality);  
   
             if (quality) {  
                 applyToFullPage(body, quality);  
                 return;  
             }  
   
-            fetchQuality(movie.id, method, function (quality) {  
-                if (!quality) return;  
-                movie.release_quality = quality;  
-                applyToFullPage(body, quality);  
+            // Качества нет — запрашиваем с CUB  
+            fetchQuality(movie.id, method, function (q) {  
+                if (!q) return;  
+                movie.release_quality = q;  
+                applyToFullPage(body, q);  
             });  
         });  
   
@@ -97,15 +101,13 @@
                     }  
   
                     for (var m = 0; m < cards.length; m++) {  
-                        var cardEl = cards[m];  
-                        var data   = cardEl.card_data;  
+                        var cardEl  = cards[m];  
+                        var data    = cardEl.card_data;  
+                        if (!data) continue;  
   
-                        if (!data) {  
-                            console.log('[Quality Plugin] No card_data on element');  
-                            continue;  
-                        }  
-  
-                        var quality = data.release_quality || data.quality;  
+                        // Нормализуем здесь тоже  
+                        var quality = normalizeQuality(data.release_quality)  
+                                   || normalizeQuality(data.quality);  
                         if (!quality) continue;  
   
                         var view = cardEl.querySelector('.card__view');  
@@ -118,10 +120,8 @@
         });  
   
         observer.observe(document.body, { childList: true, subtree: true });  
-        console.log('[Quality Plugin] Observer started');  
     }  
   
-    // Правильная инициализация через событие app  
     if (window.appready) {  
         initPlugin();  
     } else {  
