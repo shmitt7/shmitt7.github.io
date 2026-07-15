@@ -6,18 +6,20 @@
   
     var SERVERS = ['https://jac.red', 'https://jr.maxvol.pro'];  
     var KP_API  = 'https://kinopoiskapiunofficial.tech/api/v2.1/films/search-by-keyword';  
-    var KP_KEY  = '2d55adfd-019d-4567-bbf7-67d503f61b5a'; // замените на свой ключ  
+    var KP_KEY  = '2d55adfd-019d-4567-bbf7-67d503f61b5a';  
   
-    var RE_TS  = /\b(ts|telesync|telecine|cam|camrip|workprint|wp|scr|screener|dvdscr)\b/i;  
+    var RE_TS  = /\b(tsrip|ts|telesync|telecine|cam|camrip|workprint|wp|scr|screener|dvdscr)\b/i;  
     var RE_TS2 = /звук\s*с\s*ts|sound\s*ts|audio\s*ts|dub\s*ts/i;  
     var RE_4K  = /\b(2160p|2160р|4k|uhd|4к)\b/i;  
     var RE_HD  = /\b(1080p|1080р|720p|720р|blu\-ray|bdrip|bdremux|web\-dl|webdl|web\-dlrip|webrip|hdtv|hdtvrip|hddvd|hddvdrip|fullhd|fhd|hd|hdrip)\b/i;  
   
-    var qualityCache = {};  
+    var qualityCache    = {};  
     var qualityCacheSize = 0;  
+    var cacheHits       = 0;  
+    var cacheMisses     = 0;  
     var intersectionObserver = null;  
   
-    console.log(LOG, 'Plugin initialized');  
+    console.log(LOG, 'Plugin initialized. Servers:', SERVERS);  
   
     // ─── helpers ────────────────────────────────────────────────────────────  
   
@@ -29,9 +31,28 @@
         return null;  
     }  
   
+    function aggregate(titles, label) {  
+        var ts = 0, k4 = 0, hd = 0, none = 0;  
+        for (var i = 0; i < titles.length; i++) {  
+            var q = getQuality(titles[i]);  
+            if      (q === 'TS') ts++;  
+            else if (q === '4K') k4++;  
+            else if (q === 'HD') hd++;  
+            else                 none++;  
+            console.log(LOG, '  [' + label + '] "' + titles[i] + '" → ' + (q || 'null'));  
+        }  
+        var total = titles.length;  
+        var tsPct = total ? Math.round(ts / total * 100) : 0;  
+        var result = tsPct >= 50 ? 'TS' : k4 ? '4K' : hd ? 'HD' : null;  
+        console.log(LOG, '  [' + label + '] STATS total=' + total  
+            + ' TS=' + ts + '(' + tsPct + '%) 4K=' + k4 + ' HD=' + hd + ' none=' + none  
+            + ' → RESULT: ' + result);  
+        return result;  
+    }  
+  
     function setQualityCache(key, value) {  
         if (qualityCacheSize > 200) {  
-            console.log(LOG, 'Cache cleared (limit 200)');  
+            console.log(LOG, 'Cache cleared (limit 200). Hits so far: ' + cacheHits);  
             qualityCache = {};  
             qualityCacheSize = 0;  
         }  
@@ -39,47 +60,42 @@
         qualityCacheSize++;  
     }  
   
-    // ─── поиск по KP ID на jac.red ──────────────────────────────────────────  
+    // ─── поиск по KP ID через Query=kp{id} ──────────────────────────────────  
   
     function searchByKpId(kpId, cacheKey, callback) {  
-        console.log(LOG, 'searchByKpId: kpId=' + kpId);  
+        console.log(LOG, '── searchByKpId START kpId=' + kpId + ' ──');  
         var i = 0;  
         var titles = [];  
+        var serverStats = [];  
         var network = new Lampa.Reguest();  
   
         function done() {  
-            console.log(LOG, 'searchByKpId done: titles collected=' + titles.length, titles);  
-            if (!titles.length) {  
-                if (cacheKey) setQualityCache(cacheKey, null);  
-                return callback(null);  
-            }  
-            var ts = 0, has4K = false, hasHD = false;  
-            for (var ti = 0; ti < titles.length; ti++) {  
-                var q = getQuality(titles[ti]);  
-                console.log(LOG, '  title:', titles[ti], '→', q);  
-                if (q === 'TS') ts++;  
-                else if (q === '4K') has4K = true;  
-                else if (q === 'HD') hasHD = true;  
-            }  
-            var r = ts / titles.length >= 0.5 ? 'TS' : has4K ? '4K' : hasHD ? 'HD' : null;  
-            console.log(LOG, 'searchByKpId result: ' + r + ' (ts=' + ts + ', 4K=' + has4K + ', HD=' + hasHD + ')');  
-            if (cacheKey) setQualityCache(cacheKey, r);  
-            callback(r);  
+            console.log(LOG, '── searchByKpId DONE kpId=' + kpId  
+                + ' total titles=' + titles.length  
+                + ' servers: ' + JSON.stringify(serverStats) + ' ──');  
+            var result = aggregate(titles, 'kpId=' + kpId);  
+            if (cacheKey) setQualityCache(cacheKey, result);  
+            callback(result);  
         }  
   
         function next() {  
             if (i >= SERVERS.length) return done();  
-            var url = SERVERS[i] + '/api/v2.0/indexers/all/results?apikey=&kp_id=' + kpId;  
-            console.log(LOG, 'searchByKpId: requesting server[' + i + ']', url);  
+            // Используем Query=kp{id} — стандартный формат для русских форков Jackett  
+            var url = SERVERS[i] + '/api/v2.0/indexers/all/results?apikey=&Query=kp' + kpId;  
+            var serverIdx = i;  
+            console.log(LOG, 'searchByKpId: → server[' + serverIdx + '] ' + url);  
             network.silent(url, function(res) {  
                 var results = (res && res.Results) || [];  
-                console.log(LOG, 'searchByKpId: server[' + i + '] returned ' + results.length + ' results');  
-                for (var ri = 0; ri < results.length; ri++) {  
-                    titles.push(results[ri].Title);  
-                }  
+                serverStats.push({ server: SERVERS[serverIdx], count: results.length, ok: true });  
+                console.log(LOG, 'searchByKpId: ← server[' + serverIdx + '] '  
+                    + results.length + ' results');  
+                for (var ri = 0; ri < results.length; ri++) titles.push(results[ri].Title);  
                 i++; next();  
             }, function(err) {  
-                console.warn(LOG, 'searchByKpId: server[' + i + '] error', err);  
+                serverStats.push({ server: SERVERS[serverIdx], count: 0, ok: false,  
+                    error: (err && err.decode_error) || 'unknown' });  
+                console.warn(LOG, 'searchByKpId: ✗ server[' + serverIdx + '] error: '  
+                    + ((err && err.decode_error) || JSON.stringify(err)));  
                 i++; next();  
             });  
         }  
@@ -87,46 +103,39 @@
         next();  
     }  
   
-    // ─── поиск по названию + год ±1 (fallback) ──────────────────────────────  
+    // ─── поиск по названию + год ±1 ─────────────────────────────────────────  
   
     function searchByTitle(title, targetYear, cacheKey, callback) {  
-        console.log(LOG, 'searchByTitle: title="' + title + '" year=' + targetYear);  
+        console.log(LOG, '── searchByTitle START title="' + title + '" year=' + targetYear + ' ──');  
         var i = 0;  
         var titles = [];  
+        var serverStats = [];  
         var network = new Lampa.Reguest();  
   
         function done() {  
-            console.log(LOG, 'searchByTitle done: titles collected=' + titles.length, titles);  
-            if (!titles.length) {  
-                if (cacheKey) setQualityCache(cacheKey, null);  
-                return callback(null);  
-            }  
-            var ts = 0, has4K = false, hasHD = false;  
-            for (var ti = 0; ti < titles.length; ti++) {  
-                var q = getQuality(titles[ti]);  
-                console.log(LOG, '  title:', titles[ti], '→', q);  
-                if (q === 'TS') ts++;  
-                else if (q === '4K') has4K = true;  
-                else if (q === 'HD') hasHD = true;  
-            }  
-            var r = ts / titles.length >= 0.5 ? 'TS' : has4K ? '4K' : hasHD ? 'HD' : null;  
-            console.log(LOG, 'searchByTitle result: ' + r + ' (ts=' + ts + ', 4K=' + has4K + ', HD=' + hasHD + ')');  
-            if (cacheKey) setQualityCache(cacheKey, r);  
-            callback(r);  
+            console.log(LOG, '── searchByTitle DONE title="' + title  
+                + '" total titles=' + titles.length  
+                + ' servers: ' + JSON.stringify(serverStats) + ' ──');  
+            var result = aggregate(titles, 'title');  
+            if (cacheKey) setQualityCache(cacheKey, result);  
+            callback(result);  
         }  
   
         function next() {  
             if (i >= SERVERS.length) return done();  
             var url = SERVERS[i] + '/api/v2.0/indexers/all/results?apikey=&Query='  
                 + encodeURIComponent(title) + (targetYear ? '&year=' + targetYear : '');  
-            console.log(LOG, 'searchByTitle: requesting server[' + i + ']', url);  
+            var serverIdx = i;  
+            console.log(LOG, 'searchByTitle: → server[' + serverIdx + '] ' + url);  
             network.silent(url, function(res) {  
                 var results = (res && res.Results) || [];  
-                console.log(LOG, 'searchByTitle: server[' + i + '] returned ' + results.length + ' results');  
+                var accepted = 0, skipped = 0;  
+                serverStats.push({ server: SERVERS[serverIdx], count: results.length, ok: true });  
+                console.log(LOG, 'searchByTitle: ← server[' + serverIdx + '] '  
+                    + results.length + ' raw results');  
                 for (var ri = 0; ri < results.length; ri++) {  
                     var r = results[ri];  
                     var y = parseInt((r.info && r.info.released) || r.year);  
-                    // ±1 год  
                     var yearMatch = !targetYear || (y && Math.abs(y - targetYear) <= 1);  
                     var inTitle = !targetYear || (r.Title && (  
                         r.Title.includes(String(targetYear)) ||  
@@ -134,15 +143,24 @@
                         r.Title.includes(String(targetYear + 1))  
                     ));  
                     if (yearMatch || (!y && inTitle)) {  
-                        console.log(LOG, '  accepted: "' + r.Title + '" year=' + y);  
+                        console.log(LOG, '  ✓ accepted [s' + serverIdx + ']: "'  
+                            + r.Title + '" year=' + (isNaN(y) ? 'NaN' : y));  
                         titles.push(r.Title);  
+                        accepted++;  
                     } else {  
-                        console.log(LOG, '  skipped:  "' + r.Title + '" year=' + y + ' (target=' + targetYear + ')');  
+                        console.log(LOG, '  ✗ skipped  [s' + serverIdx + ']: "'  
+                            + r.Title + '" year=' + y + ' (target=' + targetYear + ')');  
+                        skipped++;  
                     }  
                 }  
+                console.log(LOG, 'searchByTitle: server[' + serverIdx + '] accepted='  
+                    + accepted + ' skipped=' + skipped);  
                 i++; next();  
             }, function(err) {  
-                console.warn(LOG, 'searchByTitle: server[' + i + '] error', err);  
+                serverStats.push({ server: SERVERS[serverIdx], count: 0, ok: false,  
+                    error: (err && err.decode_error) || 'unknown' });  
+                console.warn(LOG, 'searchByTitle: ✗ server[' + serverIdx + '] error: '  
+                    + ((err && err.decode_error) || JSON.stringify(err)));  
                 i++; next();  
             });  
         }  
@@ -155,68 +173,88 @@
     function fetchQuality(data, callback) {  
         var key = data.id;  
         if (key && qualityCache[key] !== undefined) {  
-            console.log(LOG, 'fetchQuality: cache hit id=' + key + ' → ' + qualityCache[key]);  
+            cacheHits++;  
+            console.log(LOG, 'CACHE HIT id=' + key + ' → ' + qualityCache[key]  
+                + ' (hits=' + cacheHits + ' misses=' + cacheMisses  
+                + ' size=' + qualityCacheSize + ')');  
             return callback(qualityCache[key]);  
         }  
+        cacheMisses++;  
   
-        var title = data.title || data.name;  
+        var title      = data.title || data.name;  
         var targetYear = parseInt((data.release_date || data.first_air_date || '').substring(0, 4)) || null;  
-        console.log(LOG, 'fetchQuality: id=' + key + ' title="' + title + '" year=' + targetYear  
-            + ' kp_id=' + (data.kinopoisk_id || 'none'));  
+        var kpId       = data.kinopoisk_id || null;  
+  
+        console.log(LOG, '════ fetchQuality id=' + key  
+            + ' title="' + title + '" year=' + targetYear  
+            + ' kp_id=' + (kpId || 'none')  
+            + ' [hits=' + cacheHits + ' misses=' + cacheMisses + '] ════');  
+  
+        function fallbackToTitle() {  
+            if (!title) {  
+                console.warn(LOG, 'fetchQuality: no title, skipping id=' + key);  
+                return callback(null);  
+            }  
+            searchByTitle(title, targetYear, key, callback);  
+        }  
   
         // 1. Уже есть KP ID в данных карточки  
-        if (data.kinopoisk_id) {  
-            console.log(LOG, 'fetchQuality: using existing kinopoisk_id=' + data.kinopoisk_id);  
-            return searchByKpId(data.kinopoisk_id, key, function(q) {  
+        if (kpId) {  
+            console.log(LOG, 'fetchQuality: using existing kinopoisk_id=' + kpId);  
+            return searchByKpId(kpId, key, function(q) {  
                 if (q !== null) return callback(q);  
-                // KP ID ничего не дал — fallback на поиск по названию  
-                console.log(LOG, 'fetchQuality: kp_id search empty, falling back to title search');  
-                searchByTitle(title, targetYear, key, callback);  
+                console.log(LOG, 'fetchQuality: kpId search returned null → fallback to title');  
+                fallbackToTitle();  
             });  
         }  
   
         // 2. Запрашиваем KP ID через API  
         if (!title) {  
-            console.warn(LOG, 'fetchQuality: no title, skipping');  
+            console.warn(LOG, 'fetchQuality: no title and no kp_id, skipping id=' + key);  
             return callback(null);  
         }  
   
         var kpNetwork = new Lampa.Reguest();  
         var kpUrl = KP_API + '?keyword=' + encodeURIComponent(title);  
-        console.log(LOG, 'fetchQuality: requesting KP API', kpUrl);  
+        console.log(LOG, 'fetchQuality: → KP API ' + kpUrl);  
   
         kpNetwork.silent(kpUrl, function(json) {  
             var films = (json && json.films) || [];  
-            console.log(LOG, 'fetchQuality: KP API returned ' + films.length + ' films');  
-  
-            var kpId = null;  
+            console.log(LOG, 'fetchQuality: ← KP API ' + films.length + ' films');  
             for (var fi = 0; fi < films.length; fi++) {  
                 var f = films[fi];  
                 var fy = parseInt(f.year);  
-                // Ищем совпадение по году ±1  
-                if (!targetYear || Math.abs(fy - targetYear) <= 1) {  
-                    kpId = f.filmId;  
-                    console.log(LOG, 'fetchQuality: KP match: filmId=' + kpId  
-                        + ' "' + (f.nameRu || f.nameEn) + '" year=' + fy);  
+                var match = !targetYear || Math.abs(fy - targetYear) <= 1;  
+                console.log(LOG, '  KP film[' + fi + ']: id=' + f.filmId  
+                    + ' "' + (f.nameRu || f.nameEn) + '" year=' + fy  
+                    + (match ? ' ✓ MATCH' : ' ✗ skip (target=' + targetYear + ')'));  
+            }  
+  
+            var kpId = null;  
+            for (var fi2 = 0; fi2 < films.length; fi2++) {  
+                var f2 = films[fi2];  
+                var fy2 = parseInt(f2.year);  
+                if (!targetYear || Math.abs(fy2 - targetYear) <= 1) {  
+                    kpId = f2.filmId;  
                     break;  
                 }  
-                console.log(LOG, 'fetchQuality: KP skip: filmId=' + f.filmId  
-                    + ' "' + (f.nameRu || f.nameEn) + '" year=' + fy);  
             }  
   
             if (kpId) {  
+                console.log(LOG, 'fetchQuality: KP ID found: ' + kpId + ' → searchByKpId');  
                 searchByKpId(kpId, key, function(q) {  
                     if (q !== null) return callback(q);  
-                    console.log(LOG, 'fetchQuality: kp_id search empty, falling back to title search');  
-                    searchByTitle(title, targetYear, key, callback);  
+                    console.log(LOG, 'fetchQuality: kpId search returned null → fallback to title');  
+                    fallbackToTitle();  
                 });  
             } else {  
-                console.log(LOG, 'fetchQuality: no KP match, falling back to title search');  
-                searchByTitle(title, targetYear, key, callback);  
+                console.log(LOG, 'fetchQuality: no KP match → fallback to title');  
+                fallbackToTitle();  
             }  
         }, function(err) {  
-            console.warn(LOG, 'fetchQuality: KP API error, falling back to title search', err);  
-            searchByTitle(title, targetYear, key, callback);  
+            console.warn(LOG, 'fetchQuality: ✗ KP API error → fallback to title: '  
+                + ((err && err.decode_error) || JSON.stringify(err)));  
+            fallbackToTitle();  
         }, false, {  
             headers: { 'X-API-KEY': KP_KEY }  
         });  
@@ -332,7 +370,8 @@
             [].forEach.call(document.querySelectorAll('.card'), observeCard);  
         }  
         if (e.type === 'destroy') {  
-            console.log(LOG, 'app destroy: disconnecting observers');  
+            console.log(LOG, 'app destroy: disconnecting observers. Final stats: hits='  
+                + cacheHits + ' misses=' + cacheMisses + ' cacheSize=' + qualityCacheSize);  
             if (intersectionObserver) intersectionObserver.disconnect();  
             cardObserver.disconnect();  
         }  
