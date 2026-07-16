@@ -1,7 +1,7 @@
 (function() {  
     if (window.qualityPlugin) return;  
     window.qualityPlugin = true;  
-    var JAC_URL = 'http://jac.red/api/v2.0/indexers/all/results?apikey=';  
+    var JAC_URL = 'http://jac.red/api/v2.0/indexers/all/results?apikey=&Query=';  
     var RE_TS = /\b(tsrip|ts|telesync|telecine|cam|camrip|workprint|wp|scr|screener|dvdscr)\b/i;  
     var RE_TS2 = /звук\s*с\s*ts|sound\s*ts|audio\s*ts|dub\s*ts/i;  
     var RE_4K = /\b(2160p|2160р|4k|uhd|4к)\b/i;  
@@ -19,110 +19,87 @@
         if (!titles.length) return null;  
         var tsCount = 0, has4K = false, hasHD = false;  
         for (var i = 0; i < titles.length; i++) {  
-            var quality = getQuality(titles[i]);  
-            if (quality === 'TS') tsCount++;  
-            else if (quality === '4K') has4K = true;  
-            else if (quality === 'HD') hasHD = true;  
+            var q = getQuality(titles[i]);  
+            if (q === 'TS') tsCount++;  
+            else if (q === '4K') has4K = true;  
+            else if (q === 'HD') hasHD = true;  
         }  
-        if (tsCount / titles.length >= 0.5) return 'TS';  
-        if (has4K) return '4K';  
-        if (hasHD) return 'HD';  
-        return null;  
+        return tsCount / titles.length >= 0.5 ? 'TS' : has4K ? '4K' : hasHD ? 'HD' : null;  
     }  
-    function isMediaCard(data) {  
-        return !!(data && (data.release_date || data.first_air_date));  
-    }  
-    function collectTitles(results, expectedYear) {  
-        var titles = [];  
-        for (var i = 0; i < results.length; i++) {  
-            var result = results[i];  
-            if (!result.Title) continue;  
-            var resultYear = parseInt((result.info && result.info.released) || result.year);  
-            var inTitle = !expectedYear || (result.Title.indexOf(String(expectedYear)) !== -1);  
-            if ((resultYear && resultYear === expectedYear) || (!resultYear && inTitle)) {  
-                titles.push(result.Title);  
-            }  
-        }  
-        return titles;  
-    }  
-    function fetchQuality(data, callback) {  
-        var title = data.title || data.name;  
-        var year = parseInt((data.release_date || data.first_air_date || '').substring(0, 4)) || null;  
+    function fetchQuality(title, year, callback) {  
         if (!title) return callback(null);  
         var pending = year ? 2 : 1;  
         var allTitles = [];  
-        function onDone() {  
+        function onDone(results) {  
+            for (var i = 0; i < results.length; i++) {  
+                if (results[i].Title) allTitles.push(results[i].Title);  
+            }  
             pending--;  
             if (pending > 0) return;  
             callback(aggregate(allTitles));  
         }  
-        var query = encodeURIComponent(title);  
-        var network1 = new Lampa.Reguest();  
-        network1.silent(  
-            JAC_URL + '&Query=' + query + (year ? '&year=' + year : ''),  
-            function(res) {  
-                var results = (res && res.Results) || [];  
-                var found = collectTitles(results, year);  
-                for (var i = 0; i < found.length; i++) allTitles.push(found[i]);  
-                onDone();  
-            },  
-            function() { onDone(); },  
+        var net1 = new Lampa.Reguest();  
+        net1.silent(  
+            JAC_URL + encodeURIComponent(title) + (year ? '&year=' + year : ''),  
+            function(res) { onDone((res && res.Results) || []); },  
+            function() { onDone([]); },  
             false  
         );  
         if (year) {  
-            var network2 = new Lampa.Reguest();  
-            network2.silent(  
-                JAC_URL + '&Query=' + query + '&year=' + (year - 1),  
-                function(res) {  
-                    var results = (res && res.Results) || [];  
-                    var found = collectTitles(results, year - 1);  
-                    for (var i = 0; i < found.length; i++) allTitles.push(found[i]);  
-                    onDone();  
-                },  
-                function() { onDone(); },  
+            var net2 = new Lampa.Reguest();  
+            net2.silent(  
+                JAC_URL + encodeURIComponent(title) + '&year=' + (year - 1),  
+                function(res) { onDone((res && res.Results) || []); },  
+                function() { onDone([]); },  
                 false  
             );  
         }  
     }  
-    function processCardQuality(card) {  
+    function getCardInfo(card) {  
+        var titleElem = card.querySelector('.card__title');  
+        var yearElem = card.querySelector('.card__age');  
+        if (!titleElem || !titleElem.innerText) return null;  
+        var year = yearElem ? parseInt(yearElem.innerText) || null : null;  
+        if (year && (year < 1900 || year > 2030)) year = null;  
+        return { title: titleElem.innerText, year: year };  
+    }  
+    function processCardQuality(card, info) {  
         if (!Lampa.Storage.field('card_quality')) return;  
-        var cardData = card.card_data;  
-        if (!cardData || !isMediaCard(cardData)) return;  
-        fetchQuality(cardData, function(quality) {  
+        if (card.querySelector('.card__quality')) return;  
+        fetchQuality(info.title, info.year, function(quality) {  
             if (!quality) return;  
-            var view = card.querySelector('.card__view');  
-            if (!view) return;  
-            var existing = view.querySelector('.card__quality');  
-            if (existing) {  
-                var inner = existing.querySelector('div');  
-                if (inner) inner.innerText = quality;  
-                return;  
-            }  
+            if (card.querySelector('.card__quality')) return;  
+            var cardView = card.querySelector('.card__view');  
+            if (!cardView) return;  
             var badge = document.createElement('div');  
-            badge.classList.add('card__quality');  
-            var badgeInner = document.createElement('div');  
-            badgeInner.innerText = quality;  
-            badge.appendChild(badgeInner);  
-            view.appendChild(badge);  
+            badge.className = 'card__quality';  
+            var inner = document.createElement('div');  
+            inner.innerText = quality;  
+            badge.appendChild(inner);  
+            cardView.appendChild(badge);  
         });  
     }  
     function observeCard(card) {  
-        if (!card.card_data || !isMediaCard(card.card_data)) return;  
+        if (card._qualityObserved) return;  
+        card._qualityObserved = true;  
         if (intersectionObserver) {  
             intersectionObserver.observe(card);  
         } else {  
-            processCardQuality(card);  
+            var info = getCardInfo(card);  
+            if (info) processCardQuality(card, info);  
         }  
     }  
     if (typeof IntersectionObserver !== 'undefined') {  
         intersectionObserver = new IntersectionObserver(function(entries) {  
             for (var i = 0; i < entries.length; i++) {  
-                var entry = entries[i];  
-                if (!entry.isIntersecting) continue;  
-                intersectionObserver.unobserve(entry.target);  
-                processCardQuality(entry.target);  
+                if (entries[i].isIntersecting) {  
+                    var card = entries[i].target;  
+                    intersectionObserver.unobserve(card);  
+                    var info = getCardInfo(card);  
+                    if (info) processCardQuality(card, info);  
+                }  
             }  
-        }, { rootMargin: '100px' });  
+        }, { threshold: 0.1 });  
     }  
     cardObserver = new MutationObserver(function(mutations) {  
         for (var mi = 0; mi < mutations.length; mi++) {  
@@ -140,8 +117,10 @@
         if (e.type !== 'complite' || !e.data || !e.data.movie) return;  
         if (!Lampa.Storage.field('card_quality')) return;  
         var movie = e.data.movie;  
-        if (!isMediaCard(movie)) return;  
-        fetchQuality(movie, function(quality) {  
+        var title = movie.title || movie.name;  
+        var year = parseInt((movie.release_date || movie.first_air_date || '').substring(0, 4)) || null;  
+        if (!title) return;  
+        fetchQuality(title, year, function(quality) {  
             if (!quality) return;  
             var html = e.object.activity.render();  
             var details = html.find('.full-start-new__details');  
