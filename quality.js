@@ -46,8 +46,8 @@
         network.silent(url, function(res) {  
             var results = (res && res.Results) || [];  
             for (var ri = 0; ri < results.length; ri++) {  
-                var r      = results[ri];  
-                var y      = parseInt((r.info && r.info.released) || r.year);  
+                var r       = results[ri];  
+                var y       = parseInt((r.info && r.info.released) || r.year);  
                 var inTitle = !targetYear || (r.Title && (  
                     r.Title.includes(String(targetYear)) ||  
                     r.Title.includes(String(targetYear - 1)) ||  
@@ -83,15 +83,22 @@
         if (!d || !d.id) return;  
         fetchQuality(d, function(q) {  
             if (!q) return;  
+  
+            // Записываем в card_data.quality — именно это поле читает нативный card.js  
+            // и другие плагины, которые работают с качеством карточек  
+            d.quality = q;  
+  
             var view = card.querySelector('.card__view');  
             if (!view) return;  
             [].forEach.call(view.querySelectorAll('.card__quality'), function(el) { el.remove(); });  
-            var badge = document.createElement('div');  
-            badge.className = 'card__quality';  
-            var inner = document.createElement('div');  
-            inner.textContent = q;  
-            badge.appendChild(inner);  
-            view.appendChild(badge);  
+  
+            // Точная копия структуры из нативного card.js (строки 162-170)  
+            var quality = document.createElement('div');  
+            quality.classList.add('card__quality');  
+            var quality_inner = document.createElement('div');  
+            quality_inner.innerText = q;  
+            quality.appendChild(quality_inner);  
+            view.appendChild(quality);  
         });  
     }  
   
@@ -136,39 +143,28 @@
             if (!q) return;  
             var html = e.object.activity.render();  
   
-            // 1. Жёлтый бейдж в строке рейтингов (новый шаблон full_start_new)  
-            var rateLine = html.find('.full-start-new__rate-line');  
-            if (rateLine.length) {  
-                rateLine.find('.tag--quality').remove();  
-                var badge = document.createElement('div');  
-                badge.className = 'full-start__tag tag--quality';  
-                var inner = document.createElement('div');  
-                inner.textContent = q;  
-                badge.appendChild(inner);  
-                rateLine[0].appendChild(badge);  
-            }  
-  
-            // 2. Текст "Качество: TS" в строке деталей после жанров  
+            // Стандартный способ: добавить текст в .full-start-new__details после жанров  
+            // Нативный start.js делает то же самое через:  
+            //   info.push('<span>' + Lang.translate('player_quality') + ': ' + quality.toUpperCase() + '</span>')  
+            //   details.html(info.join('<span class="full-start-new__split">●</span>'))  
             var details = html.find('.full-start-new__details');  
             if (details.length) {  
-                details.find('.plugin--quality-text').remove();  
+                details.find('.plugin--quality-text, .plugin--quality-sep').remove();  
+  
+                var label = (Lampa.Lang && Lampa.Lang.translate)  
+                    ? Lampa.Lang.translate('player_quality')  
+                    : 'Качество';  
+  
+                var sep = document.createElement('span');  
+                sep.className = 'full-start-new__split plugin--quality-sep';  
+                sep.textContent = '●';  
+  
                 var span = document.createElement('span');  
                 span.className = 'plugin--quality-text';  
-                // добавляем разделитель ● как в стандартном коде  
-                span.innerHTML = '<span class="full-start-new__split">\u25CF</span>Качество: ' + q;  
-                details[0].appendChild(span);  
-            }  
+                span.textContent = label + ': ' + q.toUpperCase();  
   
-            // 3. Старый шаблон full_start — бейдж в .full-start__tags  
-            var tags = html.find('.full-start__tags');  
-            if (tags.length) {  
-                tags.find('.tag--quality').remove();  
-                var badge2 = document.createElement('div');  
-                badge2.className = 'full-start__tag tag--quality';  
-                var inner2 = document.createElement('div');  
-                inner2.textContent = q;  
-                badge2.appendChild(inner2);  
-                tags[0].appendChild(badge2);  
+                details[0].appendChild(sep);  
+                details[0].appendChild(span);  
             }  
         });  
     });  
