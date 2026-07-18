@@ -2,7 +2,7 @@
     if (window.qualityPlugin) return;  
     window.qualityPlugin = true;  
     var SERVERS = ['http://jac.red', 'https://jr.maxvol.pro'];  
-    var RE_TS = /\b(tsrip|ts|telesync|telecine|cam|camrip|workprint|wp|scr|screener|dvdscr)\b/i;  
+    var RE_TS = /\b(tsrip|ts|telesync|telecine|cam|camrip|workprint|wp|scr|screener|dvdscr|dcprip)\b/i;  
     var RE_TS2 = /звук\s*с\s*ts|sound\s*ts|audio\s*ts|dub\s*ts/i;  
     var RE_4K = /\b(2160p|2160р|4k|uhd|4к)\b/i;  
     var RE_HD = /\b(1080p|1080р|720p|720р|blu\-ray|bdrip|bdremux|web\-dl|webdl|web\-dlrip|webrip|hdtv|hdtvrip|hddvd|hddvdrip|fullhd|fhd|hd|hdrip)\b/i;  
