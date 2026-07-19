@@ -65,15 +65,29 @@
         b.appendChild(inner);  
         return b;  
     }  
+    function updateCardQuality(card, q) {  
+        var view = card.querySelector('.card__view');  
+        if (!view) return;  
+        var existing = card.querySelector('.card__quality');  
+        if (existing) {  
+            var inner = existing.querySelector('div');  
+            if (inner) inner.textContent = q;  
+            return;  
+        }  
+        var badge = makeBadge(q, 'card__quality');  
+        var bottomInfo = view.querySelector('.card__bottom-info');  
+        if (bottomInfo) {  
+            bottomInfo.insertBefore(badge, bottomInfo.firstChild);  
+        } else {  
+            view.appendChild(badge);  
+        }  
+    }  
     function processCardQuality(card) {  
         var d = card.card_data;  
         if (!d || !d.id) return;  
         fetchQuality(d, function(q) {  
             if (!q) return;  
-            var view = card.querySelector('.card__view');  
-            if (!view) return;  
-            [].forEach.call(view.querySelectorAll('.card__quality'), function(el) { el.remove(); });  
-            view.appendChild(makeBadge(q, 'card__quality'));  
+            updateCardQuality(card, q);  
         });  
     }  
     function observeCard(card) {  
