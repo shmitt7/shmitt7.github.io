@@ -1,125 +1,109 @@
 (function () {  
-    var cardPathRe = /\/3\/(movie|tv)\/(\d+)(?:\/|$|\?)/;  
-    var subPathRe = /\/3\/(?:movie|tv)\/\d+\/([^\/\?]+)/;  
-    var seasonNumRe = /\/season\/(\d+)(?:\/|$|\?)/;  
-    var collectionPathRe = /\/3\/collection\/(\d+)(?:\/|$|\?)/;  
-    var cardCache = {};  
-    var cardCacheSize = 0;  
-    function getLang() {  
-        return Lampa.Storage.get('language') || 'ru';  
+    'use strict';  
+  
+    // ── 1. CSS-переопределения ────────────────────────────────────────────────  
+    var css = `  
+        /* 1. Иконки закладок/просмотра → правый верхний угол постера */  
+        .card:not(.card--wide) .card__icons {  
+            left: auto;  
+            right: 0.5em;  
+        }  
+  
+        /* 2. Бейдж TV/MOV → левый нижний угол постера */  
+        .card:not(.card--wide) .card__type {  
+            left: 0.5em;  
+            top: auto;  
+            bottom: 0.5em;  
+        }  
+  
+        /* 3. Контейнер строки: качество + рейтинг + год → правый нижний угол */  
+        .card__bottom-info {  
+            position: absolute;  
+            right: 0.5em;  
+            bottom: 0.5em;  
+            display: flex;  
+            align-items: center;  
+            gap: 0.3em;  
+            z-index: 1;  
+        }  
+  
+        /* Сбрасываем абсолютное позиционирование у перемещённых элементов */  
+        .card__bottom-info .card__quality {  
+            position: static;  
+        }  
+        .card__bottom-info .card__vote {  
+            position: static;  
+        }  
+  
+        /* Год внутри постера */  
+        .card__bottom-info .card__age {  
+            font-size: 0.75em;  
+            color: rgba(255, 255, 255, 0.9);  
+            margin-top: 0;  
+        }  
+  
+        /* 4. Название → по центру (год убран из потока, поэтому само поднимается) */  
+        .card:not(.card--wide) .card__title {  
+            text-align: center;  
+        }  
+    `;  
+  
+    var style = document.createElement('style');  
+    style.textContent = css;  
+    document.head.appendChild(style);  
+  
+    // ── 2. JS: перемещение .card__age внутрь постера ─────────────────────────  
+    function processCard(card) {  
+        // Пропускаем уже обработанные и широкие карточки  
+        if (card.dataset.crlDone) return;  
+        if (card.classList.contains('card--wide')) return;  
+        card.dataset.crlDone = '1';  
+  
+        var view = card.querySelector('.card__view');  
+        if (!view) return;  
+  
+        var infoRow = document.createElement('div');  
+        infoRow.className = 'card__bottom-info';  
+  
+        // Перемещаем элементы в строку (порядок: качество → рейтинг → год)  
+        var quality = view.querySelector('.card__quality');  
+        var vote    = view.querySelector('.card__vote');  
+        var age     = card.querySelector('.card__age'); // вне view — ищем в card  
+  
+        if (quality) infoRow.appendChild(quality);  
+        if (vote)    infoRow.appendChild(vote);  
+        if (age)     infoRow.appendChild(age);  
+  
+        if (infoRow.children.length) view.appendChild(infoRow);  
     }  
-    function httpGet(url) {  
-        return new Promise(function (resolve, reject) {  
-            var xhr = new XMLHttpRequest();  
-            xhr.open('GET', url, true);  
-            xhr.onreadystatechange = function () {  
-                if (xhr.readyState !== 4) return;  
-                try { resolve(JSON.parse(xhr.responseText)); } catch (parseError) { reject(parseError); }  
-            };  
-            xhr.onerror = reject;  
-            xhr.send();  
-        });  
-    }  
-    function fetchDirect(type, id) {  
-        var cacheKey = type + '_' + id;  
-        if (cardCache[cacheKey]) return cardCache[cacheKey];  
-        if (cardCacheSize > 200) { cardCache = {}; cardCacheSize = 0; }  
-        cardCacheSize++;  
-        var url = 'https://api.themoviedb.org/3/' + type + '/' + id  
-            + '?api_key=' + Lampa.TMDB.key()  
-            + '&language=' + getLang()  
-            + '&append_to_response=' + (type === 'tv'  
-                ? 'credits,external_ids,videos,recommendations,similar,content_ratings'  
-                : 'credits,external_ids,videos,recommendations,similar');  
-        cardCache[cacheKey] = httpGet(url).then(function (card) {  
-            if (card && card.id) { delete card.blocked; return card; }  
-            delete cardCache[cacheKey];  
-            return Promise.reject(new Error('invalid'));  
-        }, function (requestError) {  
-            delete cardCache[cacheKey];  
-            return Promise.reject(requestError);  
-        });  
-        return cardCache[cacheKey];  
-    }  
-    function fetchSeason(tvId, seasonNum) {  
-        var url = 'https://api.themoviedb.org/3/tv/' + tvId + '/season/' + seasonNum  
-            + '?api_key=' + Lampa.TMDB.key()  
-            + '&language=' + getLang();  
-        return httpGet(url);  
-    }  
-    function fetchCollection(collectionId) {  
-        var url = 'https://api.themoviedb.org/3/collection/' + collectionId  
-            + '?api_key=' + Lampa.TMDB.key()  
-            + '&language=' + getLang();  
-        return httpGet(url);  
-    }  
-    function tryFetch(type, id, altType, resume, fallbackData, subPath) {  
-        fetchDirect(type, id).then(function (card) {  
-            var out = (subPath && card[subPath] !== undefined) ? card[subPath] : card;  
-            resume(out);  
-        }, function () {  
-            if (altType) tryFetch(altType, id, null, resume, fallbackData, subPath);  
-            else resume(fallbackData);  
-        });  
-    }  
-    function start() {  
-        if (window.anti_dmca_simple) return;  
-        window.anti_dmca_simple = true;  
-        window.lampa_settings.disable_features = window.lampa_settings.disable_features || {};  
-        window.lampa_settings.disable_features.dmca = true;  
-        try {  
-            Object.defineProperty(window.lampa_settings, 'dcma', {  
-                get: function () { return []; },  
-                set: function () {},  
-                configurable: true  
+  
+    // ── 3. MutationObserver: следим за появлением карточек ───────────────────  
+    var observer = new MutationObserver(function (mutations) {  
+        mutations.forEach(function (mutation) {  
+            mutation.addedNodes.forEach(function (node) {  
+                if (node.nodeType !== 1) return;  
+  
+                // Сама карточка  
+                if (node.classList && node.classList.contains('card')) {  
+                    // setTimeout(0): ждём, пока модули карточки добавят vote/quality  
+                    setTimeout(function () { processCard(node); }, 0);  
+                }  
+  
+                // Карточки внутри добавленного блока (например, целая лента)  
+                if (node.querySelectorAll) {  
+                    node.querySelectorAll('.card').forEach(function (c) {  
+                        setTimeout(function () { processCard(c); }, 0);  
+                    });  
+                }  
             });  
-        } catch (defineError) { window.lampa_settings.dcma = []; }  
-        Lampa.Utils.dcma = function () { return undefined; };  
-        Lampa.Listener.follow('request_secuses', function (event) {  
-            if (!event || !event.data || typeof event.abort !== 'function') return;  
-            var data = event.data;  
-            var blocked = data.blocked === true || (data.movie && data.movie.blocked === true);  
-            if (!blocked) return;  
-            var url = (event.params && event.params.url) || '';  
-            var collectionMatch = url.match(collectionPathRe);  
-            if (collectionMatch) {  
-                var resumeCollection = event.abort();  
-                fetchCollection(collectionMatch[1]).then(function (collection) {  
-                    if (collection && collection.id) resumeCollection(collection);  
-                    else resumeCollection({ parts: [], results: [] });  
-                }, function () {  
-                    resumeCollection({ parts: [], results: [] });  
-                });  
-                return;  
-            }  
-            var cardMatch = url.match(cardPathRe);  
-            if (!cardMatch) return;  
-            var type = cardMatch[1];  
-            var id = cardMatch[2];  
-            var subMatch = url.match(subPathRe);  
-            var subPath = subMatch ? subMatch[1] : null;  
-            if (subPath === 'season') {  
-                var seasonNumMatch = url.match(seasonNumRe);  
-                var seasonNum = seasonNumMatch ? parseInt(seasonNumMatch[1], 10) : 1;  
-                var resumeSeason = event.abort();  
-                fetchSeason(id, seasonNum).then(function (seasonData) {  
-                    if (seasonData && (seasonData.id !== undefined || seasonData.episodes)) resumeSeason(seasonData);  
-                    else resumeSeason({ episodes: [], id: parseInt(id, 10) });  
-                }, function () {  
-                    resumeSeason({ episodes: [], id: parseInt(id, 10) });  
-                });  
-                return;  
-            }  
-            var resumeCard = event.abort();  
-            var altType = type === 'tv' ? 'movie' : 'tv';  
-            tryFetch(type, id, altType, resumeCard, data, subPath);  
         });  
+    });  
+  
+    function start() {  
+        observer.observe(document.body, { childList: true, subtree: true });  
     }  
-    if (window.appready) {  
-        start();  
-    } else {  
-        Lampa.Listener.follow('app', function (event) {  
-            if (event.type === 'ready') start();  
-        });  
-    }  
+  
+    if (document.body) start();  
+    else document.addEventListener('DOMContentLoaded', start);  
+  
 })();
