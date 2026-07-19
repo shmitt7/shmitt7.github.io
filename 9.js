@@ -25,7 +25,7 @@
             bottom: 0.5em;  
             background: none;  
             color: rgba(255,255,255,0.95);  
-            font-size: 0.75em;  
+            font-size: 0.82em;  
             font-weight: 600;  
             padding: 0;  
             border-radius: 0;  
@@ -34,6 +34,10 @@
         .card--tv.card:not(.card--wide) .card__type {  
             background: none;  
             color: rgba(255,255,255,0.95);  
+        }  
+        .card:not(.card--wide) .card__type--movie {  
+            background: none !important;  
+            color: rgba(255,255,255,0.95) !important;  
         }  
         .card__bottom-info {  
             position: absolute;  
@@ -48,7 +52,7 @@
             position: static;  
             background: none;  
             color: rgba(255,255,255,0.95);  
-            font-size: 0.75em;  
+            font-size: 0.82em;  
             font-weight: 600;  
             padding: 0;  
             border-radius: 0;  
@@ -61,19 +65,20 @@
             position: static;  
             background: none;  
             color: rgba(255,255,255,0.95);  
-            font-size: 0.75em;  
+            font-size: 0.82em;  
             font-weight: 600;  
             padding: 0;  
             border-radius: 0;  
         }  
         .card__bottom-info .card__age {  
-            font-size: 0.75em;  
+            font-size: 0.82em;  
             font-weight: 600;  
             color: rgba(255,255,255,0.95);  
             margin-top: 0;  
         }  
         .card:not(.card--wide) .card__title {  
             text-align: center;  
+            margin-top: 0.3em;  
         }  
     `;  
     var style = document.createElement('style');  
