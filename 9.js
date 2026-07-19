@@ -25,7 +25,7 @@
             bottom: 0.5em;  
             background: none;  
             color: rgba(255,255,255,0.95);  
-            font-size: 0.82em;  
+            font-size: 1em;  
             font-weight: 600;  
             padding: 0;  
             border-radius: 0;  
@@ -52,7 +52,7 @@
             position: static;  
             background: none;  
             color: rgba(255,255,255,0.95);  
-            font-size: 0.82em;  
+            font-size: 1em;  
             font-weight: 600;  
             padding: 0;  
             border-radius: 0;  
@@ -65,20 +65,20 @@
             position: static;  
             background: none;  
             color: rgba(255,255,255,0.95);  
-            font-size: 0.82em;  
+            font-size: 1em;  
             font-weight: 600;  
             padding: 0;  
             border-radius: 0;  
         }  
         .card__bottom-info .card__age {  
-            font-size: 0.82em;  
+            font-size: 1em;  
             font-weight: 600;  
             color: rgba(255,255,255,0.95);  
             margin-top: 0;  
         }  
         .card:not(.card--wide) .card__title {  
             text-align: center;  
-            margin-top: 0.3em;  
+            margin-top: 0.5em;  
         }  
     `;  
     var style = document.createElement('style');  
