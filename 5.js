@@ -128,7 +128,7 @@
         var viewElem = cardElem.querySelector('.card__view');  
         if (!viewElem) return;  
         var label = document.createElement('div');  
-        label.className = 'tvs-label';  
+        label.className = 'card__status';  
         var iconSpan = document.createElement('span');  
         iconSpan.className = 'tvs-icon';  
         iconSpan.style.color = labelInfo.color;  
@@ -138,12 +138,7 @@
         textSpan.textContent = labelInfo.text;  
         label.appendChild(iconSpan);  
         label.appendChild(textSpan);  
-        var typeElem = cardElem.querySelector('.card__type');  
-        if (typeElem) {  
-            typeElem.parentNode.insertBefore(label, typeElem.nextSibling);  
-        } else {  
-            viewElem.appendChild(label);  
-        }  
+        viewElem.appendChild(label);  
     }  
     function isPersonCard(data) {  
         return !!(  
@@ -211,7 +206,7 @@
         mutationObserver.observe(document.body, { childList: true, subtree: true });  
     }  
     function injectStyles() {  
-        document.head.insertAdjacentHTML('beforeend', '<style>.tvs-label{position:absolute;left:-0.8em;top:3.4em;padding:0.3em 0.5em;background:rgba(0,0,0,0.80);color:#fff;font-size:0.75em;border-radius:0.3em;z-index:2;display:flex;align-items:center;white-space:nowrap;line-height:1;pointer-events:none;}.tvs-icon{font-size:1.15em;line-height:1;margin-right:0.3em;}.tvs-text{font-size:0.85em;font-weight:700;letter-spacing:0.03em;}</style>');  
+        document.head.insertAdjacentHTML('beforeend', '<style>.card__status{position:absolute;left:0.5em;bottom:1.8em;display:flex;align-items:center;z-index:2;pointer-events:none;white-space:nowrap;line-height:1;}.card__status .tvs-icon{font-size:0.85em;line-height:1;margin-right:0.25em;}.card__status .tvs-text{font-size:0.85em;font-weight:600;color:rgba(210,210,210,0.9);letter-spacing:0.03em;}</style>');  
     }  
     function destroy() {  
         if (mutationObserver) {  
