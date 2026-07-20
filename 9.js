@@ -12,7 +12,7 @@
             right: 0;  
             bottom: 0;  
             height: 4.2em;  
-            background: linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.78) 100%);  
+            background: linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.88) 100%);  
             border-bottom-left-radius: 1em;  
             border-bottom-right-radius: 1em;  
             pointer-events: none;  
@@ -25,10 +25,11 @@
             bottom: 0.5em;  
             background: none;  
             color: rgba(255,255,255,0.95);  
-            font-size: 0.85em;  
+            font-size: 0.9em;  
             font-weight: 600;  
             padding: 0;  
             border-radius: 0;  
+            line-height: 1;  
             z-index: 2;  
         }  
         .card--tv.card:not(.card--wide) .card__type {  
@@ -42,41 +43,43 @@
         .card:not(.card--wide) .card__status {  
             top: auto;  
             left: 0.5em;  
-            bottom: 1.8em;  
+            bottom: 1.5em;  
             background: none;  
             padding: 0;  
             border-radius: 0;  
             z-index: 2;  
         }  
         .card:not(.card--wide) .card__status .tvs-icon {  
-            font-size: 0.85em;  
+            font-size: 0.9em;  
             line-height: 1;  
             margin-right: 0.25em;  
         }  
         .card:not(.card--wide) .card__status .tvs-text {  
-            font-size: 0.85em;  
+            font-size: 0.9em;  
             font-weight: 600;  
             color: rgba(255,255,255,0.95);  
             letter-spacing: 0.03em;  
         }  
         .card__bottom-info {  
             position: absolute;  
-            right: 0.5em;  
+            right: 0.3em;  
             bottom: 0.5em;  
             display: flex;  
-            align-items: center;  
+            align-items: flex-end;  
             gap: 0.35em;  
             z-index: 2;  
+            line-height: 1;  
         }  
         .card__bottom-info .card__quality {  
             position: static;  
             background: none;  
             color: rgba(255,255,255,0.95);  
-            font-size: 0.85em;  
+            font-size: 0.9em;  
             font-weight: 600;  
             padding: 0;  
             border-radius: 0;  
             text-transform: none;  
+            line-height: 1;  
         }  
         .card__bottom-info .card__quality > div {  
             display: inline;  
@@ -85,20 +88,22 @@
             position: static;  
             background: none;  
             color: rgba(255,255,255,0.95);  
-            font-size: 0.85em;  
+            font-size: 0.9em;  
             font-weight: 600;  
             padding: 0;  
             border-radius: 0;  
+            line-height: 1;  
         }  
         .card__bottom-info .card__age {  
-            font-size: 0.85em;  
+            font-size: 0.9em;  
             font-weight: 600;  
             color: rgba(255,255,255,0.95);  
             margin-top: 0;  
+            line-height: 1;  
         }  
         .card:not(.card--wide) .card__title {  
             text-align: center;  
-            margin-top: 0.2em;  
+            margin-top: 0.1em;  
         }  
     `;  
     var style = document.createElement('style');  
