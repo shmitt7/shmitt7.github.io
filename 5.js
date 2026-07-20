@@ -127,8 +127,10 @@
         if (!labelInfo || !labelInfo.text) return;  
         var viewElem = cardElem.querySelector('.card__view');  
         if (!viewElem) return;  
-        var label = document.createElement('div');  
-        label.className = 'card__status';  
+        var existing = cardElem.querySelector('.card__status');  
+        var label = existing || document.createElement('div');  
+        if (!existing) label.className = 'card__status';  
+        label.innerHTML = '';  
         var iconSpan = document.createElement('span');  
         iconSpan.className = 'tvs-icon';  
         iconSpan.style.color = labelInfo.color;  
@@ -138,7 +140,7 @@
         textSpan.textContent = labelInfo.text;  
         label.appendChild(iconSpan);  
         label.appendChild(textSpan);  
-        viewElem.appendChild(label);  
+        if (!existing) viewElem.appendChild(label);  
     }  
     function isPersonCard(data) {  
         return !!(  
@@ -206,7 +208,7 @@
         mutationObserver.observe(document.body, { childList: true, subtree: true });  
     }  
     function injectStyles() {  
-        document.head.insertAdjacentHTML('beforeend', '<style>.card__status{position:absolute;left:0.5em;top:0.5em;display:flex;align-items:center;background:rgba(0,0,0,0.65);padding:0.25em 0.4em;border-radius:0.3em;z-index:2;pointer-events:none;white-space:nowrap;line-height:1;}.card__status .tvs-icon{font-size:0.85em;line-height:1;margin-right:0.25em;}.card__status .tvs-text{font-size:0.85em;font-weight:600;color:rgba(210,210,210,0.9);letter-spacing:0.03em;}</style>');  
+        document.head.insertAdjacentHTML('beforeend', '<style>.card__status{position:absolute;left:-0.8em;top:3.15em;display:flex;align-items:center;background:rgba(0,0,0,0.65);padding:0.25em 0.4em;border-radius:0.3em;z-index:2;pointer-events:none;white-space:nowrap;line-height:1;}.card__status .tvs-icon{font-size:0.85em;line-height:1;margin-right:0.25em;}.card__status .tvs-text{font-size:0.85em;font-weight:600;color:rgba(210,210,210,0.9);letter-spacing:0.03em;}</style>');  
     }  
     function destroy() {  
         if (mutationObserver) {  
