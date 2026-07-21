@@ -40,6 +40,23 @@
             background: none !important;  
             color: rgba(255,255,255,0.95) !important;  
         }  
+        /* Общий override для всех .card__quality в карточках */  
+        .card:not(.card--wide) .card__quality {  
+            background: none !important;  
+            color: rgba(255,255,255,0.95) !important;  
+            padding: 0 !important;  
+            border-radius: 0 !important;  
+            text-transform: none !important;  
+            position: static !important;  
+            left: auto !important;  
+            bottom: auto !important;  
+            font-size: 0.95em;  
+            font-weight: 600;  
+            line-height: 1;  
+        }  
+        .card:not(.card--wide) .card__quality > div {  
+            display: inline;  
+        }  
         .card:not(.card--wide) .card__status {  
             top: auto;  
             left: 0.5em;  
@@ -69,20 +86,6 @@
             gap: 0.35em;  
             z-index: 2;  
             line-height: 1;  
-        }  
-        .card__top-info .card__quality {  
-            position: static !important;  
-            background: none !important;  
-            color: rgba(255,255,255,0.95) !important;  
-            font-size: 0.95em;  
-            font-weight: 600;  
-            padding: 0 !important;  
-            border-radius: 0 !important;  
-            text-transform: none !important;  
-            line-height: 1;  
-        }  
-        .card__top-info .card__quality > div {  
-            display: inline;  
         }  
         .card__top-info .card__vote {  
             position: static;  
