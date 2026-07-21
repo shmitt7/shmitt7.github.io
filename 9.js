@@ -71,14 +71,14 @@
             line-height: 1;  
         }  
         .card__top-info .card__quality {  
-            position: static;  
-            background: none;  
-            color: rgba(255,255,255,0.95);  
+            position: static !important;  
+            background: none !important;  
+            color: rgba(255,255,255,0.95) !important;  
             font-size: 0.95em;  
             font-weight: 600;  
-            padding: 0;  
-            border-radius: 0;  
-            text-transform: none;  
+            padding: 0 !important;  
+            border-radius: 0 !important;  
+            text-transform: none !important;  
             line-height: 1;  
         }  
         .card__top-info .card__quality > div {  
@@ -86,12 +86,12 @@
         }  
         .card__top-info .card__vote {  
             position: static;  
-            background: none;  
+            background: none !important;  
             color: rgba(255,255,255,0.95);  
             font-size: 0.95em;  
             font-weight: 600;  
-            padding: 0;  
-            border-radius: 0;  
+            padding: 0 !important;  
+            border-radius: 0 !important;  
             line-height: 1;  
         }  
         .card__bottom-info {  
