@@ -25,7 +25,7 @@
             bottom: 0.5em;  
             background: none;  
             color: rgba(255,255,255,0.95);  
-            font-size: 0.9em;  
+            font-size: 0.95em;  
             font-weight: 600;  
             padding: 0;  
             border-radius: 0;  
@@ -50,12 +50,12 @@
             z-index: 2;  
         }  
         .card:not(.card--wide) .card__status .tvs-icon {  
-            font-size: 0.9em;  
+            font-size: 0.95em;  
             line-height: 1;  
-            margin-right: 0.25em;  
+            margin-right: 0.15em;  
         }  
         .card:not(.card--wide) .card__status .tvs-text {  
-            font-size: 0.9em;  
+            font-size: 0.95em;  
             font-weight: 600;  
             color: rgba(255,255,255,0.95);  
             letter-spacing: 0.03em;  
@@ -65,7 +65,7 @@
             right: 0.3em;  
             bottom: 0.5em;  
             display: flex;  
-            align-items: flex-end;  
+            align-items: baseline;  
             gap: 0.35em;  
             z-index: 2;  
             line-height: 1;  
@@ -74,7 +74,7 @@
             position: static;  
             background: none;  
             color: rgba(255,255,255,0.95);  
-            font-size: 0.9em;  
+            font-size: 0.95em;  
             font-weight: 600;  
             padding: 0;  
             border-radius: 0;  
@@ -88,14 +88,14 @@
             position: static;  
             background: none;  
             color: rgba(255,255,255,0.95);  
-            font-size: 0.9em;  
+            font-size: 0.95em;  
             font-weight: 600;  
             padding: 0;  
             border-radius: 0;  
             line-height: 1;  
         }  
         .card__bottom-info .card__age {  
-            font-size: 0.9em;  
+            font-size: 0.95em;  
             font-weight: 600;  
             color: rgba(255,255,255,0.95);  
             margin-top: 0;  
