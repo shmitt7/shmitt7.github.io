@@ -40,22 +40,6 @@
             background: none !important;  
             color: rgba(255,255,255,0.95) !important;  
         }  
-        .card:not(.card--wide) .card__quality {  
-            background: none !important;  
-            color: rgba(255,255,255,0.95) !important;  
-            padding: 0 !important;  
-            border-radius: 0 !important;  
-            text-transform: none !important;  
-            position: static !important;  
-            left: auto !important;  
-            bottom: auto !important;  
-            font-size: 0.95em;  
-            font-weight: 600;  
-            line-height: 1;  
-        }  
-        .card:not(.card--wide) .card__quality > div {  
-            display: inline;  
-        }  
         .card:not(.card--wide) .card__status {  
             top: auto;  
             left: 0.5em;  
@@ -76,26 +60,6 @@
             color: rgba(255,255,255,0.95);  
             letter-spacing: 0.03em;  
         }  
-        .card__top-info {  
-            position: absolute;  
-            right: 0.3em;  
-            bottom: 1.5em;  
-            display: flex;  
-            align-items: baseline;  
-            gap: 0.35em;  
-            z-index: 2;  
-            line-height: 1;  
-        }  
-        .card__top-info .card__vote {  
-            position: static;  
-            background: none !important;  
-            color: rgba(255,255,255,0.95);  
-            font-size: 0.95em;  
-            font-weight: 600;  
-            padding: 0 !important;  
-            border-radius: 0 !important;  
-            line-height: 1;  
-        }  
         .card__bottom-info {  
             position: absolute;  
             right: 0.3em;  
@@ -104,6 +68,30 @@
             align-items: baseline;  
             gap: 0.35em;  
             z-index: 2;  
+            line-height: 1;  
+        }  
+        .card__bottom-info .card__quality {  
+            position: static;  
+            background: none;  
+            color: rgba(255,255,255,0.95);  
+            font-size: 0.95em;  
+            font-weight: 600;  
+            padding: 0;  
+            border-radius: 0;  
+            text-transform: none;  
+            line-height: 1;  
+        }  
+        .card__bottom-info .card__quality > div {  
+            display: inline;  
+        }  
+        .card__bottom-info .card__vote {  
+            position: static;  
+            background: none;  
+            color: rgba(255,255,255,0.95);  
+            font-size: 0.95em;  
+            font-weight: 600;  
+            padding: 0;  
+            border-radius: 0;  
             line-height: 1;  
         }  
         .card__bottom-info .card__age {  
@@ -127,18 +115,15 @@
         card.dataset.crlDone = '1';  
         var view = card.querySelector('.card__view');  
         if (!view) return;  
-        var topRow = document.createElement('div');  
-        topRow.className = 'card__top-info';  
-        var bottomRow = document.createElement('div');  
-        bottomRow.className = 'card__bottom-info';  
+        var infoRow = document.createElement('div');  
+        infoRow.className = 'card__bottom-info';  
         var quality = view.querySelector('.card__quality');  
         var vote    = view.querySelector('.card__vote');  
         var age     = card.querySelector('.card__age');  
-        if (quality) topRow.appendChild(quality);  
-        if (vote)    topRow.appendChild(vote);  
-        if (age)     bottomRow.appendChild(age);  
-        view.appendChild(topRow);  
-        view.appendChild(bottomRow);  
+        if (quality) infoRow.appendChild(quality);  
+        if (vote)    infoRow.appendChild(vote);  
+        if (age)     infoRow.appendChild(age);  
+        if (infoRow.children.length) view.appendChild(infoRow);  
     }  
     var observer = new MutationObserver(function (mutations) {  
         mutations.forEach(function (mutation) {  
