@@ -60,17 +60,17 @@
             color: rgba(255,255,255,0.95);  
             letter-spacing: 0.03em;  
         }  
-        .card__bottom-info {  
+        .card__top-info {  
             position: absolute;  
             right: 0.3em;  
-            bottom: 0.5em;  
+            bottom: 1.5em;  
             display: flex;  
             align-items: baseline;  
             gap: 0.35em;  
             z-index: 2;  
             line-height: 1;  
         }  
-        .card__bottom-info .card__quality {  
+        .card__top-info .card__quality {  
             position: static;  
             background: none;  
             color: rgba(255,255,255,0.95);  
@@ -81,10 +81,10 @@
             text-transform: none;  
             line-height: 1;  
         }  
-        .card__bottom-info .card__quality > div {  
+        .card__top-info .card__quality > div {  
             display: inline;  
         }  
-        .card__bottom-info .card__vote {  
+        .card__top-info .card__vote {  
             position: static;  
             background: none;  
             color: rgba(255,255,255,0.95);  
@@ -92,6 +92,16 @@
             font-weight: 600;  
             padding: 0;  
             border-radius: 0;  
+            line-height: 1;  
+        }  
+        .card__bottom-info {  
+            position: absolute;  
+            right: 0.3em;  
+            bottom: 0.5em;  
+            display: flex;  
+            align-items: baseline;  
+            gap: 0.35em;  
+            z-index: 2;  
             line-height: 1;  
         }  
         .card__bottom-info .card__age {  
@@ -115,15 +125,18 @@
         card.dataset.crlDone = '1';  
         var view = card.querySelector('.card__view');  
         if (!view) return;  
-        var infoRow = document.createElement('div');  
-        infoRow.className = 'card__bottom-info';  
+        var topRow = document.createElement('div');  
+        topRow.className = 'card__top-info';  
+        var bottomRow = document.createElement('div');  
+        bottomRow.className = 'card__bottom-info';  
         var quality = view.querySelector('.card__quality');  
         var vote    = view.querySelector('.card__vote');  
         var age     = card.querySelector('.card__age');  
-        if (quality) infoRow.appendChild(quality);  
-        if (vote)    infoRow.appendChild(vote);  
-        if (age)     infoRow.appendChild(age);  
-        if (infoRow.children.length) view.appendChild(infoRow);  
+        if (quality) topRow.appendChild(quality);  
+        if (vote)    topRow.appendChild(vote);  
+        if (age)     bottomRow.appendChild(age);  
+        if (topRow.children.length) view.appendChild(topRow);  
+        if (bottomRow.children.length) view.appendChild(bottomRow);  
     }  
     var observer = new MutationObserver(function (mutations) {  
         mutations.forEach(function (mutation) {  
