@@ -109,6 +109,7 @@
     var style = document.createElement('style');  
     style.textContent = css;  
     document.head.appendChild(style);  
+  
     function processCard(card) {  
         if (card.dataset.crlDone) return;  
         if (card.classList.contains('card--wide')) return;  
@@ -125,14 +126,20 @@
         if (age)     infoRow.appendChild(age);  
         if (infoRow.children.length) view.appendChild(infoRow);  
     }  
+  
+    function scanExisting() {  
+        document.querySelectorAll('.card').forEach(function (c) {  
+            processCard(c);  
+        });  
+    }  
+  
     var observer = new MutationObserver(function (mutations) {  
         mutations.forEach(function (mutation) {  
             mutation.addedNodes.forEach(function (node) {  
                 if (node.nodeType !== 1) return;  
                 if (node.classList && node.classList.contains('card')) {  
                     setTimeout(function () { processCard(node); }, 0);  
-                }  
-                if (node.querySelectorAll) {  
+                } else if (node.querySelectorAll) {  
                     node.querySelectorAll('.card').forEach(function (c) {  
                         setTimeout(function () { processCard(c); }, 0);  
                     });  
@@ -140,9 +147,18 @@
             });  
         });  
     });  
+  
     function start() {  
         observer.observe(document.body, { childList: true, subtree: true });  
+        scanExisting();  
     }  
+  
+    if (window.Lampa && Lampa.Listener) {  
+        Lampa.Listener.follow('app', function (e) {  
+            if (e.type === 'ready') scanExisting();  
+        });  
+    }  
+  
     if (document.body) start();  
     else document.addEventListener('DOMContentLoaded', start);  
 })();
