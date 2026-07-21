@@ -40,7 +40,6 @@
             background: none !important;  
             color: rgba(255,255,255,0.95) !important;  
         }  
-        /* Общий override для всех .card__quality в карточках */  
         .card:not(.card--wide) .card__quality {  
             background: none !important;  
             color: rgba(255,255,255,0.95) !important;  
@@ -138,8 +137,8 @@
         if (quality) topRow.appendChild(quality);  
         if (vote)    topRow.appendChild(vote);  
         if (age)     bottomRow.appendChild(age);  
-        if (topRow.children.length) view.appendChild(topRow);  
-        if (bottomRow.children.length) view.appendChild(bottomRow);  
+        view.appendChild(topRow);  
+        view.appendChild(bottomRow);  
     }  
     var observer = new MutationObserver(function (mutations) {  
         mutations.forEach(function (mutation) {  
