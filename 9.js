@@ -1,26 +1,10 @@
 (function () {  
     'use strict';  
-  
     var css = `  
-        /* Иконки — правый верхний угол */  
         .card:not(.card--wide) .card__icons {  
             left: auto;  
             right: 0.5em;  
-            justify-content: flex-end;  
         }  
-  
-        /* Убираем тип контента (TV/MOV) */  
-        .card:not(.card--wide) .card__type {  
-            display: none !important;  
-        }  
-  
-        /* Скрываем название и год под постером */  
-        .card:not(.card--wide) .card__title,  
-        .card:not(.card--wide) .card__age {  
-            display: none;  
-        }  
-  
-        /* [ИЗМЕНЕНИЕ 3] Затемнение снизу ~1.5 строки (было 4.5em) */  
         .card:not(.card--wide) .card__view::before {  
             content: '';  
             position: absolute;  
@@ -34,76 +18,79 @@
             pointer-events: none;  
             z-index: 1;  
         }  
-  
-        /* Скрываем оригинальные vote и quality */  
-        .card:not(.card--wide) .card__vote,  
-        .card:not(.card--wide) .card__quality {  
+        .card:not(.card--wide) .card__type {  
             display: none !important;  
         }  
-  
-        /* Маркер статуса — нижний левый угол, без фона */  
-        .card:not(.card--wide) .card__marker {  
+        .card:not(.card--wide) .card__status {  
+            position: absolute;  
+            top: auto;  
             left: 0.5em;  
             bottom: 0.5em;  
             background: none;  
             padding: 0;  
             border-radius: 0;  
-            z-index: 3;  
-        }  
-        .card:not(.card--wide) .card__marker::before {  
-            width: 0.55em;  
-            height: 0.55em;  
-            margin-right: 0.3em;  
-        }  
-        .card:not(.card--wide) .card__marker > span {  
-            font-size: 0.85em;  
-            font-weight: 600;  
-            color: rgba(255,255,255,0.95);  
-            max-width: 7em;  
-            white-space: nowrap;  
-            overflow: hidden;  
-            text-overflow: ellipsis;  
-        }  
-  
-        /* Контейнер с инфо поверх постера */  
-        .crl-info {  
-            position: absolute;  
-            left: 0;  
-            right: 0;  
-            bottom: 0;  
             z-index: 2;  
-            pointer-events: none;  
         }  
-        .crl-row {  
-            display: flex;  
-            align-items: center;  
-            padding: 0 0.5em;  
+        .card:not(.card--wide) .card__status .tvs-icon {  
+            font-size: 0.95em;  
             line-height: 1;  
+            margin-right: 0.15em;  
         }  
-        /* Строка: качество · рейтинг — справа */  
-        .crl-row--top {  
-            justify-content: flex-end;  
-            padding-bottom: 0.3em;  
-        }  
-        /* Строка: год — справа */  
-        .crl-row--bottom {  
-            justify-content: flex-end;  
-            padding-bottom: 0.5em;  
-        }  
-        .crl-text {  
-            font-size: 0.85em;  
+        .card:not(.card--wide) .card__status .tvs-text {  
+            font-size: 0.95em;  
             font-weight: 600;  
             color: rgba(255,255,255,0.95);  
+            letter-spacing: 0.03em;  
+        }  
+        .card__bottom-info {  
+            position: absolute;  
+            right: 0.3em;  
+            bottom: 0.5em;  
+            display: flex;  
+            align-items: baseline;  
+            gap: 0.35em;  
+            z-index: 2;  
             line-height: 1;  
         }  
-        .crl-sep {  
-            font-size: 0.85em;  
-            color: rgba(255,255,255,0.45);  
-            margin: 0 0.25em;  
+        .card__bottom-info .card__quality {  
+            position: static;  
+            background: none;  
+            color: rgba(255,255,255,0.95);  
+            font-size: 0.95em;  
+            font-weight: 600;  
+            padding: 0;  
+            border-radius: 0;  
+            text-transform: none;  
             line-height: 1;  
+        }  
+        .card__bottom-info .card__quality > div {  
+            display: inline;  
+        }  
+        .card--tv.card:not(.card--wide) .card__bottom-info .card__quality {  
+            display: none !important;  
+        }  
+        .card__bottom-info .card__vote {  
+            position: static;  
+            background: none;  
+            color: rgba(255,255,255,0.95);  
+            font-size: 0.95em;  
+            font-weight: 600;  
+            padding: 0;  
+            border-radius: 0;  
+            line-height: 1;  
+        }  
+        .card__bottom-info .card__age {  
+            font-size: 0.95em;  
+            font-weight: 600;  
+            color: rgba(255,255,255,0.95);  
+            margin-top: 0;  
+            line-height: 1;  
+        }  
+        .card:not(.card--wide) .card__title {  
+            text-align: center;  
+            margin-top: 0.1em;  
         }  
     `;  
-  
     var style = document.createElement('style');  
     style.textContent = css;  
     document.head.appendChild(style);  
@@ -112,78 +99,17 @@
         if (card.dataset.crlDone) return;  
         if (card.classList.contains('card--wide')) return;  
         card.dataset.crlDone = '1';  
-  
         var view = card.querySelector('.card__view');  
         if (!view) return;  
-  
-        // [ИЗМЕНЕНИЕ 2] Сериал или фильм?  
-        var isTv = card.classList.contains('card--tv');  
-  
-        // Год  
-        var ageEl = card.querySelector('.card__age');  
-        var releaseYear = ageEl ? ageEl.textContent.trim() : '';  
-        if (releaseYear === '0000') releaseYear = '';  
-  
-        // Рейтинг  
-        var voteEl = view.querySelector('.card__vote');  
-        var voteText = voteEl ? voteEl.textContent.trim() : '';  
-  
-        // [ИЗМЕНЕНИЕ 2] Качество — только для фильмов, для сериалов скрываем  
-        var qualityText = '';  
-        if (!isTv) {  
-            var qualityEl = view.querySelector('.card__quality');  
-            if (qualityEl) {  
-                var qInner = qualityEl.querySelector('div');  
-                qualityText = qInner ? qInner.textContent.trim() : qualityEl.textContent.trim();  
-            }  
-        }  
-  
-        var info = document.createElement('div');  
-        info.className = 'crl-info';  
-  
-        // Верхняя строка: качество · рейтинг (справа)  
-        if (qualityText || voteText) {  
-            var rowTop = document.createElement('div');  
-            rowTop.className = 'crl-row crl-row--top';  
-  
-            if (qualityText) {  
-                var qSpan = document.createElement('span');  
-                qSpan.className = 'crl-text';  
-                qSpan.textContent = qualityText;  
-                rowTop.appendChild(qSpan);  
-            }  
-  
-            if (qualityText && voteText) {  
-                var sep = document.createElement('span');  
-                sep.className = 'crl-sep';  
-                sep.textContent = '·';  
-                rowTop.appendChild(sep);  
-            }  
-  
-            if (voteText) {  
-                var vSpan = document.createElement('span');  
-                vSpan.className = 'crl-text';  
-                vSpan.textContent = voteText;  
-                rowTop.appendChild(vSpan);  
-            }  
-  
-            info.appendChild(rowTop);  
-        }  
-  
-        // Нижняя строка: год справа (статус — .card__marker слева через CSS)  
-        if (releaseYear) {  
-            var rowBottom = document.createElement('div');  
-            rowBottom.className = 'crl-row crl-row--bottom';  
-  
-            var yearSpan = document.createElement('span');  
-            yearSpan.className = 'crl-text';  
-            yearSpan.textContent = releaseYear;  
-            rowBottom.appendChild(yearSpan);  
-  
-            info.appendChild(rowBottom);  
-        }  
-  
-        view.appendChild(info);  
+        var infoRow = document.createElement('div');  
+        infoRow.className = 'card__bottom-info';  
+        var quality = view.querySelector('.card__quality');  
+        var vote    = view.querySelector('.card__vote');  
+        var age     = card.querySelector('.card__age');  
+        if (quality) infoRow.appendChild(quality);  
+        if (vote)    infoRow.appendChild(vote);  
+        if (age)     infoRow.appendChild(age);  
+        if (infoRow.children.length) view.appendChild(infoRow);  
     }  
   
     function scanExisting() {  
