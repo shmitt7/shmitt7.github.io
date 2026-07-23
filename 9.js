@@ -112,6 +112,23 @@
         if (infoRow.children.length) view.appendChild(infoRow);  
     }  
   
+    // Переместить элемент в уже существующий infoRow обработанной карточки  
+    function relocateLateElement(node) {  
+        var card = node.closest && node.closest('.card');  
+        if (!card) return;  
+        if (!card.dataset.crlDone) return;  
+        if (card.classList.contains('card--wide')) return;  
+        var view = card.querySelector('.card__view');  
+        if (!view) return;  
+        var infoRow = view.querySelector('.card__bottom-info');  
+        if (!infoRow) {  
+            infoRow = document.createElement('div');  
+            infoRow.className = 'card__bottom-info';  
+            view.appendChild(infoRow);  
+        }  
+        infoRow.appendChild(node);  
+    }  
+  
     function scanExisting() {  
         document.querySelectorAll('.card').forEach(function (c) {  
             processCard(c);  
@@ -122,12 +139,26 @@
         mutations.forEach(function (mutation) {  
             mutation.addedNodes.forEach(function (node) {  
                 if (node.nodeType !== 1) return;  
+  
+                // Новая карточка добавлена в DOM  
                 if (node.classList && node.classList.contains('card')) {  
                     setTimeout(function () { processCard(node); }, 0);  
                 } else if (node.querySelectorAll) {  
                     node.querySelectorAll('.card').forEach(function (c) {  
                         setTimeout(function () { processCard(c); }, 0);  
                     });  
+                }  
+  
+                // Элемент качества/рейтинга/года добавлен в уже обработанную карточку  
+                // (например, другим плагином после того, как processCard уже отработал)  
+                if (node.classList) {  
+                    if (  
+                        node.classList.contains('card__quality') ||  
+                        node.classList.contains('card__vote') ||  
+                        node.classList.contains('card__age')  
+                    ) {  
+                        relocateLateElement(node);  
+                    }  
                 }  
             });  
         });  
