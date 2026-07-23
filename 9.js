@@ -1,94 +1,83 @@
 (function () {  
     'use strict';  
     var css = `  
+        /* Иконки — правый верхний угол */  
         .card:not(.card--wide) .card__icons {  
             left: auto;  
             right: 0.5em;  
+            top: 0.5em;  
         }  
+  
+        /* Убираем нижнее затемнение */  
         .card:not(.card--wide) .card__view::before {  
-            content: '';  
-            position: absolute;  
-            left: 0;  
-            right: 0;  
-            bottom: 0;  
-            height: 2.5em;  
-            background: linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.88) 100%);  
-            border-bottom-left-radius: 1em;  
-            border-bottom-right-radius: 1em;  
-            pointer-events: none;  
-            z-index: 1;  
+            display: none !important;  
         }  
+  
+        /* Тип — скрыт */  
         .card:not(.card--wide) .card__type {  
             display: none !important;  
         }  
+  
+        /* Статус — левый верхний угол, на одном уровне с иконками */  
         .card:not(.card--wide) .card__status {  
             position: absolute;  
-            top: auto;  
+            top: 0.5em;  
             left: 0.5em;  
-            bottom: 0.5em;  
+            bottom: auto;  
             background: none;  
             padding: 0;  
             border-radius: 0;  
             z-index: 2;  
         }  
         .card:not(.card--wide) .card__status .tvs-icon {  
-            font-size: 0.95em;  
+            font-size: 0.9em;  
             line-height: 1;  
-            margin-right: 0.15em;  
+            margin-right: 0.1em;  
         }  
         .card:not(.card--wide) .card__status .tvs-text {  
-            font-size: 0.95em;  
-            font-weight: 600;  
-            color: rgba(255,255,255,0.95);  
+            font-size: 0.9em;  
+            font-weight: 700;  
+            color: #fff;  
             letter-spacing: 0.03em;  
+            text-shadow: 0 1px 4px rgba(0,0,0,1), 0 0 8px rgba(0,0,0,0.9);  
         }  
+  
+        /* Блок с рейтингом — правый нижний угол */  
         .card__bottom-info {  
             position: absolute;  
-            right: 0.3em;  
-            bottom: 0.5em;  
+            right: 0.4em;  
+            bottom: 0.4em;  
             display: flex;  
             align-items: baseline;  
-            gap: 0.35em;  
             z-index: 2;  
             line-height: 1;  
         }  
-        .card__bottom-info .card__quality {  
-            position: static;  
-            background: none;  
-            color: rgba(255,255,255,0.95);  
-            font-size: 0.95em;  
-            font-weight: 600;  
-            padding: 0;  
-            border-radius: 0;  
-            text-transform: none;  
-            line-height: 1;  
-        }  
-        .card__bottom-info .card__quality > div {  
-            display: inline;  
-        }  
-        .card--tv.card:not(.card--wide) .card__bottom-info .card__quality {  
-            display: none !important;  
-        }  
+  
+        /* Рейтинг — крупнее, объёмный текст */  
         .card__bottom-info .card__vote {  
             position: static;  
             background: none;  
-            color: rgba(255,255,255,0.95);  
-            font-size: 0.95em;  
-            font-weight: 600;  
+            color: #fff;  
+            font-size: 1.15em;  
+            font-weight: 700;  
             padding: 0;  
             border-radius: 0;  
             line-height: 1;  
+            text-shadow:  
+                0 1px 4px rgba(0,0,0,1),  
+                0 0 10px rgba(0,0,0,0.9),  
+                1px 1px 0 rgba(0,0,0,0.8);  
         }  
+  
+        /* Качество и год — скрыты */  
+        .card__bottom-info .card__quality,  
         .card__bottom-info .card__age {  
-            font-size: 0.95em;  
-            font-weight: 600;  
-            color: rgba(255,255,255,0.95);  
-            margin-top: 0;  
-            line-height: 1;  
+            display: none !important;  
         }  
+  
+        /* Название под постером — скрыто */  
         .card:not(.card--wide) .card__title {  
-            text-align: center;  
-            margin-top: 0.1em;  
+            display: none !important;  
         }  
     `;  
     var style = document.createElement('style');  
@@ -103,23 +92,18 @@
         if (!view) return;  
         var infoRow = document.createElement('div');  
         infoRow.className = 'card__bottom-info';  
-        var quality = view.querySelector('.card__quality');  
-        var vote    = view.querySelector('.card__vote');  
-        var age     = card.querySelector('.card__age');  
-        if (quality) infoRow.appendChild(quality);  
-        if (vote)    infoRow.appendChild(vote);  
-        if (age)     infoRow.appendChild(age);  
+        var vote = view.querySelector('.card__vote');  
+        if (vote) infoRow.appendChild(vote);  
         if (infoRow.children.length) view.appendChild(infoRow);  
     }  
   
     function relocateLateElement(node) {  
-        // Уже внутри infoRow — не трогаем, иначе бесконечный цикл  
         if (node.closest && node.closest('.card__bottom-info')) return;  
-  
         var card = node.closest && node.closest('.card');  
         if (!card) return;  
         if (!card.dataset.crlDone) return;  
         if (card.classList.contains('card--wide')) return;  
+        if (!node.classList.contains('card__vote')) return;  
         var view = card.querySelector('.card__view');  
         if (!view) return;  
         var infoRow = view.querySelector('.card__bottom-info');  
@@ -150,14 +134,8 @@
                     });  
                 }  
   
-                if (node.classList) {  
-                    if (  
-                        node.classList.contains('card__quality') ||  
-                        node.classList.contains('card__vote') ||  
-                        node.classList.contains('card__age')  
-                    ) {  
-                        relocateLateElement(node);  
-                    }  
+                if (node.classList && node.classList.contains('card__vote')) {  
+                    relocateLateElement(node);  
                 }  
             });  
         });  
