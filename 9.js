@@ -112,8 +112,10 @@
         if (infoRow.children.length) view.appendChild(infoRow);  
     }  
   
-    // Переместить элемент в уже существующий infoRow обработанной карточки  
     function relocateLateElement(node) {  
+        // Уже внутри infoRow — не трогаем, иначе бесконечный цикл  
+        if (node.closest && node.closest('.card__bottom-info')) return;  
+  
         var card = node.closest && node.closest('.card');  
         if (!card) return;  
         if (!card.dataset.crlDone) return;  
@@ -140,7 +142,6 @@
             mutation.addedNodes.forEach(function (node) {  
                 if (node.nodeType !== 1) return;  
   
-                // Новая карточка добавлена в DOM  
                 if (node.classList && node.classList.contains('card')) {  
                     setTimeout(function () { processCard(node); }, 0);  
                 } else if (node.querySelectorAll) {  
@@ -149,8 +150,6 @@
                     });  
                 }  
   
-                // Элемент качества/рейтинга/года добавлен в уже обработанную карточку  
-                // (например, другим плагином после того, как processCard уже отработал)  
                 if (node.classList) {  
                     if (  
                         node.classList.contains('card__quality') ||  
