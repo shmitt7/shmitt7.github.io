@@ -18,6 +18,16 @@
             display: none !important;  
         }  
   
+        /* Качество — скрыто везде */  
+        .card:not(.card--wide) .card__quality {  
+            display: none !important;  
+        }  
+  
+        /* Год — скрыт везде */  
+        .card:not(.card--wide) .card__age {  
+            display: none !important;  
+        }  
+  
         /* Статус — левый верхний угол, на одном уровне с иконками */  
         .card:not(.card--wide) .card__status {  
             position: absolute;  
@@ -67,12 +77,6 @@
                 0 1px 4px rgba(0,0,0,1),  
                 0 0 10px rgba(0,0,0,0.9),  
                 1px 1px 0 rgba(0,0,0,0.8);  
-        }  
-  
-        /* Качество и год — скрыты */  
-        .card__bottom-info .card__quality,  
-        .card__bottom-info .card__age {  
-            display: none !important;  
         }  
   
         /* Название под постером — скрыто */  
