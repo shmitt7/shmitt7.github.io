@@ -1,18 +1,21 @@
 (function () {  
     var css =  
-        '.card:not(.card--wide) .card__icons{left:auto;right:0.5em;top:0.5em}' +  
-        '.card:not(.card--wide) .card__icons-inner{background:none}' +  
-        '.card:not(.card--wide) .card__icon{filter:drop-shadow(0 1px 4px rgba(0,0,0,1)) drop-shadow(0 0 8px rgba(0,0,0,0.9))}' +  
-        '.card:not(.card--wide) .card__view::before{display:none!important}' +  
-        '.card:not(.card--wide) .card__type,' +  
-        '.card:not(.card--wide) .card__quality,' +  
-        '.card:not(.card--wide) .card__age,' +  
-        '.card:not(.card--wide) .card__title{display:none!important}' +  
-        '.card:not(.card--wide) .card__status{position:absolute;top:0.5em;left:0.5em;bottom:auto;background:none;padding:0;border-radius:0;z-index:2}' +  
-        '.card:not(.card--wide) .card__status .tvs-icon{font-size:0.9em;line-height:1;margin-right:0.1em}' +  
-        '.card:not(.card--wide) .card__status .tvs-text{font-size:0.9em;font-weight:700;color:#fff;letter-spacing:0.03em;text-shadow:0 1px 4px rgba(0,0,0,1),0 0 8px rgba(0,0,0,0.9)}' +  
-        '.card__bottom-info{position:absolute;right:0.4em;bottom:0.4em;display:flex;align-items:baseline;z-index:2;line-height:1}' +  
-        '.card__bottom-info .card__vote{position:static;background:none;color:#fff;font-size:1.15em;font-weight:700;padding:0;border-radius:0;line-height:1;text-shadow:0 1px 4px rgba(0,0,0,1),0 0 8px rgba(0,0,0,0.9)}';  
+    '.card:not(.card--wide) .card__icons{left:auto;right:0.5em;top:0.5em}' +  
+    '.card:not(.card--wide) .card__icons-inner{background:none}' +  
+    '.card:not(.card--wide) .card__icon{filter:drop-shadow(0 1px 4px rgba(0,0,0,1)) drop-shadow(0 0 8px rgba(0,0,0,0.9))}' +  
+    '.card:not(.card--wide) .card__view::before{display:none!important}' +  
+    '.card:not(.card--wide) .card__type,' +  
+    '.card:not(.card--wide) .card__quality,' +  
+    '.card:not(.card--wide) .card__age,' +  
+    '.card:not(.card--wide) .card__title,' +  
+    '.card:not(.card--wide) .card-watched,' +  
+    '.card:not(.card--wide) .card__new-episode,' +  
+    '.card:not(.card--wide) .card__marker{display:none!important}' +  
+    '.card:not(.card--wide) .card__status{position:absolute;top:0.5em;left:0.5em;bottom:auto;background:none;padding:0;border-radius:0;z-index:2}' +  
+    '.card:not(.card--wide) .card__status .tvs-icon{font-size:0.9em;line-height:1;margin-right:0.1em}' +  
+    '.card:not(.card--wide) .card__status .tvs-text{font-size:0.9em;font-weight:700;color:#fff;letter-spacing:0.03em;text-shadow:0 1px 4px rgba(0,0,0,1),0 0 8px rgba(0,0,0,0.9)}' +  
+    '.card__bottom-info{position:absolute;right:0.4em;bottom:0.4em;display:flex;align-items:baseline;z-index:2;line-height:1}' +  
+    '.card__bottom-info .card__vote{position:static;background:none;color:#fff;font-size:1.15em;font-weight:700;padding:0;border-radius:0;line-height:1;text-shadow:0 1px 4px rgba(0,0,0,1),0 0 8px rgba(0,0,0,0.9)}';  
     document.head.insertAdjacentHTML('beforeend', '<style>' + css + '</style>');  
     function processCard(card) {  
         if (card.dataset.crlDone) return;  
