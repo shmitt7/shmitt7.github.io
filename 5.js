@@ -208,23 +208,24 @@
         mutationObserver.observe(document.body, { childList: true, subtree: true });    
     }    
     function injectStyles() {  
+    function injectStyles() {  
     document.head.insertAdjacentHTML('beforeend', '<style>' +  
         '.card__status{' +  
             'position:absolute;' +  
-            'left:0.5em;' +          /* было left:-0.8em; top:3.15em — теперь левый низ постера */  
+            'left:0.5em;' +  
             'bottom:0.5em;' +  
             'display:flex;' +  
             'align-items:center;' +  
-            /* убраны: background, padding, border-radius */  
+            'line-height:1;' +       /* перенесли сюда */  
             'z-index:2;' +  
             'pointer-events:none;' +  
             'white-space:nowrap;' +  
-            'line-height:1;' +  
         '}' +  
         '.card__status .tvs-icon{' +  
-            'font-size:1.1em;' +     /* 0.85em * 1.3 ≈ 1.1em — иконка крупнее текста */  
-            'line-height:1;' +  
+            'font-size:1.1em;' +  
             'margin-right:0.2em;' +  
+            'display:flex;' +        /* делаем сам span flex-контейнером */  
+            'align-items:center;' +  
             'text-shadow:0 1px 4px rgba(0,0,0,1),0 0 8px rgba(0,0,0,0.9);' +  
         '}' +  
         '.card__status .tvs-text{' +  
@@ -232,6 +233,8 @@
             'font-weight:600;' +  
             'color:#ffffff;' +  
             'letter-spacing:0.03em;' +  
+            'display:flex;' +  
+            'align-items:center;' +  
             'text-shadow:0 1px 4px rgba(0,0,0,1),0 0 8px rgba(0,0,0,0.9);' +  
         '}' +  
     '</style>');  
