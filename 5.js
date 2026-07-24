@@ -214,8 +214,8 @@
             'left:0.5em;' +  
             'bottom:0.5em;' +  
             'display:flex;' +  
-            'align-items:center;' +  
-            'line-height:1;' +       /* перенесли сюда */  
+            'align-items:baseline;' +   /* baseline вместо center */  
+            'line-height:1;' +  
             'z-index:2;' +  
             'pointer-events:none;' +  
             'white-space:nowrap;' +  
@@ -223,8 +223,7 @@
         '.card__status .tvs-icon{' +  
             'font-size:1.1em;' +  
             'margin-right:0.2em;' +  
-            'display:flex;' +        /* делаем сам span flex-контейнером */  
-            'align-items:center;' +  
+            'transform:translateY(0.1em);' +  /* опускаем иконку чуть вниз к baseline текста */  
             'text-shadow:0 1px 4px rgba(0,0,0,1),0 0 8px rgba(0,0,0,0.9);' +  
         '}' +  
         '.card__status .tvs-text{' +  
@@ -232,8 +231,7 @@
             'font-weight:600;' +  
             'color:#ffffff;' +  
             'letter-spacing:0.03em;' +  
-            'display:flex;' +  
-            'align-items:center;' +  
+            'line-height:1;' +  
             'text-shadow:0 1px 4px rgba(0,0,0,1),0 0 8px rgba(0,0,0,0.9);' +  
         '}' +  
     '</style>');  
