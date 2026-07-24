@@ -206,8 +206,7 @@
             }    
         });    
         mutationObserver.observe(document.body, { childList: true, subtree: true });    
-    }    
-    function injectStyles() {  
+    }      
     function injectStyles() {  
     document.head.insertAdjacentHTML('beforeend', '<style>' +  
         '.card__status{' +  
