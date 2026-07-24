@@ -1,11 +1,19 @@
 (function () {  
     'use strict';  
     var css = `  
-        /* Иконки — правый верхний угол */  
+        /* Иконки — правый верхний угол, без фона, объёмные */  
         .card:not(.card--wide) .card__icons {  
             left: auto;  
             right: 0.5em;  
             top: 0.5em;  
+        }  
+        .card:not(.card--wide) .card__icons-inner {  
+            background: none;  
+        }  
+        .card:not(.card--wide) .card__icon {  
+            filter:  
+                drop-shadow(0 1px 4px rgba(0,0,0,1))  
+                drop-shadow(0 0 8px rgba(0,0,0,0.9));  
         }  
   
         /* Убираем нижнее затемнение */  
