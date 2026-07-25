@@ -6,7 +6,6 @@
        CSS  
     ═══════════════════════════════════════════════════════ */  
     document.head.insertAdjacentHTML('beforeend', '<style>' +  
-        /* скрываем оригинальные элементы */  
         '.card:not(.card--wide) .card__title,' +  
         '.card:not(.card--wide) .card__age,' +  
         '.card:not(.card--wide) .card__type,' +  
@@ -17,23 +16,22 @@
         '.card:not(.card--wide) .card-watched,' +  
         '.card:not(.card--wide) .card__status{display:none!important}' +  
         '.card:not(.card--wide) .card__view::before{display:none!important}' +  
-        /* иконки — правый верхний угол */  
         '.card:not(.card--wide) .card__icons{left:auto;right:0.5em;top:0.5em}' +  
         '.card:not(.card--wide) .card__icons-inner{background:none}' +  
         '.card:not(.card--wide) .card__icon{filter:drop-shadow(0 1px 4px rgba(0,0,0,1)) drop-shadow(0 0 8px rgba(0,0,0,0.9))}' +  
-        /* оверлей */  
-        '.crl-overlay{position:absolute;bottom:0;left:0;right:0;height:35%;border-radius:0 0 1em 1em;overflow:hidden;background:linear-gradient(to bottom,rgba(0,0,0,0) 0%,rgba(0,0,0,0.78) 30%,rgba(0,0,0,0.88) 100%);padding:0.4em 0.45em 0.4em;display:flex;flex-direction:column;justify-content:flex-end;z-index:2;box-sizing:border-box}' +  
-        /* название — макс. 2 строки, чуть меньше и плотнее */  
-        '.crl-title{font-size:1.15em;line-height:1.1;font-weight:700;color:#fff;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;line-clamp:2;-webkit-box-orient:vertical;text-overflow:ellipsis;margin-bottom:0.2em;text-shadow:0 1px 3px rgba(0,0,0,0.9)}' +  
-        /* строки метаданных */  
-        '.crl-row{display:flex;justify-content:space-between;align-items:baseline;line-height:1.2;margin-top:0.15em}' +  
-        '.crl-left{font-size:0.65em;color:rgba(255,255,255,0.82);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0}' +  
-        '.crl-right{font-size:0.95em;color:rgba(255,255,255,0.95);white-space:nowrap;margin-left:0.5em;flex-shrink:0;display:flex;align-items:baseline;gap:0.35em;font-weight:700}' +  
-        /* статус */  
+        /* оверлей — высота уменьшена до 27% */  
+        '.crl-overlay{position:absolute;bottom:0;left:0;right:0;height:27%;border-radius:0 0 1em 1em;overflow:hidden;background:linear-gradient(to bottom,rgba(0,0,0,0) 0%,rgba(0,0,0,0.78) 30%,rgba(0,0,0,0.88) 100%);padding:0.35em 0.45em 0.35em;display:flex;flex-direction:column;justify-content:flex-end;z-index:2;box-sizing:border-box}' +  
+        /* название — плотнее, меньше отступ снизу */  
+        '.crl-title{font-size:1.15em;line-height:1.1;font-weight:700;color:#fff;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;line-clamp:2;-webkit-box-orient:vertical;text-overflow:ellipsis;margin-bottom:0.1em;text-shadow:0 1px 3px rgba(0,0,0,0.9)}' +  
+        /* строки — меньше отступ сверху */  
+        '.crl-row{display:flex;justify-content:space-between;align-items:baseline;line-height:1.2;margin-top:0.08em}' +  
+        /* левая часть — 0.9em, серый */  
+        '.crl-left{font-size:0.9em;color:rgba(255,255,255,0.75);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0}' +  
+        /* правая часть — 0.9em, серый, без жирного */  
+        '.crl-right{font-size:0.9em;color:rgba(255,255,255,0.75);white-space:nowrap;margin-left:0.5em;flex-shrink:0;display:flex;align-items:baseline;gap:0.3em}' +  
         '.crl-status-icon{margin-right:0.15em}' +  
-        /* рейтинг с иконкой КП */  
         '.crl-vote{display:flex;align-items:center}' +  
-        '.crl-vote .source--name{width:0.85em;height:1.1em;background-repeat:no-repeat;background-position:center;background-size:contain;margin-left:0.2em;flex-shrink:0;background-image:url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\'%3E%3Cpath fill=\'white\' d=\'M12.049 0C5.45 0 .104 5.373.104 12S5.45 24 12.049 24c3.928 0 7.414-1.904 9.592-4.844l-9.803-5.174l6.256 6.418h-3.559l-4.373-6.086V20.4h-2.89V3.6h2.89v6.095L14.535 3.6h3.559l-6.422 6.627l9.98-5.368C19.476 1.911 15.984 0 12.05 0zm10.924 7.133l-9.994 4.027l10.917-.713a12 12 0 0 0-.923-3.314m-10.065 5.68l10.065 4.054c.458-1.036.774-2.149.923-3.314z\'/%3E%3C/svg%3E")}' +  
+        '.crl-vote .source--name{width:0.85em;height:1.1em;background-repeat:no-repeat;background-position:center;background-size:contain;margin-left:0.2em;flex-shrink:0;background-image:url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\'%3E%3Cpath fill=\'rgba(255,255,255,0.75)\' d=\'M12.049 0C5.45 0 .104 5.373.104 12S5.45 24 12.049 24c3.928 0 7.414-1.904 9.592-4.844l-9.803-5.174l6.256 6.418h-3.559l-4.373-6.086V20.4h-2.89V3.6h2.89v6.095L14.535 3.6h3.559l-6.422 6.627l9.98-5.368C19.476 1.911 15.984 0 12.05 0zm10.924 7.133l-9.994 4.027l10.917-.713a12 12 0 0 0-.923-3.314m-10.065 5.68l10.065 4.054c.458-1.036.774-2.149.923-3.314z\'/%3E%3C/svg%3E")}' +  
     '</style>');  
   
     /* ═══════════════════════════════════════════════════════  
@@ -169,7 +167,8 @@
         ratingNetwork.silent('https://kinopoiskapiunofficial.tech/api/v2.2/films/' + id,  
             function(data) { var kp = data.ratingKinopoisk || 0; setRatingCache(card.id, { kp: kp, tmdb: tmdb }); callback(kp, tmdb); },  
             function() { setRatingCache(card.id, { kp: 0, tmdb: tmdb }); callback(0, tmdb); },  
-            false, { timeout: 3000, headers: { 'X-API-KEY': KP_API_KEY } }  
+            false,  
+            { timeout: 3000, headers: { 'X-API-KEY': KP_API_KEY } }  
         );  
     }  
   
@@ -186,7 +185,8 @@
                 fetchFromKpApi(id, card, callback);  
             },  
             function() { fetchFromKpApi(id, card, callback); },  
-            false, { timeout: 1000, dataType: 'text' }  
+            false,  
+            { timeout: 1000, dataType: 'text' }  
         );  
     }  
   
@@ -214,7 +214,8 @@
                     if (best) { setRatingCache(card.id, { kp_id: best.filmId }, 'search'); getRatingById(best.filmId, card, callback); }  
                     else processError();  
                 },  
-                processError, false, { timeout: 5000, headers: { 'X-API-KEY': KP_API_KEY } }  
+                processError, false,  
+                { timeout: 5000, headers: { 'X-API-KEY': KP_API_KEY } }  
             );  
         }  
         if (card.imdb_id) {  
@@ -225,7 +226,8 @@
                     if (id) { setRatingCache(card.id, { kp_id: id }, 'search'); getRatingById(id, card, callback); }  
                     else searchByTitle();  
                 },  
-                searchByTitle, false, { timeout: 5000, headers: { 'X-API-KEY': KP_API_KEY } }  
+                searchByTitle, false,  
+                { timeout: 5000, headers: { 'X-API-KEY': KP_API_KEY } }  
             );  
         } else {  
             searchByTitle();  
@@ -358,7 +360,7 @@
        OVERLAY BUILDING  
     ═══════════════════════════════════════════════════════ */  
     function buildOverlay(card, data) {  
-        var genreLabels = getGenreLabels(data, 1);   // только 1 жанр  
+        var genreLabels = getGenreLabels(data, 1);  
         var year = ((data.release_date || data.first_air_date || '') + '').slice(0, 4);  
         if (year === '0000') year = '';  
   
@@ -371,11 +373,10 @@
         titleEl.textContent = data.title || data.name || '';  
         overlay.appendChild(titleEl);  
   
-        /* строка 2: статус (placeholder, заполняется асинхронно) */  
+        /* строка 2: статус (скрыт до загрузки) */  
         var statusRow = document.createElement('div');  
         statusRow.className = 'crl-row';  
-        statusRow.style.display = 'none';   // скрыт пока нет данных  
-  
+        statusRow.style.display = 'none';  
         var statusLeft = document.createElement('div');  
         statusLeft.className = 'crl-left';  
         var statusIconEl = document.createElement('span');  
@@ -385,7 +386,6 @@
         statusLeft.appendChild(statusTextEl);  
         statusRow.appendChild(statusLeft);  
         overlay.appendChild(statusRow);  
-  
         card._crlStatusRow    = statusRow;  
         card._crlStatusIconEl = statusIconEl;  
         card._crlStatusTextEl = statusTextEl;  
@@ -403,23 +403,19 @@
         var metaRight = document.createElement('div');  
         metaRight.className = 'crl-right';  
   
-        /* качество — plain text, скрыт до загрузки */  
         var qEl = document.createElement('span');  
         qEl.className = 'crl-quality-text';  
         qEl.style.display = 'none';  
         metaRight.appendChild(qEl);  
         card._crlQualityEl = qEl;  
   
-        /* разделитель между качеством и рейтингом */  
         var sepEl = document.createElement('span');  
-        sepEl.className = 'crl-sep';  
         sepEl.textContent = '·';  
         sepEl.style.display = 'none';  
         sepEl.style.opacity = '0.5';  
         metaRight.appendChild(sepEl);  
         card._crlSepEl = sepEl;  
   
-        /* рейтинг — скрыт до загрузки */  
         var vEl = document.createElement('span');  
         vEl.className = 'crl-vote';  
         vEl.style.display = 'none';  
@@ -450,18 +446,13 @@
         var data = card.card_data;  
         if (!data || !data.id) return;  
   
-        /* качество */  
         fetchQuality(data, function(q) {  
             if (!q || !card._crlQualityEl) return;  
             card._crlQualityEl.textContent = q;  
             card._crlQualityEl.style.display = '';  
-            /* показываем разделитель только если есть и качество и рейтинг */  
-            if (card._crlVoteEl && card._crlVoteEl.style.display !== 'none') {  
-                card._crlSepEl.style.display = '';  
-            }  
+            if (card._crlVoteEl && card._crlVoteEl.style.display !== 'none') card._crlSepEl.style.display = '';  
         });  
   
-        /* рейтинг */  
         if (data.release_date || data.first_air_date) {  
             fetchRating(data, function(kp, tmdb) {  
                 if (!card._crlVoteEl) return;  
@@ -469,14 +460,11 @@
                 if (rating > 0) {  
                     card._crlVoteEl.innerHTML = rating.toFixed(1) + (kp > 0 ? '<span class="source--name"></span>' : '');  
                     card._crlVoteEl.style.display = '';  
-                    if (card._crlQualityEl && card._crlQualityEl.style.display !== 'none') {  
-                        card._crlSepEl.style.display = '';  
-                    }  
+                    if (card._crlQualityEl && card._crlQualityEl.style.display !== 'none') card._crlSepEl.style.display = '';  
                 }  
             });  
         }  
   
-        /* статус */  
         fetchStatus(data, function(labelInfo) {  
             if (!labelInfo || !card._crlStatusIconEl) return;  
             card._crlStatusIconEl.textContent = labelInfo.icon + '\u00a0';  
