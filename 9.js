@@ -28,7 +28,7 @@
         /* строки метаданных */  
         '.crl-row{display:flex;justify-content:space-between;align-items:baseline;line-height:1.2;margin-top:0.15em}' +  
         '.crl-left{font-size:0.65em;color:rgba(255,255,255,0.82);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0}' +  
-        '.crl-right{font-size:0.75em;color:rgba(255,255,255,0.95);white-space:nowrap;margin-left:0.5em;flex-shrink:0;display:flex;align-items:baseline;gap:0.35em;font-weight:700}' +  
+        '.crl-right{font-size:0.95em;color:rgba(255,255,255,0.95);white-space:nowrap;margin-left:0.5em;flex-shrink:0;display:flex;align-items:baseline;gap:0.35em;font-weight:700}' +  
         /* статус */  
         '.crl-status-icon{margin-right:0.15em}' +  
         /* рейтинг с иконкой КП */  
