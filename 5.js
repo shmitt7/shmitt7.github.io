@@ -223,7 +223,7 @@
         '.card__status .tvs-icon{' +  
             'font-size:1.1em;' +  
             'margin-right:0.2em;' +  
-            'transform:translateY(0.1em);' +  /* опускаем иконку чуть вниз к baseline текста */  
+            'transform:translateY(0.2em);' +  /* опускаем иконку чуть вниз к baseline текста */  
             'text-shadow:0 1px 4px rgba(0,0,0,1),0 0 8px rgba(0,0,0,0.9);' +  
         '}' +  
         '.card__status .tvs-text{' +  
