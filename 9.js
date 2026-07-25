@@ -1,158 +1,182 @@
-
 (function () {  
-    if (window.crlOverlayPlugin) return;  
-    window.crlOverlayPlugin = true;  
-    document.head.insertAdjacentHTML('beforeend', '<style>' +  
-        '.card:not(.card--wide) .card__title,' +  
-        '.card:not(.card--wide) .card__age,' +  
-        '.card:not(.card--wide) .card__type,' +  
-        '.card:not(.card--wide) .card__new-episode,' +  
-        '.card:not(.card--wide) .card__marker,' +  
-        '.card:not(.card--wide) .card-watched,' +  
-        '.card:not(.card--wide) .card__status{display:none!important}' +  
-        '.card:not(.card--wide) .card__view::before{display:none!important}' +  
-        '.card:not(.card--wide) .card__icons{left:auto;right:0.5em;top:0.5em}' +  
-        '.card:not(.card--wide) .card__icons-inner{background:none}' +  
-        '.card:not(.card--wide) .card__icon{filter:drop-shadow(0 1px 4px rgba(0,0,0,1)) drop-shadow(0 0 8px rgba(0,0,0,0.9))}' +  
-        '.crl-overlay{position:absolute;bottom:0;left:0;right:0;height:27%;border-radius:0 0 1em 1em;overflow:hidden;background:linear-gradient(to bottom,rgba(0,0,0,0) 0%,rgba(0,0,0,0.78) 30%,rgba(0,0,0,0.88) 100%);padding:0.35em 0.45em 0.35em;display:flex;flex-direction:column;justify-content:flex-end;z-index:2;box-sizing:border-box}' +  
-        '.crl-title{font-size:1.15em;line-height:1.1;font-weight:700;color:#fff;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;line-clamp:2;-webkit-box-orient:vertical;text-overflow:ellipsis;margin-bottom:0.1em;text-shadow:0 1px 3px rgba(0,0,0,0.9)}' +  
-        '.crl-status-row{font-size:0.9em;color:rgba(255,255,255,0.75);line-height:1.2;margin-bottom:0.08em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}' +  
-        '.crl-row{display:flex;justify-content:space-between;align-items:baseline;line-height:1.2;margin-top:0.08em}' +  
-        '.crl-left{font-size:0.9em;color:rgba(255,255,255,0.75);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0}' +  
-        '.crl-right{font-size:0.9em;color:rgba(255,255,255,0.75);white-space:nowrap;margin-left:0.5em;flex-shrink:0;display:flex;align-items:baseline}' +  
-        '.crl-sep{margin-left:0.3em;opacity:0.5}' +  
-        '.crl-overlay .card__vote,.crl-overlay .card__quality,.crl-overlay .card__quality>div{position:static!important;background:none!important;color:rgba(255,255,255,0.75)!important;font-size:0.9em!important;font-weight:400!important;padding:0!important;border-radius:0!important;margin:0!important;line-height:1.2!important;box-shadow:none!important}' +  
-        '.crl-overlay .card__vote{margin-left:0.3em!important}' +  
-        '.crl-overlay .card__status{display:block!important;position:static!important;background:none!important;color:rgba(255,255,255,0.75)!important;font-size:0.9em!important;font-weight:400!important;padding:0!important;border-radius:0!important;margin:0!important;line-height:1.2!important;box-shadow:none!important}' +  
-    '</style>');  
-    function buildOverlay(card, data) {  
-        var overlay = document.createElement('div');  
-        overlay.className = 'crl-overlay';  
-        var titleEl = document.createElement('div');  
-        titleEl.className = 'crl-title';  
-        titleEl.textContent = data.title || data.name || '';  
-        overlay.appendChild(titleEl);  
-        var statusRow = document.createElement('div');  
-        statusRow.className = 'crl-status-row';  
-        statusRow.style.display = 'none';  
-        overlay.appendChild(statusRow);  
-        card._crlStatusRow = statusRow;  
-        var metaRow = document.createElement('div');  
-        metaRow.className = 'crl-row';  
-        var metaLeft = document.createElement('div');  
-        metaLeft.className = 'crl-left';  
-        var year = ((data.release_date || data.first_air_date || '') + '').slice(0, 4);  
-        if (year === '0000') year = '';  
-        var typeEl = card.querySelector('.card__type');  
-        var typeText = typeEl ? typeEl.textContent.trim() : '';  
-        metaLeft.textContent = year + (year && typeText ? ' \u00b7 ' : '') + typeText;  
-        var metaRight = document.createElement('div');  
-        metaRight.className = 'crl-right';  
-        var qualityEl = card.querySelector('.card__quality');  
-        if (qualityEl) {  
-            metaRight.appendChild(qualityEl);  
+    'use strict';  
+  
+    // ─── CSS ────────────────────────────────────────────────────────────────────  
+    var css = `  
+        /* Скрываем стандартный год под карточкой */  
+        .card__age {  
+            display: none !important;  
         }  
-        var voteEl = card.querySelector('.card__vote');  
-        if (voteEl) {  
-            if (qualityEl) {  
-                var sepEl = document.createElement('span');  
-                sepEl.className = 'crl-sep';  
-                sepEl.textContent = '\u00b7';  
-                metaRight.appendChild(sepEl);  
-            }  
-            metaRight.appendChild(voteEl);  
+  
+        /* Ограничиваем название до 2 строк */  
+        .card__title {  
+            -webkit-line-clamp: 2 !important;  
+            line-clamp: 2 !important;  
+            max-height: 2.4em !important;  
         }  
-        metaRow.appendChild(metaLeft);  
-        metaRow.appendChild(metaRight);  
-        overlay.appendChild(metaRow);  
-        return overlay;  
+  
+        /* Скрываем стандартные плашки рейтинга и качества на постере */  
+        .card__vote,  
+        .card__quality {  
+            display: none !important;  
+        }  
+  
+        /* Нижняя панель поверх постера */  
+        .ccs__bar {  
+            position: absolute;  
+            bottom: 0;  
+            left: 0;  
+            right: 0;  
+            padding: 2.5em 0.6em 0.55em 0.6em;  
+            background: linear-gradient(  
+                to bottom,  
+                rgba(0,0,0,0) 0%,  
+                rgba(0,0,0,0.82) 100%  
+            );  
+            border-bottom-left-radius: 1em;  
+            border-bottom-right-radius: 1em;  
+            display: flex;  
+            justify-content: space-between;  
+            align-items: flex-end;  
+            z-index: 2;  
+            pointer-events: none;  
+            box-sizing: border-box;  
+        }  
+  
+        .ccs__left,  
+        .ccs__right {  
+            display: flex;  
+            align-items: center;  
+            gap: 0.35em;  
+            font-size: 0.78em;  
+            line-height: 1;  
+            color: rgba(255,255,255,0.92);  
+        }  
+  
+        .ccs__type {  
+            background: rgba(255,255,255,0.22);  
+            border-radius: 0.3em;  
+            padding: 0.18em 0.45em;  
+            text-transform: uppercase;  
+            font-weight: 600;  
+            font-size: 0.9em;  
+        }  
+  
+        .ccs__quality {  
+            background: #ffe216;  
+            color: #000;  
+            border-radius: 0.3em;  
+            padding: 0.18em 0.45em;  
+            text-transform: uppercase;  
+            font-weight: 700;  
+            font-size: 0.9em;  
+        }  
+  
+        .ccs__vote {  
+            font-weight: 700;  
+            color: #fff;  
+        }  
+    `;  
+  
+    // ─── Добавить стили ──────────────────────────────────────────────────────────  
+    function addStyle(text) {  
+        var el = document.createElement('style');  
+        el.id  = 'custom-card-style';  
+        el.textContent = text;  
+        document.head.appendChild(el);  
     }  
-    function watchForStatus(card) {  
-        var view = card.querySelector('.card__view');  
-        if (!view || !card._crlStatusRow) return;  
-        var existing = view.querySelector('.card__status');  
-        if (existing) {  
-            card._crlStatusRow.appendChild(existing);  
-            card._crlStatusRow.style.display = '';  
-            return;  
+  
+    // ─── Обработать одну карточку ────────────────────────────────────────────────  
+    function processCard(cardEl, data) {  
+        if (!cardEl || !data) return;  
+        if (cardEl.querySelector('.ccs__bar')) return; // уже обработана  
+  
+        var view = cardEl.querySelector('.card__view');  
+        if (!view) return;  
+  
+        // Год  
+        var relDate = data.release_date || data.first_air_date || data.birthday || '';  
+        var year    = relDate ? String(relDate).slice(0, 4) : '';  
+        if (year === '0000') year = '';  
+  
+        // Тип: TV или Movie  
+        var isTV = !!(data.name || data.original_name ||  
+                      data.first_air_date || data.number_of_seasons);  
+        var type = isTV ? 'TV' : 'Movie';  
+  
+        // Качество (только для фильмов, как в оригинале)  
+        var quality = (!isTV && (data.quality || data.release_quality)) || '';  
+  
+        // Рейтинг  
+        var voteRaw = parseFloat(  
+            (data.cub_hundred_rating || data.vote_average || 0) + ''  
+        );  
+        var vote = voteRaw > 0  
+            ? (data.cub_hundred_fire  
+                ? String(data.cub_hundred_fire)  
+                : (voteRaw >= 10 ? '10' : voteRaw.toFixed(1)))  
+            : '';  
+  
+        // ── Строим панель ──────────────────────────────────────────────────────  
+        var bar   = document.createElement('div');  
+        bar.className = 'ccs__bar';  
+  
+        // Левая часть: год + тип  
+        var left  = document.createElement('div');  
+        left.className = 'ccs__left';  
+  
+        if (year) {  
+            var yearEl = document.createElement('span');  
+            yearEl.textContent = year;  
+            left.appendChild(yearEl);  
         }  
-        var statusObserver = new MutationObserver(function(mutations) {  
-            for (var mi = 0; mi < mutations.length; mi++) {  
-                var nodes = mutations[mi].addedNodes;  
-                for (var ni = 0; ni < nodes.length; ni++) {  
-                    var node = nodes[ni];  
-                    if (node.nodeType === 1 && node.classList && node.classList.contains('card__status')) {  
-                        statusObserver.disconnect();  
-                        card._crlStatusRow.appendChild(node);  
-                        card._crlStatusRow.style.display = '';  
-                        return;  
-                    }  
-                }  
+  
+        var typeEl = document.createElement('span');  
+        typeEl.className = 'ccs__type';  
+        typeEl.textContent = type;  
+        left.appendChild(typeEl);  
+  
+        // Правая часть: качество + рейтинг  
+        var right = document.createElement('div');  
+        right.className = 'ccs__right';  
+  
+        if (quality) {  
+            var qualEl = document.createElement('span');  
+            qualEl.className = 'ccs__quality';  
+            qualEl.textContent = quality;  
+            right.appendChild(qualEl);  
+        }  
+  
+        if (vote) {  
+            var voteEl = document.createElement('span');  
+            voteEl.className = 'ccs__vote';  
+            voteEl.textContent = vote;  
+            right.appendChild(voteEl);  
+        }  
+  
+        bar.appendChild(left);  
+        bar.appendChild(right);  
+        view.appendChild(bar);  
+    }  
+  
+    // ─── Инициализация ───────────────────────────────────────────────────────────  
+    function init() {  
+        addStyle(css);  
+  
+        // Перехватываем момент, когда карточка становится видимой  
+        Lampa.Listener.follow('card', function (e) {  
+            if (e.type === 'visible') {  
+                processCard(e.card, e.data);  
             }  
         });  
-        statusObserver.observe(view, { childList: true });  
-        card._crlStatusObserver = statusObserver;  
     }  
-    function processCard(card) {  
-        if (card.dataset.crlDone) return;  
-        if (card.classList.contains('card--wide')) return;  
-        if (!card.card_data) return;  
-        card.dataset.crlDone = '1';  
-        var view = card.querySelector('.card__view');  
-        if (!view) return;  
-        view.appendChild(buildOverlay(card, card.card_data));  
-        watchForStatus(card);  
+  
+    if (window.appready) {  
+        init();  
+    } else {  
+        Lampa.Listener.follow('app', function (e) {  
+            if (e.type === 'ready') init();  
+        });  
     }  
-    var intersectionObserver = null;  
-    function observeCard(card) {  
-        if (card.dataset.crlObserved) return;  
-        card.dataset.crlObserved = '1';  
-        if (intersectionObserver) {  
-            intersectionObserver.observe(card);  
-        } else {  
-            processCard(card);  
-        }  
-    }  
-    if (typeof IntersectionObserver !== 'undefined') {  
-        intersectionObserver = new IntersectionObserver(function(entries) {  
-            for (var i = 0; i < entries.length; i++) {  
-                var entry = entries[i];  
-                if (!entry.isIntersecting) continue;  
-                intersectionObserver.unobserve(entry.target);  
-                processCard(entry.target);  
-            }  
-        }, { rootMargin: '100px' });  
-    }  
-    var mutationObserver = new MutationObserver(function(mutations) {  
-        for (var mi = 0; mi < mutations.length; mi++) {  
-            var nodes = mutations[mi].addedNodes;  
-            for (var ni = 0; ni < nodes.length; ni++) {  
-                var node = nodes[ni];  
-                if (node.nodeType !== 1) continue;  
-                if (node.classList && node.classList.contains('card')) {  
-                    (function(n) { setTimeout(function() { observeCard(n); }, 0); })(node);  
-                } else if (node.querySelectorAll) {  
-                    [].forEach.call(node.querySelectorAll('.card'), function(c) {  
-                        (function(n) { setTimeout(function() { observeCard(n); }, 0); })(c);  
-                    });  
-                }  
-            }  
-        }  
-    });  
-    function scanExisting() {  
-        [].forEach.call(document.querySelectorAll('.card'), observeCard);  
-    }  
-    function start() {  
-        mutationObserver.observe(document.body, { childList: true, subtree: true });  
-        scanExisting();  
-    }  
-    Lampa.Listener.follow('app', function(e) {  
-        if (e.type === 'ready') scanExisting();  
-        if (e.type === 'destroy') {  
-            mutationObserver.disconnect();  
-            if (intersectionObserver) intersectionObserver.disconnect();  
-        }  
-    });  
-    if (document.body) start();  
-    else document.addEventListener('DOMContentLoaded', start);  
+  
 })();
