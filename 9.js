@@ -5,22 +5,24 @@
         '.card:not(.card--wide) .card__title,' +  
         '.card:not(.card--wide) .card__age,' +  
         '.card:not(.card--wide) .card__type,' +  
-        '.card:not(.card--wide) .card__quality,' +  
-        '.card:not(.card--wide) .card__vote,' +  
         '.card:not(.card--wide) .card__new-episode,' +  
         '.card:not(.card--wide) .card__marker,' +  
-        '.card:not(.card--wide) .card-watched{display:none!important}' +  
+        '.card:not(.card--wide) .card-watched,' +  
+        '.card:not(.card--wide) .card__status{display:none!important}' +  
         '.card:not(.card--wide) .card__view::before{display:none!important}' +  
         '.card:not(.card--wide) .card__icons{left:auto;right:0.5em;top:0.5em}' +  
         '.card:not(.card--wide) .card__icons-inner{background:none}' +  
         '.card:not(.card--wide) .card__icon{filter:drop-shadow(0 1px 4px rgba(0,0,0,1)) drop-shadow(0 0 8px rgba(0,0,0,0.9))}' +  
         '.crl-overlay{position:absolute;bottom:0;left:0;right:0;height:27%;border-radius:0 0 1em 1em;overflow:hidden;background:linear-gradient(to bottom,rgba(0,0,0,0) 0%,rgba(0,0,0,0.78) 30%,rgba(0,0,0,0.88) 100%);padding:0.35em 0.45em 0.35em;display:flex;flex-direction:column;justify-content:flex-end;z-index:2;box-sizing:border-box}' +  
         '.crl-title{font-size:1.15em;line-height:1.1;font-weight:700;color:#fff;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;line-clamp:2;-webkit-box-orient:vertical;text-overflow:ellipsis;margin-bottom:0.1em;text-shadow:0 1px 3px rgba(0,0,0,0.9)}' +  
+        '.crl-status-row{font-size:0.9em;color:rgba(255,255,255,0.75);line-height:1.2;margin-bottom:0.08em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}' +  
         '.crl-row{display:flex;justify-content:space-between;align-items:baseline;line-height:1.2;margin-top:0.08em}' +  
         '.crl-left{font-size:0.9em;color:rgba(255,255,255,0.75);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0}' +  
         '.crl-right{font-size:0.9em;color:rgba(255,255,255,0.75);white-space:nowrap;margin-left:0.5em;flex-shrink:0;display:flex;align-items:baseline}' +  
         '.crl-sep{margin-left:0.3em;opacity:0.5}' +  
-        '.crl-vote{margin-left:0.3em}' +  
+        '.crl-overlay .card__vote,.crl-overlay .card__quality,.crl-overlay .card__quality>div{position:static!important;background:none!important;color:rgba(255,255,255,0.75)!important;font-size:0.9em!important;font-weight:400!important;padding:0!important;border-radius:0!important;margin:0!important;line-height:1.2!important;box-shadow:none!important}' +  
+        '.crl-overlay .card__vote{margin-left:0.3em!important}' +  
+        '.crl-overlay .card__status{display:block!important;position:static!important;background:none!important;color:rgba(255,255,255,0.75)!important;font-size:0.9em!important;font-weight:400!important;padding:0!important;border-radius:0!important;margin:0!important;line-height:1.2!important;box-shadow:none!important}' +  
     '</style>');  
     function buildOverlay(card, data) {  
         var overlay = document.createElement('div');  
@@ -29,6 +31,11 @@
         titleEl.className = 'crl-title';  
         titleEl.textContent = data.title || data.name || '';  
         overlay.appendChild(titleEl);  
+        var statusRow = document.createElement('div');  
+        statusRow.className = 'crl-status-row';  
+        statusRow.style.display = 'none';  
+        overlay.appendChild(statusRow);  
+        card._crlStatusRow = statusRow;  
         var metaRow = document.createElement('div');  
         metaRow.className = 'crl-row';  
         var metaLeft = document.createElement('div');  
@@ -41,30 +48,49 @@
         var metaRight = document.createElement('div');  
         metaRight.className = 'crl-right';  
         var qualityEl = card.querySelector('.card__quality');  
-        var qualityText = qualityEl ? qualityEl.textContent.trim() : '';  
-        var voteEl = card.querySelector('.card__vote');  
-        var voteText = voteEl ? voteEl.textContent.trim() : '';  
-        if (qualityText) {  
-            var qualitySpan = document.createElement('span');  
-            qualitySpan.textContent = qualityText;  
-            metaRight.appendChild(qualitySpan);  
+        if (qualityEl) {  
+            metaRight.appendChild(qualityEl);  
         }  
-        if (voteText) {  
-            if (qualityText) {  
+        var voteEl = card.querySelector('.card__vote');  
+        if (voteEl) {  
+            if (qualityEl) {  
                 var sepEl = document.createElement('span');  
                 sepEl.className = 'crl-sep';  
                 sepEl.textContent = '\u00b7';  
                 metaRight.appendChild(sepEl);  
             }  
-            var voteSpan = document.createElement('span');  
-            voteSpan.className = 'crl-vote';  
-            voteSpan.textContent = voteText;  
-            metaRight.appendChild(voteSpan);  
+            metaRight.appendChild(voteEl);  
         }  
         metaRow.appendChild(metaLeft);  
         metaRow.appendChild(metaRight);  
         overlay.appendChild(metaRow);  
         return overlay;  
+    }  
+    function watchForStatus(card) {  
+        var view = card.querySelector('.card__view');  
+        if (!view || !card._crlStatusRow) return;  
+        var existing = view.querySelector('.card__status');  
+        if (existing) {  
+            card._crlStatusRow.appendChild(existing);  
+            card._crlStatusRow.style.display = '';  
+            return;  
+        }  
+        var statusObserver = new MutationObserver(function(mutations) {  
+            for (var mi = 0; mi < mutations.length; mi++) {  
+                var nodes = mutations[mi].addedNodes;  
+                for (var ni = 0; ni < nodes.length; ni++) {  
+                    var node = nodes[ni];  
+                    if (node.nodeType === 1 && node.classList && node.classList.contains('card__status')) {  
+                        statusObserver.disconnect();  
+                        card._crlStatusRow.appendChild(node);  
+                        card._crlStatusRow.style.display = '';  
+                        return;  
+                    }  
+                }  
+            }  
+        });  
+        statusObserver.observe(view, { childList: true });  
+        card._crlStatusObserver = statusObserver;  
     }  
     function processCard(card) {  
         if (card.dataset.crlDone) return;  
@@ -74,6 +100,7 @@
         var view = card.querySelector('.card__view');  
         if (!view) return;  
         view.appendChild(buildOverlay(card, card.card_data));  
+        watchForStatus(card);  
     }  
     var intersectionObserver = null;  
     function observeCard(card) {  
