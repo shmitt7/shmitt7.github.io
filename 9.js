@@ -26,7 +26,7 @@
             'color: #fff !important;',
             'margin-bottom: 0.2em !important;',
             'transform: none !important;',
-            'text-shadow: 0 1px 4px rgba(0,0,0,0.9), 0 2px 8px rgba(0,0,0,0.6);',
+            'text-shadow: 0 1px 4px rgba(0,0,0,0.9);',
         '}',
         '.ccs__row {',
             'display: flex;',
