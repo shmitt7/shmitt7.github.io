@@ -18,78 +18,120 @@
     </div>`;  
   
     var css = `  
-        .ccs__bar {  
-            position: absolute;  
-            bottom: 0; left: 0; right: 0;  
-            padding: 0.5em;  
-            background: linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.85) 100%);  
-            border-bottom-left-radius: 1em;  
-            border-bottom-right-radius: 1em;  
-            z-index: 2;  
-            pointer-events: none;  
-            box-sizing: border-box;  
-        }  
+    /* ── Панель поверх постера ─────────────────────────────────────── */  
+    .ccs__bar {  
+        position: absolute;  
+        bottom: 0; left: 0; right: 0;  
+        /* padding-top = хвост градиента */  
+        padding: 1.8em 0.6em 0.55em 0.6em;  
+        background: linear-gradient(  
+            to bottom,  
+            rgba(0,0,0,0)    0%,  
+            rgba(0,0,0,0.88) 100%  
+        );  
+        border-bottom-left-radius: 1em;  
+        border-bottom-right-radius: 1em;  
+        z-index: 2;  
+        pointer-events: none;  
+        box-sizing: border-box;  
+    }  
   
-        .ccs__bar .card__title {  
-            -webkit-line-clamp: 2 !important;  
-            line-clamp: 2 !important;  
-            max-height: 2.4em !important;  
-            overflow: hidden !important;  
-            display: -webkit-box !important;  
-            -webkit-box-orient: vertical !important;  
-            color: #fff;  
-            margin-bottom: 0.4em;  
-            line-height: 1.2;  
-            font-size: 1em;  
-        }  
+    /* ── Название: побольше, 2 строки, плотный межстрочник ─────────── */  
+    .ccs__bar .card__title {  
+        font-size: 1.4em !important;  
+        line-height: 1.1 !important;  
+        -webkit-line-clamp: 2 !important;  
+                line-clamp: 2 !important;  
+        max-height: 2.2em !important;   /* 2 × 1.1 */  
+        overflow: hidden !important;  
+        display: -webkit-box !important;  
+        -webkit-box-orient: vertical !important;  
+        color: #fff !important;  
+        margin-bottom: 0.2em !important;  
+        transform: none !important;  
+    }  
   
-        .ccs__row {  
-            display: flex;  
-            justify-content: space-between;  
-            align-items: center;  
-        }  
+    /* ── Строка метаданных ──────────────────────────────────────────── */  
+    .ccs__row {  
+        display: flex;  
+        justify-content: space-between;  
+        align-items: center;  
+        line-height: 1;  
+    }  
   
-        .ccs__left, .ccs__right {  
-            display: flex;  
-            align-items: center;  
-            gap: 0.3em;  
-            font-size: 0.8em;  
-            line-height: 1;  
-            color: rgba(255,255,255,0.92);  
-        }  
+    /* Год и тип — маленькие, серые */  
+    .ccs__left {  
+        display: flex;  
+        align-items: center;  
+        gap: 0.3em;  
+        font-size: 0.82em;  
+        color: rgba(255,255,255,0.5);  
+        line-height: 1;  
+    }  
   
-        .ccs__bar .card__age {  
-            position: static !important;  
-            font-size: 1em !important;  
-            margin-top: 0 !important;  
-            transform: none !important;  
-        }  
+    /* Качество и рейтинг — крупнее, серые */  
+    .ccs__right {  
+        display: flex;  
+        align-items: center;  
+        gap: 0.3em;  
+        font-size: 1em;  
+        color: rgba(255,255,255,0.5);  
+        line-height: 1;  
+    }  
   
-        .ccs__bar .card__type {  
-            position: static !important;  
-            left: auto !important;  
-            top: auto !important;  
-            font-size: 1em !important;  
-        }  
+    /* ── Сброс стилей перемещённых элементов ───────────────────────── */  
+    .ccs__bar .card__age {  
+        position: static !important;  
+        font-size: 1em !important;  
+        margin-top: 0 !important;  
+        transform: none !important;  
+        color: inherit !important;  
+    }  
   
-        .ccs__bar .card__quality {  
-            position: static !important;  
-            left: auto !important;  
-            bottom: auto !important;  
-            font-size: 1em !important;  
-        }  
+    /* .card__type (TV бейдж) — убираем фон, рамку, позицию */  
+    .ccs__bar .card__type,  
+    .card--tv .ccs__bar .card__type {  
+        position: static !important;  
+        left: auto !important; top: auto !important;  
+        font-size: 1em !important;  
+        background: none !important;  
+        color: inherit !important;  
+        padding: 0 !important;  
+        border-radius: 0 !important;  
+    }  
   
-        .ccs__bar .card__vote {  
-            position: static !important;  
-            right: auto !important;  
-            bottom: auto !important;  
-            font-size: 1em !important;  
-            background: none !important;  
-            padding: 0 !important;  
-            border-radius: 0 !important;  
-        }  
-    `;  
+    /* .card__quality — убираем жёлтый фон */  
+    .ccs__bar .card__quality,  
+    .ccs__bar .card__quality > div {  
+        position: static !important;  
+        left: auto !important; bottom: auto !important;  
+        font-size: 1em !important;  
+        background: none !important;  
+        color: inherit !important;  
+        padding: 0 !important;  
+        border-radius: 0 !important;  
+        text-transform: uppercase;  
+    }  
   
+    /* .card__vote — убираем тёмный фон, жирность */  
+    .ccs__bar .card__vote {  
+        position: static !important;  
+        right: auto !important; bottom: auto !important;  
+        font-size: 1em !important;  
+        background: none !important;  
+        color: inherit !important;  
+        padding: 0 !important;  
+        border-radius: 0 !important;  
+        font-weight: normal !important;  
+    }  
+  
+    /* ── Скрываем панель там где название удаляется ─────────────────── */  
+    .card--wide .ccs__bar,  
+    .card--small .ccs__bar {  
+        display: none;  
+    }  
+`;  
+    
     function addStyle(text) {  
         var el = document.createElement('style');  
         el.id = 'custom-card-style';  
