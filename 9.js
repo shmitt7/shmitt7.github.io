@@ -17,8 +17,8 @@
             'gap: 0.25em;',  
         '}',  
         '.card__icon {',  
-            'width: 2.2em !important;',  
-            'height: 2.2em !important;',  
+            'width: 1.8em !important;',  
+            'height: 1.8em !important;',  
             'background-size: 72% !important;',  
             /* лёгкая объёмность через drop-shadow */  
             'filter: drop-shadow(0 1px 4px rgba(0,0,0,0.9)) drop-shadow(0 0px 1px rgba(0,0,0,0.6)) !important;',  
