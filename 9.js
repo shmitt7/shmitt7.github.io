@@ -44,7 +44,7 @@
 '}',  
         '.ccs__bar .card__title {',  
             'font-size: 1.4em !important;',  
-            'font-weight: 700 !important;',  
+            'font-weight: 600 !important;',  
             'line-height: 1.1 !important;',  
             '-webkit-line-clamp: 2 !important;',  
             'line-clamp: 2 !important;',  
