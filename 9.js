@@ -2,25 +2,40 @@
     'use strict';  
   
     var css = `  
-        .card__title {  
-            -webkit-line-clamp: 2 !important;  
-            line-clamp: 2 !important;  
-            max-height: 2.4em !important;  
-        }  
-  
+        /* Панель поверх постера */  
         .ccs__bar {  
             position: absolute;  
             bottom: 0; left: 0; right: 0;  
-            padding: 2em 0.5em 0.5em 0.5em;  
+            padding: 0.5em;  
             background: linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.85) 100%);  
             border-bottom-left-radius: 1em;  
             border-bottom-right-radius: 1em;  
-            display: flex;  
-            justify-content: space-between;  
-            align-items: flex-end;  
             z-index: 2;  
             pointer-events: none;  
             box-sizing: border-box;  
+        }  
+  
+        /* Перемещённое название — 2 строки */  
+        .ccs__bar .card__title {  
+            position: static !important;  
+            font-size: 1em !important;  
+            max-height: 2.4em !important;  
+            -webkit-line-clamp: 2 !important;  
+            line-clamp: 2 !important;  
+            overflow: hidden !important;  
+            display: -webkit-box !important;  
+            -webkit-box-orient: vertical !important;  
+            transform: none !important;  
+            color: #fff;  
+            margin-bottom: 0.4em;  
+            line-height: 1.2;  
+        }  
+  
+        /* Строка метаданных */  
+        .ccs__row {  
+            display: flex;  
+            justify-content: space-between;  
+            align-items: center;  
         }  
   
         .ccs__left, .ccs__right {  
@@ -40,12 +55,12 @@
             transform: none !important;  
         }  
   
-        .ccs__type {  
-            background: rgba(255,255,255,0.22);  
-            border-radius: 0.3em;  
-            padding: 0.15em 0.45em;  
-            text-transform: uppercase;  
-            font-weight: 600;  
+        /* Стандартный .card__type — сбрасываем absolute */  
+        .ccs__bar .card__type {  
+            position: static !important;  
+            left: auto !important;  
+            top: auto !important;  
+            font-size: 1em !important;  
         }  
   
         .ccs__bar .card__quality {  
@@ -76,24 +91,32 @@
     function processCard(cardEl) {  
         if (!cardEl || cardEl.dataset.ccsProcessed) return;  
   
-        var view = cardEl.querySelector('.card__view');  
+        var view   = cardEl.querySelector('.card__view');  
         if (!view) return;  
   
-        var ageEl  = cardEl.querySelector('.card__age');  
-        var voteEl = view.querySelector('.card__vote');  
-        var qualEl = view.querySelector('.card__quality');  
+        // Элементы снаружи .card__view  
+        var titleEl = cardEl.querySelector('.card__title');  
+        var ageEl   = cardEl.querySelector('.card__age');  
   
-        // Если ни одного элемента нет — модули ещё не отработали, выходим  
-        // (scheduleProcess попробует снова через setTimeout)  
-        if (!ageEl && !voteEl && !qualEl) return;  
+        // Элементы уже внутри .card__view  
+        var typeEl  = view.querySelector('.card__type');  
+        var voteEl  = view.querySelector('.card__vote');  
+        var qualEl  = view.querySelector('.card__quality');  
+  
+        // Ждём пока хоть что-то появится  
+        if (!titleEl && !ageEl && !voteEl && !qualEl && !typeEl) return;  
   
         cardEl.dataset.ccsProcessed = '1';  
   
-        var data = cardEl.card_data || {};  
-        var isTV = !!(data.name || data.original_name || data.first_air_date || data.number_of_seasons);  
-  
-        var bar   = document.createElement('div');  
+        var bar = document.createElement('div');  
         bar.className = 'ccs__bar';  
+  
+        // Перемещаем название внутрь постера  
+        if (titleEl) bar.appendChild(titleEl);  
+  
+        // Строка: [год + тип] | [качество + рейтинг]  
+        var row   = document.createElement('div');  
+        row.className = 'ccs__row';  
   
         var left  = document.createElement('div');  
         left.className = 'ccs__left';  
@@ -101,23 +124,18 @@
         var right = document.createElement('div');  
         right.className = 'ccs__right';  
   
-        // appendChild ПЕРЕМЕЩАЕТ существующий узел, не копирует  
-        if (ageEl)  left.appendChild(ageEl);  
+        if (ageEl)  left.appendChild(ageEl);   // перемещаем год  
+        if (typeEl) left.appendChild(typeEl);  // перемещаем стандартный .card__type  
   
-        var typeEl = document.createElement('span');  
-        typeEl.className = 'ccs__type';  
-        typeEl.textContent = isTV ? 'TV' : 'Movie';  
-        left.appendChild(typeEl);  
+        if (qualEl) right.appendChild(qualEl); // перемещаем качество  
+        if (voteEl) right.appendChild(voteEl); // перемещаем рейтинг  
   
-        if (qualEl) right.appendChild(qualEl);  
-        if (voteEl) right.appendChild(voteEl);  
-  
-        bar.appendChild(left);  
-        bar.appendChild(right);  
+        row.appendChild(left);  
+        row.appendChild(right);  
+        bar.appendChild(row);  
         view.appendChild(bar);  
     }  
   
-    // Планируем обработку через setTimeout(0) — ждём пока все модули добавят элементы  
     function scheduleProcess(cardEl) {  
         if (!cardEl || cardEl.dataset.ccsQueued || cardEl.dataset.ccsProcessed) return;  
         cardEl.dataset.ccsQueued = '1';  
@@ -135,17 +153,15 @@
                     if (node.nodeType !== 1) continue;  
   
                     if (node.classList.contains('card')) {  
-                        // Карточка добавлена в DOM — планируем обработку  
                         scheduleProcess(node);  
                     } else if (  
                         node.classList.contains('card__vote') ||  
-                        node.classList.contains('card__quality')  
+                        node.classList.contains('card__quality') ||  
+                        node.classList.contains('card__type')  
                     ) {  
-                        // Дополнительный триггер: элемент добавлен внутрь карточки  
                         var card = node.closest ? node.closest('.card') : null;  
                         if (card) scheduleProcess(card);  
                     } else {  
-                        // Контейнер с карточками (например, список)  
                         var cards = node.querySelectorAll ? node.querySelectorAll('.card') : [];  
                         for (var k = 0; k < cards.length; k++) {  
                             scheduleProcess(cards[k]);  
