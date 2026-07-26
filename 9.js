@@ -58,7 +58,6 @@
             color: rgba(255,255,255,0.92);  
         }  
   
-        /* Сбрасываем стили элементов которые перемещаются в панель */  
         .ccs__bar .card__age {  
             position: static !important;  
             font-size: 1em !important;  
@@ -98,32 +97,50 @@
         document.head.appendChild(el);  
     }  
   
-    // Перемещаем элемент в нужный контейнер карточки  
-    function relocate(node) {  
+    // Перемещаем динамические элементы карточки в нужные контейнеры  
+    function processCard(cardEl) {  
+        if (!cardEl || cardEl.dataset.ccsProcessed) return;  
+        cardEl.dataset.ccsProcessed = '1';  
+  
+        var left  = cardEl.querySelector('.ccs__left');  
+        var right = cardEl.querySelector('.ccs__right');  
+        if (!left || !right) return;  
+  
+        var view   = cardEl.querySelector('.card__view');  
+        var typeEl = view && view.querySelector(':scope > .card__type');  
+        var qualEl = view && view.querySelector(':scope > .card__quality');  
+        var voteEl = view && view.querySelector(':scope > .card__vote');  
+  
+        if (typeEl) left.appendChild(typeEl);  
+        if (qualEl) right.insertBefore(qualEl, right.querySelector('.card__vote') || null);  
+        if (voteEl) right.appendChild(voteEl);  
+    }  
+  
+    // Для элементов добавленных сторонними плагинами ПОСЛЕ нашей обработки  
+    function relocateLate(node) {  
         var card = node.closest ? node.closest('.card') : null;  
-        if (!card) return;  
+        if (!card || !card.dataset.ccsProcessed) return;  
   
-        if (node.classList.contains('card__type')) {  
-            var left = card.querySelector('.ccs__left');  
-            if (left && !left.contains(node)) left.appendChild(node);  
+        var left  = card.querySelector('.ccs__left');  
+        var right = card.querySelector('.ccs__right');  
   
-        } else if (node.classList.contains('card__quality') || node.classList.contains('card__vote')) {  
-            var right = card.querySelector('.ccs__right');  
-            if (right && !right.contains(node)) {  
-                // качество — перед рейтингом  
-                var vote = right.querySelector('.card__vote');  
-                right.insertBefore(node, vote || null);  
-            }  
+        if (node.classList.contains('card__type') && left && !left.contains(node)) {  
+            left.appendChild(node);  
+        } else if ((node.classList.contains('card__quality') || node.classList.contains('card__vote')) && right && !right.contains(node)) {  
+            right.insertBefore(node, right.querySelector('.card__vote') || null);  
         }  
     }  
   
-    function init() {  
-        // Переопределяем шаблон — title и age теперь сразу внутри .card__view  
-        Lampa.Template.add('card', NEW_CARD_TPL);  
+    function scheduleProcess(cardEl) {  
+        if (!cardEl || cardEl.dataset.ccsQueued || cardEl.dataset.ccsProcessed) return;  
+        cardEl.dataset.ccsQueued = '1';  
+        setTimeout(function () { processCard(cardEl); }, 0);  
+    }  
   
+    function init() {  
+        Lampa.Template.add('card', NEW_CARD_TPL);  
         addStyle(css);  
   
-        // MutationObserver только для динамически добавляемых элементов  
         var observer = new MutationObserver(function (mutations) {  
             for (var i = 0; i < mutations.length; i++) {  
                 var added = mutations[i].addedNodes;  
@@ -131,12 +148,22 @@
                     var node = added[j];  
                     if (node.nodeType !== 1) continue;  
   
-                    if (  
+                    if (node.classList.contains('card')) {  
+                        // Карточка добавлена в DOM — все onCreate уже отработали  
+                        scheduleProcess(node);  
+                    } else if (  
                         node.classList.contains('card__type') ||  
                         node.classList.contains('card__quality') ||  
                         node.classList.contains('card__vote')  
                     ) {  
-                        relocate(node);  
+                        // Элемент добавлен сторонним плагином после нашей обработки  
+                        relocateLate(node);  
+                    } else if (node.querySelectorAll) {  
+                        // Контейнер с карточками (список)  
+                        var cards = node.querySelectorAll('.card');  
+                        for (var k = 0; k < cards.length; k++) {  
+                            scheduleProcess(cards[k]);  
+                        }  
                     }  
                 }  
             }  
