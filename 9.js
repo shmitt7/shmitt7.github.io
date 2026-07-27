@@ -23,11 +23,10 @@
             'filter: drop-shadow(0 1px 4px rgba(0,0,0,0.9)) drop-shadow(0 0px 1px rgba(0,0,0,0.6)) !important;',  
         '}',  
   
-        /* ── скрыть оригинальные quality/vote/watched/episode ── */  
+        /* ── скрыть оригинальные quality/vote/type/watched/episode ── */  
         '.card__view > .card__quality,',  
-        '.card__view > .card__vote {',  
-            'display: none !important;',  
-        '}',  
+        '.card__view > .card__vote,',  
+        '.card:not(.card--wide) .card__type,',  
         '.card:not(.card--wide) .card-watched,',  
         '.card:not(.card--wide) .card__new-episode {',  
             'display: none !important;',  
@@ -118,6 +117,22 @@
         document.head.appendChild(el);  
     }  
   
+    function patchTemplate() {  
+        var _orig = Lampa.Template.js.bind(Lampa.Template);  
+        Lampa.Template.js = function (name, data) {  
+            var result = _orig(name, data);  
+            if (name === 'card') {  
+                // Перехватываем присвоение card_data и дублируем на DOM-элемент  
+                Object.defineProperty(result, 'card_data', {  
+                    set: function (val) { this[0]._ccs_data = val; },  
+                    get: function ()    { return this[0]._ccs_data; },  
+                    configurable: true  
+                });  
+            }  
+            return result;  
+        };  
+    }  
+  
     function buildBadge(cardEl) {  
         var badge = cardEl.querySelector('.ccs__badge');  
         if (!badge) return;  
@@ -129,10 +144,10 @@
         // Год  
         var ageEl = cardEl.querySelector('.card__age');  
         var year = ageEl && ageEl.textContent.trim();  
-        if (year) parts.push({ text: year, cls: 'ccs__badge-year' });  
+        if (year) parts.push({ text: year, cls: '' });  
   
-        // Жанр (первый) из card_data  
-        var data = cardEl.card_data;  
+        // Жанр (первый) из _ccs_data, сохранённого через patchTemplate  
+        var data = cardEl._ccs_data;  
         if (data && data.genres && data.genres.length) {  
             var genreName = data.genres[0].name || '';  
             if (genreName) parts.push({ text: genreName, cls: 'ccs__badge-genre' });  
@@ -160,7 +175,7 @@
                 badge.appendChild(sep);  
             }  
             var span = document.createElement('span');  
-            span.className = part.cls;  
+            if (part.cls) span.className = part.cls;  
             span.textContent = part.text;  
             badge.appendChild(span);  
         });  
@@ -175,7 +190,6 @@
     function relocateLate(node) {  
         var card = node.closest ? node.closest('.card') : null;  
         if (!card || !card.dataset.ccsProcessed) return;  
-        // Перестроить бейдж когда quality/vote добавились позже  
         buildBadge(card);  
     }  
   
@@ -186,6 +200,7 @@
     }  
   
     function init() {  
+        patchTemplate();  
         Lampa.Template.add('card', NEW_CARD_TPL);  
         addStyle(css);  
         var observer = new MutationObserver(function (mutations) {  
