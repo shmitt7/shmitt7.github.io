@@ -35,7 +35,7 @@
     'position: absolute;',  
     'bottom: 0; left: 0; right: 0;',  
     'padding: 0.4em 0.6em 0.3em 0.6em;',  
-    'background: rgba(0,0,0,0.45);',  
+    'background: rgba(0,0,0,0.7);',  
     'border-bottom-left-radius: 1em;',  
     'border-bottom-right-radius: 1em;',  
     'z-index: 2;',  
