@@ -1,7 +1,7 @@
 (function () {  
     'use strict';  
   
-    var NEW_CARD_TPL = '<div class="card selector layer--visible layer--render"><div class="card__view"><img src="./img/img_load.svg" class="card__img" /><div class="card__icons"><div class="card__icons-inner"></div></div><div class="ccs__bar"><div class="card__title">{title}</div><div class="ccs__row"><div class="ccs__left"><div class="card__age">{release_year}</div></div><div class="ccs__right"></div></div></div></div></div>';  
+    var NEW_CARD_TPL = '<div class="card selector layer--visible layer--render"><div class="card__view"><img src="./img/img_load.svg" class="card__img" /><div class="card__icons"><div class="card__icons-inner"></div></div><div class="ccs__bar"><div class="card__title">{title}</div><div class="ccs__row"><div class="ccs__left"><div class="card__age">{release_year}</div></div><div class="ccs__right"></div></div></div><div class="ccs__badge">{release_year}</div></div></div>';  
   
     var css = [  
         /* ── иконки: правый верх, без фона ── */  
@@ -20,7 +20,6 @@
             'width: 1.8em !important;',  
             'height: 1.8em !important;',  
             'background-size: 72% !important;',  
-            /* лёгкая объёмность через drop-shadow */  
             'filter: drop-shadow(0 1px 4px rgba(0,0,0,0.9)) drop-shadow(0 0px 1px rgba(0,0,0,0.6)) !important;',  
         '}',  
   
@@ -30,21 +29,21 @@
             'display: none !important;',  
         '}',  
   
-        /* ── нижняя панель ── */  
+        /* ── нижняя панель: без фона, название с объёмной тенью ── */  
         '.ccs__bar {',  
-    'position: absolute;',  
-    'bottom: 0; left: 0; right: 0;',  
-    'padding: 0.4em 0.6em 0.3em 0.6em;',  
-    'background: rgba(0,0,0,0.7);',  
-    'border-bottom-left-radius: 1em;',  
-    'border-bottom-right-radius: 1em;',  
-    'z-index: 2;',  
-    'pointer-events: none;',  
-    'box-sizing: border-box;',  
-'}',  
+            'position: absolute;',  
+            'bottom: 0; left: 0; right: 0;',  
+            'padding: 0.4em 0.6em 0.3em 0.6em;',  
+            'background: none !important;',  
+            'border-bottom-left-radius: 1em;',  
+            'border-bottom-right-radius: 1em;',  
+            'z-index: 2;',  
+            'pointer-events: none;',  
+            'box-sizing: border-box;',  
+        '}',  
         '.ccs__bar .card__title {',  
             'font-size: 1.4em !important;',  
-            'font-weight: 600 !important;',  
+            'font-weight: 700 !important;',  
             'line-height: 1.1 !important;',  
             '-webkit-line-clamp: 2 !important;',  
             'line-clamp: 2 !important;',  
@@ -55,7 +54,8 @@
             'color: #fff !important;',  
             'margin-bottom: 0.2em !important;',  
             'transform: none !important;',  
-            'text-shadow: 0 1px 4px rgba(0,0,0,0.9);',  
+            /* многослойная тень для объёма и читаемости на светлых постерах */  
+            'text-shadow: 0 1px 1px rgba(0,0,0,0.8), 0 2px 4px rgba(0,0,0,0.6), 0 0 8px rgba(0,0,0,0.5) !important;',  
         '}',  
         '.ccs__row {',  
             'display: flex;',  
@@ -123,6 +123,20 @@
         '.card--wide .ccs__bar,',  
         '.card--small .ccs__bar {',  
             'display: none;',  
+        '}',  
+  
+        /* ── бейдж для года внизу ── */  
+        '.ccs__badge {',  
+            'position: absolute;',  
+            'bottom: 0.4em;',  
+            'left: 0.4em;',  
+            'background: rgba(0,0,0,0.6);',  
+            'padding: 0.3em 0.6em;',  
+            'border-radius: 0.5em;',  
+            'font-size: 0.8em;',  
+            'color: #fff;',  
+            'backdrop-filter: blur(4px);',  
+            'z-index: 3;',  
         '}'  
     ].join(' ');  
   
