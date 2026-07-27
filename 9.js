@@ -27,58 +27,10 @@
         '.card__badge-quality,.card__badge-rating{font-size:1em;font-weight:700;color:#ddd;flex-shrink:0;white-space:nowrap}' +  
         '.card__badge-kp-icon{display:inline-block;width:1em;height:1.25em;background-repeat:no-repeat;background-position:center;background-size:contain;margin-left:0.05em;vertical-align:middle;flex-shrink:0}' +  
     '</style>');  
-    var posterCache = Lampa.Storage.cache('ccp_poster_cache', 500, {});  
-    var posterCacheSize = Object.keys(posterCache).length;  
-    function setPosterCache(key, val) {  
-        if (posterCacheSize > 500) { posterCache = {}; posterCacheSize = 0; }  
-        posterCache[key] = val;  
-        posterCacheSize++;  
-        Lampa.Storage.set('ccp_poster_cache', posterCache);  
-    }  
     function tmdbKey() {  
         return (Lampa.TMDB && Lampa.TMDB.key && typeof Lampa.TMDB.key === 'function')  
             ? Lampa.TMDB.key()  
             : '4ef0d7355d9ffb5151e987764708ce96';  
-    }  
-    function fetchCleanPoster(data, cb) {  
-        var id = data.id;  
-        var type = data.name ? 'tv' : 'movie';  
-        if (!id) return;  
-        if (posterCache[id] === null) return;  
-        if (posterCache[id]) { cb(posterCache[id]); return; }  
-        var posterNetwork = new Lampa.Reguest();  
-        var url = Lampa.TMDB.api(type + '/' + id + '/images?include_image_language=null&api_key=' + tmdbKey());  
-        posterNetwork.silent(url, function (res) {  
-            var posters = (res && res.posters) || [];  
-            posters.sort(function (a, b) { return b.vote_average - a.vote_average; });  
-            if (posters.length) {  
-                var src = Lampa.TMDB.image('t/p/w342' + posters[0].file_path);  
-                setPosterCache(id, src);  
-                cb(src);  
-            } else {  
-                setPosterCache(id, null);  
-            }  
-        }, function () {  
-            setPosterCache(id, null);  
-        }, false, { cache: { life: 1440 } });  
-    }  
-    function setupPosterReplacement(img, data) {  
-        if (!data || !data.id) return;  
-        fetchCleanPoster(data, function (src) {  
-            var currentSrc = img.getAttribute('src') || '';  
-            if (currentSrc && currentSrc.indexOf('img_load') === -1 && currentSrc.indexOf('img_broken') === -1 && currentSrc.length > 1) {  
-                img.src = src;  
-                return;  
-            }  
-            var imgObserver = new MutationObserver(function () {  
-                var newSrc = img.getAttribute('src') || '';  
-                if (newSrc && newSrc.indexOf('img_load') === -1 && newSrc.indexOf('img_broken') === -1 && newSrc.length > 1) {  
-                    imgObserver.disconnect();  
-                    img.src = src;  
-                }  
-            });  
-            imgObserver.observe(img, { attributes: true, attributeFilter: ['src'] });  
-        });  
     }  
     var allGenres = {  
         28:'Боевик', 12:'Приключения', 35:'Комедия', 80:'Криминал',  
@@ -102,7 +54,7 @@
         if (ids.indexOf(99)    !== -1) return 'Документальный';  
         if (ids.indexOf(10766) !== -1) return 'Мыльная опера';  
         if (isAnim) return isTv ? 'Мультсериал' : 'Мультфильм';  
-           return allGenres[ids[0]] || (isTv ? 'Сериал' : 'Фильм');  
+        return allGenres[ids[0]] || (isTv ? 'Сериал' : 'Фильм');  
     }  
     var SERVERS = [Lampa.Utils.protocol() + 'jac.red', 'https://jr.maxvol.pro'];  
     var RE_TS  = /\b(tsrip|ts|telesync|telecine|cam|camrip|workprint|wp|scr|screener|dvdscr|dcprip)\b/i;  
@@ -406,8 +358,6 @@
             var inner = icons.querySelector('.card__icons-inner');  
             if (inner) inner.style.cssText = 'background:none;border-radius:0;flex-direction:column;';  
         }  
-        var img = card.querySelector('.card__img');  
-        if (img) setupPosterReplacement(img, data);  
         var overlay = document.createElement('div');  
         overlay.className = 'card__overlay';  
         var overlayTitle = document.createElement('div');  
