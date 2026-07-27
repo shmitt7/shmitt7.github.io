@@ -25,7 +25,7 @@
             'border-bottom-left-radius:1em;border-bottom-right-radius:1em;z-index:1;pointer-events:none}' +
 
         /* Название — жирное, макс 2 строки, меньше отступ снизу (п.4) */
-        '.card__overlay-title{font-size:1.2em;font-weight:700;line-height:1.3;color:#fff;' +
+        '.card__overlay-title{font-size:1.35em;font-weight:600;line-height:1.1;color:#fff;' +
             'overflow:hidden;text-overflow:ellipsis;' +
             'display:-webkit-box;-webkit-line-clamp:2;line-clamp:2;-webkit-box-orient:vertical;' +
             'margin-bottom:0.15em}' +   /* было 0.3em */
