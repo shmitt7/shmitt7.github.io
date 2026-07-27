@@ -8,12 +8,15 @@
         .card__title { display: none !important; }  
         .card__age   { display: none !important; }  
   
-        /* Скрываем стандартные бейджи внутри постера */  
+        /* Скрываем стандартные бейджи */  
         .card__type    { display: none !important; }  
         .card__quality { display: none !important; }  
         .card__vote    { display: none !important; }  
   
-        /* Иконки — правый верх, без фона, с тенью для видимости */  
+        /* Убираем список эпизодов при фокусе */  
+        .card.focus .card-watched { display: none !important; }  
+  
+        /* Иконки — правый верх, без фона */  
         .card__icons {  
             top: 0.5em !important;  
             left: auto !important;  
@@ -22,39 +25,32 @@
         }  
         .card__icons-inner {  
             background: none !important;  
+            border-radius: 0 !important;  
             flex-direction: column !important;  
-            gap: 0.15em;  
+            gap: 0.2em;  
         }  
-        /* Затемнение в правом верхнем углу */  
-        .card__view::before {  
-            content: '';  
-            position: absolute;  
-            top: 0; right: 0;  
-            width: 3em; height: 3em;  
-            background: radial-gradient(ellipse at top right, rgba(0,0,0,0.55) 0%, transparent 70%);  
-            border-top-right-radius: 1em;  
-            z-index: 1;  
-            pointer-events: none;  
-        }  
-        .card__icon {  
-            filter: drop-shadow(0 1px 3px rgba(0,0,0,1)) !important;  
+        /* Затемнение ТОЛЬКО когда есть иконки */  
+        .card__icons-inner:not(:empty) {  
+            background: rgba(0,0,0,0.55) !important;  
+            border-radius: 0.5em !important;  
+            padding: 0.15em 0.2em !important;  
         }  
   
         /* Оверлей поверх постера */  
         .card__overlay {  
             position: absolute;  
             left: 0; right: 0; bottom: 0;  
-            padding: 2.5em 0.6em 0.55em 0.6em;  
-            background: linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.88) 100%);  
+            padding: 3em 0.7em 0.6em 0.7em;  
+            background: linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.9) 100%);  
             border-bottom-left-radius: 1em;  
             border-bottom-right-radius: 1em;  
             z-index: 1;  
             pointer-events: none;  
         }  
   
-        /* Название над бейджем — макс 2 строки */  
+        /* Название — макс 2 строки, увеличенный размер */  
         .card__overlay-title {  
-            font-size: 1.05em;  
+            font-size: 1.25em;  
             line-height: 1.3;  
             color: #fff;  
             overflow: hidden;  
@@ -66,7 +62,7 @@
             margin-bottom: 0.35em;  
         }  
   
-        /* Бейдж — вся ширина */  
+        /* Бейдж */  
         .card__badge {  
             display: flex;  
             align-items: center;  
@@ -76,14 +72,14 @@
         }  
         .card__badge-year,  
         .card__badge-sep {  
-            font-size: 0.72em;  
-            color: #999;  
+            font-size: 0.85em;  
+            color: #aaa;  
             flex-shrink: 0;  
             white-space: nowrap;  
         }  
         .card__badge-genre {  
-            font-size: 0.72em;  
-            color: #999;  
+            font-size: 0.85em;  
+            color: #aaa;  
             overflow: hidden;  
             text-overflow: ellipsis;  
             white-space: nowrap;  
@@ -92,13 +88,45 @@
         }  
         .card__badge-quality,  
         .card__badge-rating {  
-            font-size: 0.88em;  
+            font-size: 1em;  
             font-weight: 700;  
-            color: #ccc;  
+            color: #ddd;  
             flex-shrink: 0;  
             white-space: nowrap;  
         }  
     </style>`);  
+  
+    // ─── Постер без надписей с TMDB ─────────────────────────────────────────  
+    var posterCache = {};  
+    var posterNet   = new Lampa.Reguest();  
+  
+    function fetchCleanPoster(data, img) {  
+        var id   = data.id;  
+        var type = data.name ? 'tv' : 'movie';  
+        if (!id) return;  
+        if (posterCache[id] === null) return;  
+        if (posterCache[id]) { img.src = posterCache[id]; return; }  
+  
+        // Используем Lampa.TMDB.api() — он сам подставит прокси/email  
+        // api_key берём из Lampa или используем публичный  
+        var key = (Lampa.TMDB && Lampa.TMDB.key && Lampa.TMDB.key()) || '4ef0d7355d9ffb5151e987764708ce96';  
+        var url = Lampa.TMDB.api(type + '/' + id + '/images?include_image_language=null&api_key=' + key);  
+  
+        posterNet.silent(url, function (res) {  
+            var posters = (res && res.posters) || [];  
+            // Сортируем по рейтингу, берём лучший  
+            posters.sort(function (a, b) { return b.vote_average - a.vote_average; });  
+            if (posters.length) {  
+                var src = Lampa.TMDB.image('t/p/w342' + posters[0].file_path);  
+                posterCache[id] = src;  
+                img.src = src;  
+            } else {  
+                posterCache[id] = null;  
+            }  
+        }, function () {  
+            posterCache[id] = null;  
+        });  
+    }  
   
     // ─── Жанры ──────────────────────────────────────────────────────────────  
     var allGenres = {  
@@ -113,7 +141,7 @@
     function getLabel(d) {  
         if (!d || d.profile_path !== undefined || d.known_for_department) return '';  
         var isTv = !!d.name;  
-        var ids = Array.isArray(d.genres)  
+        var ids  = Array.isArray(d.genres)  
             ? d.genres.map(function (g) { return (g && typeof g === 'object') ? g.id : g; })  
             : (d.genre_ids || []);  
         var isAnim = ids.indexOf(16) !== -1;  
@@ -128,13 +156,13 @@
     }  
   
     // ─── Качество ───────────────────────────────────────────────────────────  
-    var SERVERS  = ['http://jac.red', 'https://jr.maxvol.pro'];  
-    var RE_TS    = /\b(tsrip|ts|telesync|telecine|cam|camrip|workprint|wp|scr|screener|dvdscr|dcprip)\b/i;  
-    var RE_TS2   = /звук\s*с\s*ts|sound\s*ts|audio\s*ts|dub\s*ts/i;  
-    var RE_4K    = /\b(2160p|2160р|4k|uhd|4к)\b/i;  
-    var RE_HD    = /\b(1080p|1080р|720p|720р|blu\-ray|bdrip|bdremux|web\-dl|webdl|web\-dlrip|webrip|hdtv|hdtvrip|hddvd|hddvdrip|fullhd|fhd|hd|hdrip)\b/i;  
-    var qNet     = new Lampa.Reguest();  
-    var qCache   = {}, qCacheSize = 0;  
+    var SERVERS = ['http://jac.red', 'https://jr.maxvol.pro'];  
+    var RE_TS   = /\b(tsrip|ts|telesync|telecine|cam|camrip|workprint|wp|scr|screener|dvdscr|dcprip)\b/i;  
+    var RE_TS2  = /звук\s*с\s*ts|sound\s*ts|audio\s*ts|dub\s*ts/i;  
+    var RE_4K   = /\b(2160p|2160р|4k|uhd|4к)\b/i;  
+    var RE_HD   = /\b(1080p|1080р|720p|720р|blu\-ray|bdrip|bdremux|web\-dl|webdl|web\-dlrip|webrip|hdtv|hdtvrip|hddvd|hddvdrip|fullhd|fhd|hd|hdrip)\b/i;  
+    var qNet    = new Lampa.Reguest();  
+    var qCache  = {}, qCacheSize = 0;  
   
     function qFromStr(t) {  
         if (!t) return null;  
@@ -180,7 +208,7 @@
                 + encodeURIComponent(title) + (yr ? '&year=' + yr : '');  
             qNet.silent(url, function (res) {  
                 (res && res.Results || []).forEach(function (r) {  
-                    var y = parseInt((r.info && r.info.released) || r.year);  
+                    var y   = parseInt((r.info && r.info.released) || r.year);  
                     var inT = !yr || (r.Title && (  
                         r.Title.includes(String(yr)) ||  
                         r.Title.includes(String(yr - 1)) ||  
@@ -303,12 +331,29 @@
         if (tEl) tEl.style.display = 'none';  
         if (aEl) aEl.style.display = 'none';  
   
-        // Перемещаем иконки вправо, убираем фон  
+        // Перемещаем иконки вправо, убираем фон (фон теперь через :not(:empty))  
         var icons = card.querySelector('.card__icons');  
         if (icons) {  
             icons.style.cssText = 'top:0.5em;left:auto;right:0.5em;justify-content:flex-end;';  
             var inner = icons.querySelector('.card__icons-inner');  
-            if (inner) inner.style.cssText = 'background:none;flex-direction:column;gap:0.15em;';  
+            if (inner) inner.style.cssText = 'flex-direction:column;gap:0.2em;';  
+        }  
+  
+        // Постер без надписей — наблюдаем за установкой src  
+        var img = card.querySelector('.card__img');  
+        if (img && data.id) {  
+            var srcObserver = new MutationObserver(function (mutations) {  
+                mutations.forEach(function (m) {  
+                    if (m.attributeName !== 'src') return;  
+                    var src = img.getAttribute('src') || '';  
+                    // Ждём пока Lampa установит реальный постер (не заглушку)  
+                    if (src && src.indexOf('img_load') === -1 && src.indexOf('img_broken') === -1 && src !== '') {  
+                        srcObserver.disconnect();  
+                        fetchCleanPoster(data, img);  
+                    }  
+                });  
+            });  
+            srcObserver.observe(img, { attributes: true, attributeFilter: ['src'] });  
         }  
   
         // Оверлей  
