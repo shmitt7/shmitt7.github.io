@@ -1,6 +1,6 @@
 (function () {  
-    if (window.customCardPlugin) return;  
-    window.customCardPlugin = true;  
+    if (window.listCard) return;  
+    window.listCard = true;  
     document.head.insertAdjacentHTML('beforeend', '<style>' +  
         '.card__title{display:none!important}' +  
         '.card__age{display:none!important}' +  
@@ -13,7 +13,7 @@
         '.card__overlay-title{font-size:1.35em;font-weight:600;line-height:1.1;color:#fff;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;line-clamp:2;-webkit-box-orient:vertical;margin-bottom:0.15em}' +  
         '.card__status-row{display:flex;align-items:baseline;margin-bottom:0.15em;line-height:1;overflow:hidden;white-space:nowrap;min-width:0}' +  
         '.card__status-row:empty{display:none}' +  
-        '.card__status-row .card__status{position:static!important;left:auto!important;bottom:auto!important;display:flex!important;align-items:baseline!important;pointer-events:none;white-space:nowrap}' +  
+        '.card__status-row .card__status{position:static!important;left:auto!important;top:auto!important;bottom:auto!important;background:none!important;padding:0!important;border-radius:0!important;font-size:0.85em!important;display:flex!important;align-items:baseline!important;pointer-events:none;white-space:nowrap}' +  
         '.card__status-row .card__status .tvs-icon{font-size:1.1em;margin-right:0.2em;flex-shrink:0}' +  
         '.card__status-row .card__status .tvs-text{font-size:0.85em;font-weight:600;color:#ccc;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:1;min-width:0}' +  
         '.card__badge{display:flex;flex-wrap:nowrap;align-items:center;width:100%;overflow:hidden}' +  
@@ -63,7 +63,7 @@
     function processCard(card) {  
         var data = card.card_data;  
         if (!data) return;  
-        card.dataset.ccp = '1';  
+        card.dataset.listCard = '1';  
         var view = card.querySelector('.card__view');  
         if (!view) return;  
         var titleEl = card.querySelector('.card__title');  
@@ -113,7 +113,7 @@
         }, { rootMargin: '200px' });  
     }  
     function observe(card) {  
-        if (!card.card_data || card.dataset.ccp) return;  
+        if (!card.card_data || card.dataset.listCard) return;  
         if (intersectionObserver) intersectionObserver.observe(card);  
         else processCard(card);  
     }  
