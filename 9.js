@@ -34,16 +34,18 @@
     function relocateExisting(view, statusRow, badge, badgeRight) {  
         var status = view.querySelector(':scope > .card__status');  
         var type = view.querySelector(':scope > .card__type');  
-        var quality = view.querySelector(':scope > .card__quality');  
-        var vote = view.querySelector(':scope > .card__vote');  
-        if (status && status.parentNode !== statusRow) statusRow.appendChild(status);  
-        if (type && type.parentNode !== badge) badge.insertBefore(type, badgeRight);  
-        if (quality && quality.parentNode !== badgeRight) {  
-            var qualityAnchor = vote && vote.parentNode === badgeRight ? vote : null;  
-            badgeRight.insertBefore(quality, qualityAnchor);  
-        }  
-        if (vote && vote.parentNode !== badgeRight) badgeRight.appendChild(vote);  
-        return !!(status && type && quality && vote);  
+    function relocateExisting(view, statusRow, badge, badgeRight) {  
+    var status = view.querySelector(':scope > .card__status');  
+    var type = view.querySelector(':scope > .card__type');  
+    var quality = view.querySelector(':scope > .card__quality');  
+    var vote = view.querySelector(':scope > .card__vote');  
+    if (status && status.parentNode !== statusRow) statusRow.appendChild(status);  
+    if (type && type.parentNode !== badge) badge.insertBefore(type, badgeRight);  
+    if (quality && (quality.parentNode !== badgeRight || quality.nextSibling !== vote)) {  
+        badgeRight.insertBefore(quality, vote && vote.parentNode === badgeRight ? vote : null);  
+    }  
+    if (vote && vote.parentNode !== badgeRight) badgeRight.appendChild(vote);  
+    return !!(status && type && quality && vote);  
     }  
     function watchOverlayInjects(view, statusRow, badge, badgeRight) {  
         if (relocateExisting(view, statusRow, badge, badgeRight)) return;  
