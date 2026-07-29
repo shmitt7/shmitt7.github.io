@@ -131,8 +131,6 @@
         var label = existing || document.createElement('div');  
         if (!existing) label.className = 'card__status';  
         label.innerHTML = '';  
-        var badgeInner = document.createElement('div');  
-        badgeInner.className = 'card__status-badge';  
         var iconSpan = document.createElement('span');  
         iconSpan.className = 'tvs-icon';  
         iconSpan.style.color = labelInfo.color;  
@@ -140,9 +138,8 @@
         var textSpan = document.createElement('span');  
         textSpan.className = 'tvs-text';  
         textSpan.textContent = labelInfo.text;  
-        badgeInner.appendChild(iconSpan);  
-        badgeInner.appendChild(textSpan);  
-        label.appendChild(badgeInner);  
+        label.appendChild(iconSpan);  
+        label.appendChild(textSpan);  
         if (!existing) viewElem.appendChild(label);  
     }  
     function isPersonCard(data) {  
@@ -214,30 +211,26 @@
         document.head.insertAdjacentHTML('beforeend', '<style>' +  
             '.card__status{' +  
                 'position:absolute;' +  
-                'left:0.5em;' +  
-                'top:1.4em;' +  
-                'z-index:2;' +  
-                'pointer-events:none;' +  
-                'white-space:nowrap;' +  
-            '}' +  
-            '.card--tv .card__status{' +  
-                'top:3.6em;' +  
-            '}' +  
-            '.card__status .card__status-badge{' +  
+                'left:-0.8em;' +  
+                'top:3.1em;' +  
+                'padding:0.4em 0.4em;' +  
+                'background:rgba(0,0,0,0.6);' +  
+                'border-radius:0.3em;' +  
+                'font-size:0.8em;' +  
                 'display:flex;' +  
                 'align-items:baseline;' +  
                 'line-height:1;' +  
-                'background:rgba(0,0,0,0.5);' +  
-                'border-radius:1em;' +  
-                'padding:0.3em 0.6em;' +  
+                'z-index:1;' +  
+                'pointer-events:none;' +  
+                'white-space:nowrap;' +  
             '}' +  
             '.card__status .tvs-icon{' +  
-                'font-size:1.1em;' +  
+                'font-size:1.2em;' +  
                 'margin-right:0.3em;' +  
                 'transform:translateY(0.05em);' +  
             '}' +  
             '.card__status .tvs-text{' +  
-                'font-size:0.85em;' +  
+                'font-size:1em;' +  
                 'font-weight:600;' +  
                 'color:#ffffff;' +  
                 'letter-spacing:0.03em;' +  
