@@ -215,7 +215,7 @@
             '.card__status{' +  
                 'position:absolute;' +  
                 'left:-0.8em;' +  
-                'top:3.3em;' +  
+                'top:3.5em;' +  
                 'padding:0.4em 0.4em;' +  
                 'background:rgba(0,0,0,0.8);' +  
                 'border-radius:0.3em;' +  
