@@ -215,9 +215,9 @@
             '.card__status{' +  
                 'position:absolute;' +  
                 'left:-0.8em;' +  
-                'top:3.1em;' +  
+                'top:3.3em;' +  
                 'padding:0.4em 0.4em;' +  
-                'background:rgba(0,0,0,0.6);' +  
+                'background:rgba(0,0,0,0.8);' +  
                 'border-radius:0.3em;' +  
                 'font-size:0.8em;' +  
                 'display:flex;' +  
