@@ -16,9 +16,9 @@
         '.card__status-row .card__status{position:static!important;left:auto!important;bottom:auto!important;display:flex!important;align-items:baseline!important;pointer-events:none;white-space:nowrap}' +  
         '.card__status-row .card__status .tvs-icon{font-size:1.1em;margin-right:0.2em;flex-shrink:0}' +  
         '.card__status-row .card__status .tvs-text{font-size:0.85em;font-weight:600;color:#ccc;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:1;min-width:0}' +  
-        '.card__badge{display:flex;align-items:center;width:100%;overflow:hidden}' +  
+        '.card__badge{display:flex;flex-wrap:nowrap;align-items:center;width:100%;overflow:hidden}' +  
         '.card__badge-year{font-size:0.85em;color:#ccc;flex-shrink:0}' +  
-        '.card__badge-genre,.card__badge .card__type{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;margin-left:0.4em}' +  
+        '.card__badge-genre,.card__badge .card__type{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-left:0.4em}' +  
         '.card__badge-year+.card__badge-genre::before,.card__badge-year+.card__type::before{content:"\u2022";margin-right:0.4em;color:#ccc;font-size:0.85em}' +  
         '.card__badge .card__type{position:static!important;top:auto!important;left:auto!important;background:none!important;padding:0!important;border-radius:0!important;font-size:0.85em!important;color:#ccc!important}' +  
         '.card__badge-right{display:flex;align-items:center;flex-shrink:0;margin-left:auto}' +  
@@ -30,19 +30,19 @@
         '.card__status-row .card__status,.card__badge .card__type,.card__badge-right .card__quality,.card__badge-right .card__vote{visibility:visible!important}' +  
     '</style>');  
     var WATCH_TIMEOUT = 8000;  
-    var activeChildObservers = [];       
+    var activeChildObservers = [];  
     function relocateExisting(view, statusRow, badge, badgeRight) {  
-    var status = view.querySelector(':scope > .card__status');  
-    var type = view.querySelector(':scope > .card__type');  
-    var quality = view.querySelector(':scope > .card__quality');  
-    var vote = view.querySelector(':scope > .card__vote');  
-    if (status && status.parentNode !== statusRow) statusRow.appendChild(status);  
-    if (type && type.parentNode !== badge) badge.insertBefore(type, badgeRight);  
-    if (quality && (quality.parentNode !== badgeRight || quality.nextSibling !== vote)) {  
-        badgeRight.insertBefore(quality, vote && vote.parentNode === badgeRight ? vote : null);  
-    }  
-    if (vote && vote.parentNode !== badgeRight) badgeRight.appendChild(vote);  
-    return !!(status && type && quality && vote);  
+        var status = view.querySelector(':scope > .card__status');  
+        var type = view.querySelector(':scope > .card__type');  
+        var quality = view.querySelector(':scope > .card__quality');  
+        var vote = view.querySelector(':scope > .card__vote');  
+        if (status && status.parentNode !== statusRow) statusRow.appendChild(status);  
+        if (type && type.parentNode !== badge) badge.insertBefore(type, badgeRight);  
+        if (quality && (quality.parentNode !== badgeRight || quality.nextSibling !== vote)) {  
+            badgeRight.insertBefore(quality, vote && vote.parentNode === badgeRight ? vote : null);  
+        }  
+        if (vote && vote.parentNode !== badgeRight) badgeRight.appendChild(vote);  
+        return !!(status && type && quality && vote);  
     }  
     function watchOverlayInjects(view, statusRow, badge, badgeRight) {  
         if (relocateExisting(view, statusRow, badge, badgeRight)) return;  
