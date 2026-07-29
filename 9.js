@@ -1,13 +1,10 @@
 (function () {  
     if (window.customCardPlugin) return;  
     window.customCardPlugin = true;  
-    var KP_SVG = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='white' d='M12.049 0C5.45 0 .104 5.373.104 12S5.45 24 12.049 24c3.928 0 7.414-1.904 9.592-4.844l-9.803-5.174l6.256 6.418h-3.559l-4.373-6.086V20.4h-2.89V3.6h2.89v6.095L14.535 3.6h3.559l-6.422 6.627l9.98-5.368C19.476 1.911 15.984 0 12.05 0zm10.924 7.133l-9.994 4.027l10.917-.713a12 12 0 0 0-.923-3.314m-10.065 5.68l10.065 4.054c.458-1.036.774-2.149.923-3.314z'/%3E%3C/svg%3E";  
+  
     document.head.insertAdjacentHTML('beforeend', '<style>' +  
         '.card__title{display:none!important}' +  
         '.card__age{display:none!important}' +  
-        '.card__type{display:none!important}' +  
-        '.card__quality{display:none!important}' +  
-        '.card__vote{display:none!important}' +  
         '.card.focus .card-watched{display:none!important}' +  
         '.card__icons{top:0.5em!important;left:auto!important;right:0.5em!important;justify-content:flex-end!important}' +  
         '.card__icons-inner{background:none!important;border-radius:0!important;flex-direction:column!important}' +  
@@ -24,14 +21,8 @@
         '.card__badge>*+*{margin-left:0.3em}' +  
         '.card__badge-year,.card__badge-sep{font-size:0.85em;color:#ccc;flex-shrink:0;white-space:nowrap}' +  
         '.card__badge-genre{font-size:0.85em;color:#ccc;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0}' +  
-        '.card__badge-quality,.card__badge-rating{font-size:1em;font-weight:700;color:#ddd;flex-shrink:0;white-space:nowrap}' +  
-        '.card__badge-kp-icon{display:inline-block;width:1em;height:1.25em;background-repeat:no-repeat;background-position:center;background-size:contain;margin-left:0.05em;vertical-align:middle;flex-shrink:0}' +  
     '</style>');  
-    function tmdbKey() {  
-        return (Lampa.TMDB && Lampa.TMDB.key && typeof Lampa.TMDB.key === 'function')  
-            ? Lampa.TMDB.key()  
-            : '4ef0d7355d9ffb5151e987764708ce96';  
-    }  
+  
     var allGenres = {  
         28:'Боевик', 12:'Приключения', 35:'Комедия', 80:'Криминал',  
         18:'Драма', 10751:'Семейный', 14:'Фэнтези', 36:'История',  
@@ -56,159 +47,13 @@
         if (isAnim) return isTv ? 'Мультсериал' : 'Мультфильм';  
         return allGenres[ids[0]] || (isTv ? 'Сериал' : 'Фильм');  
     }  
-    var SERVERS = [Lampa.Utils.protocol() + 'jac.red', 'https://jr.maxvol.pro'];  
-    var RE_TS  = /\b(tsrip|ts|telesync|telecine|cam|camrip|workprint|wp|scr|screener|dvdscr|dcprip)\b/i;  
-    var RE_TS2 = /звук\s*с\s*ts|sound\s*ts|audio\s*ts|dub\s*ts/i;  
-    var RE_4K  = /\b(2160p|2160р|4k|uhd|4к)\b/i;  
-    var RE_HD  = /\b(1080p|1080р|720p|720р|blu\-ray|bdrip|bdremux|web\-dl|webdl|web\-dlrip|webrip|hdtv|hdtvrip|hddvd|hddvdrip|fullhd|fhd|hd|hdrip)\b/i;  
-    var qualityCache = Lampa.Storage.cache('ccp_quality_cache', 500, {});  
-    var qualityCacheSize = Object.keys(qualityCache).length;  
-    function qFromStr(t) {  
-        if (!t) return null;  
-        if (RE_TS.test(t) || RE_TS2.test(t)) return 'TS';  
-        if (RE_4K.test(t)) return '4K';  
-        if (RE_HD.test(t)) return 'HD';  
-        return null;  
+  
+    function tmdbKey() {  
+        return (Lampa.TMDB && Lampa.TMDB.key && typeof Lampa.TMDB.key === 'function')  
+            ? Lampa.TMDB.key()  
+            : '4ef0d7355d9ffb5151e987764708ce96';  
     }  
-    function setQualityCache(key, val) {  
-        if (qualityCacheSize > 500) { qualityCache = {}; qualityCacheSize = 0; }  
-        qualityCache[key] = val;  
-        qualityCacheSize++;  
-        Lampa.Storage.set('ccp_quality_cache', qualityCache);  
-    }  
-    function fetchQuality(data, cb) {  
-        var lampaQ = data.quality || data.release_quality;  
-        var key = data.id;  
-        if (key && qualityCache[key] !== undefined) return cb(qualityCache[key]);  
-        var title = data.title || data.name;  
-        var year = parseInt((data.release_date || data.first_air_date || '').slice(0, 4), 10) || null;  
-        var serverIndex = 0;  
-        var titles = [];  
-        function done() {  
-            var result = null;  
-            if (titles.length) {  
-                var tsCount = 0, has4K = false, hasHD = false;  
-                titles.forEach(function (titleStr) {  
-                    var quality = qFromStr(titleStr);  
-                    if (quality === 'TS') tsCount++;  
-                    else if (quality === '4K') has4K = true;  
-                    else if (quality === 'HD') hasHD = true;  
-                });  
-                result = tsCount / titles.length >= 0.5 ? 'TS' : has4K ? '4K' : hasHD ? 'HD' : null;  
-            }  
-            if (!result && lampaQ) result = qFromStr(lampaQ) || lampaQ.toUpperCase();  
-            if (key) setQualityCache(key, result);  
-            cb(result);  
-        }  
-        function next() {  
-            if (serverIndex >= SERVERS.length) return done();  
-            var url = SERVERS[serverIndex] + '/api/v2.0/indexers/all/results?apikey=&Query='  
-                + encodeURIComponent(title) + (year ? '&year=' + year : '');  
-            var qualityNetwork = new Lampa.Reguest();  
-            qualityNetwork.silent(url, function (res) {  
-                (res && res.Results || []).forEach(function (item) {  
-                    var releaseYear = parseInt((item.info && item.info.released) || item.year, 10);  
-                    var inTitle = !year || (item.Title && (  
-                        item.Title.indexOf(String(year)) !== -1 ||  
-                        item.Title.indexOf(String(year - 1)) !== -1 ||  
-                        item.Title.indexOf(String(year + 1)) !== -1  
-                    ));  
-                    if ((releaseYear && Math.abs(releaseYear - year) <= 1) || (!releaseYear && inTitle)) titles.push(item.Title);  
-                });  
-                serverIndex++;  
-                next();  
-            }, function () { serverIndex++; next(); });  
-        }  
-        next();  
-    }  
-    var TTL_OK  = 15 * 24 * 60 * 60 * 1000;  
-    var TTL_ERR =      24 * 60 * 60 * 1000;  
-    var TTL_SRC =       3 * 60 * 60 * 1000;  
-    var KP_KEY  = '14342b35-714b-449d-bf10-30d0d9ac22e6';  
-    var ratingCache = Lampa.Storage.cache('ccp_kp_rating', 500, {});  
-    function getRatingCache(id, type) {  
-        var key = type === 'search' ? 'search_' + id : id;  
-        var item = ratingCache[key];  
-        if (!item) return null;  
-        var ttl = type === 'search' ? TTL_SRC : item.kp === 0 ? TTL_ERR : TTL_OK;  
-        return (Date.now() - item.timestamp) < ttl ? item : null;  
-    }  
-    function setRatingCache(id, data, type) {  
-        var key = type === 'search' ? 'search_' + id : id;  
-        ratingCache[key] = Object.assign({}, data, { timestamp: Date.now() });  
-        Lampa.Storage.set('ccp_kp_rating', ratingCache);  
-    }  
-    function fromKpApi(kpId, card, cb) {  
-        var tmdb = card.vote_average || 0;  
-        var apiNetwork = new Lampa.Reguest();  
-        apiNetwork.silent('https://kinopoiskapiunofficial.tech/api/v2.2/films/' + kpId,  
-            function (response) { var kp = response.ratingKinopoisk || 0; setRatingCache(card.id, { kp: kp, tmdb: tmdb }); cb(kp, tmdb); },  
-            function () { setRatingCache(card.id, { kp: 0, tmdb: tmdb }); cb(0, tmdb); },  
-            false, { timeout: 3000, headers: { 'X-API-KEY': KP_KEY } }  
-        );  
-    }  
-    function fromKpXml(kpId, card, cb) {  
-        var tmdb = card.vote_average || 0;  
-        var xmlNetwork = new Lampa.Reguest();  
-        xmlNetwork.silent('https://rating.kinopoisk.ru/' + kpId + '.xml',  
-            function (str) {  
-                if (str && str.indexOf('<rating>') !== -1) {  
-                    try {  
-                        var kp = parseFloat($($.parseXML(str)).find('kp_rating').text()) || 0;  
-                        if (kp > 0) { setRatingCache(card.id, { kp: kp, tmdb: tmdb }); cb(kp, tmdb); return; }  
-                    } catch (e) {}  
-                }  
-                fromKpApi(kpId, card, cb);  
-            },  
-            function () { fromKpApi(kpId, card, cb); },  
-            false, { timeout: 1000, dataType: 'text' }  
-        );  
-    }  
-    function fetchRating(card, cb) {  
-        var cached = getRatingCache(card.id);  
-        if (cached) return cb(cached.kp, cached.tmdb);  
-        var searchCached = getRatingCache(card.id, 'search');  
-        if (searchCached) return fromKpXml(searchCached.kp_id, card, cb);  
-        var year = parseInt((card.release_date || card.first_air_date || '').slice(0, 4), 10) || null;  
-        var title = card.title || card.name;  
-        var tmdb = card.vote_average || 0;  
-        var fail = function () { setRatingCache(card.id, { kp: 0, tmdb: tmdb }); cb(0, tmdb); };  
-        function byTitle() {  
-            var query = (title || '').toLowerCase().replace(/[^\wа-яё\s]/gi, ' ').replace(/\s+/g, ' ').trim();  
-            var searchNetwork = new Lampa.Reguest();  
-            searchNetwork.silent('https://kinopoiskapiunofficial.tech/api/v2.1/films/search-by-keyword?keyword=' + encodeURIComponent(query),  
-                function (json) {  
-                    if (!json.films || !json.films.length) return fail();  
-                    var best = null;  
-                    if (year) {  
-                        best = json.films.find(function (film) { return parseInt((film.year || '').slice(0, 4), 10) === year; });  
-                        if (!best) best = json.films.find(function (film) {  
-                            var filmYear = parseInt((film.year || '').slice(0, 4), 10);  
-                            return filmYear && filmYear > year - 3 && filmYear < year + 3;  
-                        });  
-                    }  
-                    best = best || json.films[0];  
-                    if (best) { setRatingCache(card.id, { kp_id: best.filmId }, 'search'); fromKpXml(best.filmId, card, cb); }  
-                    else fail();  
-                },  
-                fail, false, { timeout: 5000, headers: { 'X-API-KEY': KP_KEY } }  
-            );  
-        }  
-        if (card.imdb_id) {  
-            var imdbNetwork = new Lampa.Reguest();  
-            imdbNetwork.silent('https://kinopoiskapiunofficial.tech/api/v2.2/films?imdbId=' + encodeURIComponent(card.imdb_id),  
-                function (d) {  
-                    var filmItem = d.items && d.items[0];  
-                    var id = (filmItem && (filmItem.kinopoiskId || filmItem.filmId)) || d.kinopoiskId || d.filmId;  
-                    if (id) { setRatingCache(card.id, { kp_id: id }, 'search'); fromKpXml(id, card, cb); }  
-                    else byTitle();  
-                },  
-                byTitle, false, { timeout: 5000, headers: { 'X-API-KEY': KP_KEY } }  
-            );  
-        } else {  
-            byTitle();  
-        }  
-    }  
+  
     function daysUntil(dateStr) {  
         if (!dateStr) return -1;  
         var today = new Date(); today.setHours(0, 0, 0, 0);  
@@ -341,6 +186,7 @@
             if (statusInfo && statusInfo.text) renderStatus(statusInfo, statusRow);  
         }, function () {}, false, { cache: { life: 1440 } });  
     }  
+  
     function processCard(card) {  
         if (!card.card_data) return;  
         if (card.dataset.ccp) return;  
@@ -389,38 +235,11 @@
             genreEl.textContent = genre;  
             badge.appendChild(genreEl);  
         }  
-        var qualityEl = document.createElement('span');  
-        qualityEl.className = 'card__badge-quality';  
-        qualityEl.style.display = 'none';  
-        badge.appendChild(qualityEl);  
-        var ratingEl = document.createElement('span');  
-        ratingEl.className = 'card__badge-rating';  
-        ratingEl.style.display = 'none';  
-        badge.appendChild(ratingEl);  
-        var kpIconEl = document.createElement('span');  
-        kpIconEl.className = 'card__badge-kp-icon';  
-        kpIconEl.style.cssText = 'display:none;background-image:url("' + KP_SVG + '")';  
-        badge.appendChild(kpIconEl);  
         overlay.appendChild(badge);  
         view.appendChild(overlay);  
         if (data.id) loadCardStatus(data, statusRow);  
-        fetchQuality(data, function (quality) {  
-            if (quality) { qualityEl.textContent = quality; qualityEl.style.display = ''; }  
-        });  
-        if (data.id && (data.release_date || data.first_air_date)) {  
-            fetchRating(data, function (kp, tmdb) {  
-                var val = kp > 0 ? kp : tmdb;  
-                if (val > 0) {  
-                    ratingEl.textContent = parseFloat(val).toFixed(1);  
-                    ratingEl.style.display = '';  
-                    if (kp > 0) kpIconEl.style.cssText = 'background-image:url("' + KP_SVG + '")';  
-                }  
-            });  
-        } else {  
-            var vote = parseFloat(data.vote_average || 0);  
-            if (vote > 0) { ratingEl.textContent = vote.toFixed(1); ratingEl.style.display = ''; }  
-        }  
     }  
+  
     var intersectionObserver = null;  
     if (typeof IntersectionObserver !== 'undefined') {  
         intersectionObserver = new IntersectionObserver(function (entries) {  
