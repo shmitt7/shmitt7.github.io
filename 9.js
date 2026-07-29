@@ -21,6 +21,10 @@
         '.card__badge>*+*{margin-left:0.3em}' +  
         '.card__badge-year,.card__badge-sep{font-size:0.85em;color:#ccc;flex-shrink:0;white-space:nowrap}' +  
         '.card__badge-genre{font-size:0.85em;color:#ccc;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0}' +  
+        /* сброс нативных позиций и приведение к виду бейджей внутри overlay */  
+        '.card__badge .card__quality{position:static!important;left:auto!important;bottom:auto!important;padding:0!important;background:none!important;color:#ddd!important;font-size:1em!important;font-weight:700;border-radius:0!important;order:2}' +  
+        '.card__badge .card__quality>div{display:inline}' +  
+        '.card__badge .card__vote{position:static!important;right:auto!important;bottom:auto!important;background:none!important;color:#ddd!important;font-size:1em!important;font-weight:700;padding:0!important;border-radius:0!important;order:3}' +  
     '</style>');  
   
     var allGenres = {  
@@ -187,6 +191,23 @@
         }, function () {}, false, { cache: { life: 1440 } });  
     }  
   
+    // Переносит .card__quality / .card__vote (создаются kpRating.js / qualityPlugin.js / самим Lampa)  
+    // из .card__view внутрь badge-строки оверлея, как только они появляются в DOM  
+    function relocateExisting(view, badge) {  
+        var q = view.querySelector(':scope > .card__quality');  
+        var v = view.querySelector(':scope > .card__vote');  
+        if (q && q.parentNode !== badge) badge.appendChild(q);  
+        if (v && v.parentNode !== badge) badge.appendChild(v);  
+        return !!(q && v); // true если оба уже перенесены  
+    }  
+    function watchRatingQuality(view, badge) {  
+        if (relocateExisting(view, badge)) return; // уже есть оба — дальше следить не нужно  
+        var childObserver = new MutationObserver(function () {  
+            if (relocateExisting(view, badge)) childObserver.disconnect();  
+        });  
+        childObserver.observe(view, { childList: true });  
+    }  
+  
     function processCard(card) {  
         if (!card.card_data) return;  
         if (card.dataset.ccp) return;  
@@ -238,6 +259,7 @@
         overlay.appendChild(badge);  
         view.appendChild(overlay);  
         if (data.id) loadCardStatus(data, statusRow);  
+        watchRatingQuality(view, badge);  
     }  
   
     var intersectionObserver = null;  
