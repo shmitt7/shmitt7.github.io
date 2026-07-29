@@ -78,6 +78,9 @@
                 var year = formatYearLabel(info.first_air_date);  
                 return { text: 'Запланировано' + (year ? ' ' + year : ''), icon: '❱', color: '#E040FB' };  
             }  
+            if (status === 'Ended') return { text: 'Завершён', icon: '✔', color: '#FFD740' };  
+            if (status === 'Canceled') return { text: 'Отменён', icon: '✘', color: '#FF5252' };  
+            if (status === 'Pilot') return { text: 'Пилот', icon: '✔', color: '#FFD740' };  
             return null;  
         }  
         if (status === 'Returning Series') {  
