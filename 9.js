@@ -30,10 +30,7 @@
         '.card__status-row .card__status,.card__badge .card__type,.card__badge-right .card__quality,.card__badge-right .card__vote{visibility:visible!important}' +  
     '</style>');  
     var WATCH_TIMEOUT = 8000;  
-    var activeChildObservers = [];  
-    function relocateExisting(view, statusRow, badge, badgeRight) {  
-        var status = view.querySelector(':scope > .card__status');  
-        var type = view.querySelector(':scope > .card__type');  
+    var activeChildObservers = [];       
     function relocateExisting(view, statusRow, badge, badgeRight) {  
     var status = view.querySelector(':scope > .card__status');  
     var type = view.querySelector(':scope > .card__type');  
