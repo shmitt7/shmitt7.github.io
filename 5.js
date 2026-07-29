@@ -90,15 +90,15 @@
             }  
             return { text: episodeText, icon: '⏯︎', color: '#40C4FF' };  
         }  
-        if (status === 'Ended')    return { text: episodeText, icon: '✔', color: '#FFD740' };  
+        if (status === 'Ended') return { text: episodeText, icon: '✔', color: '#FFD740' };  
         if (status === 'Canceled') return { text: episodeText, icon: '✘', color: '#FF5252' };  
-        if (status === 'Pilot')    return { text: 'Пилот',     icon: '✔', color: '#FFD740' };  
+        if (status === 'Pilot') return { text: 'Пилот', icon: '✔', color: '#FFD740' };  
         if (status === 'In Production') {  
             return { text: formatPremiereLabel(info.first_air_date), icon: '✦', color: '#E040FB' };  
         }  
         if (status === 'Planned') {  
-            var year = formatYearLabel(info.first_air_date);  
-            return { text: 'Запланировано' + (year ? ' ' + year : ''), icon: '❱', color: '#E040FB' };  
+            var year2 = formatYearLabel(info.first_air_date);  
+            return { text: 'Запланировано' + (year2 ? ' ' + year2 : ''), icon: '❱', color: '#E040FB' };  
         }  
         return { text: episodeText, icon: '⏯︎', color: '#40C4FF' };  
     }  
@@ -110,8 +110,8 @@
             return { text: 'По слухам' + (year ? ' ' + year : ''), icon: '❱', color: '#E040FB' };  
         }  
         if (status === 'Planned') {  
-            var year = formatYearLabel(releaseDate);  
-            return { text: 'Запланировано' + (year ? ' ' + year : ''), icon: '❱', color: '#E040FB' };  
+            var year2 = formatYearLabel(releaseDate);  
+            return { text: 'Запланировано' + (year2 ? ' ' + year2 : ''), icon: '❱', color: '#E040FB' };  
         }  
         if (status === 'In Production') {  
             return { text: formatPremiereLabel(releaseDate), icon: '✦', color: '#E040FB' };  
@@ -130,10 +130,8 @@
         if (!labelInfo || !labelInfo.text) return;  
         var viewElem = cardElem.querySelector('.card__view');  
         if (!viewElem) return;  
-        var existing = cardElem.querySelector('.card__status');  
-        var label = existing || document.createElement('div');  
-        if (!existing) label.className = 'card__status';  
-        label.innerHTML = '';  
+        var label = document.createElement('div');  
+        label.className = 'card__status';  
         var iconSpan = document.createElement('span');  
         iconSpan.className = 'tvs-icon';  
         iconSpan.style.color = labelInfo.color;  
@@ -143,13 +141,10 @@
         textSpan.textContent = labelInfo.text;  
         label.appendChild(iconSpan);  
         label.appendChild(textSpan);  
-        if (!existing) viewElem.appendChild(label);  
+        viewElem.appendChild(label);  
     }  
     function isPersonCard(data) {  
-        return !!(  
-            data.known_for_department !== undefined ||  
-            (data.profile_path && !data.poster_path && !data.backdrop_path)  
-        );  
+        return !!(data.known_for_department !== undefined || (data.profile_path && !data.poster_path && !data.backdrop_path));  
     }  
     function loadCardStatus(cardElem, data) {  
         if (cardElem._tvsDone) return;  
