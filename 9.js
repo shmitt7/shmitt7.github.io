@@ -32,10 +32,10 @@
     var WATCH_TIMEOUT = 8000;  
     var activeChildObservers = [];  
     function relocateExisting(view, statusRow, badge, badgeRight) {  
-        var status = view.querySelector(':scope > .card__status');  
-        var type = view.querySelector(':scope > .card__type');  
-        var quality = view.querySelector(':scope > .card__quality');  
-        var vote = view.querySelector(':scope > .card__vote');  
+        var status = view.querySelector('.card__status');  
+        var type = view.querySelector('.card__type');  
+        var quality = view.querySelector('.card__quality');  
+        var vote = view.querySelector('.card__vote');  
         if (status && status.parentNode !== statusRow) statusRow.appendChild(status);  
         if (type && type.parentNode !== badge) badge.insertBefore(type, badgeRight);  
         if (quality && (quality.parentNode !== badgeRight || quality.nextSibling !== vote)) {  
@@ -61,10 +61,9 @@
         activeChildObservers.push(childObserver);  
     }  
     function processCard(card) {  
-        if (!card.card_data) return;  
-        if (card.dataset.ccp) return;  
-        card.dataset.ccp = '1';  
         var data = card.card_data;  
+        if (!data) return;  
+        card.dataset.ccp = '1';  
         var view = card.querySelector('.card__view');  
         if (!view) return;  
         var titleEl = card.querySelector('.card__title');  
