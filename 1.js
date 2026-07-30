@@ -32,7 +32,8 @@
         { url: 'https://shmitt7.github.io/parser.js', name: 'Дополнительные кнопки Торрента', description: 'Управление общедоступными парсерами. Доступ: Карточка → Торренты → кнопка µTorrent в шапке | Долгий тап на карточку → Парсер' },  
         { url: 'https://shmitt7.github.io/quality.js', name: 'Отметка качества', description: 'Отображение доступного качества видео 4K, HD, TS' },  
         { url: 'https://shmitt7.github.io/rating.js', name: 'Рейтинг КиноПоиск с логотипом', description: 'Отображение рейтинга КиноПоиск с логотипом на карточке | Рейтинг без логотипа - TMDB' },  
-        { url: 'https://shmitt7.github.io/russkoe.js', name: 'Русский контент', description: 'Добавляет категорию Русское: новинки, популярное, фильмы, сериалы, мультфильмы, реалити...' },  
+        { url: 'https://shmitt7.github.io/russkoe.js', name: 'Русский контент', description: 'Добавляет категорию Русское: новинки, популярное, фильмы, сериалы, мультфильмы, реалити...' },
+        { url: 'https://shmitt7.github.io/status.js', name: 'Статус контента', description: 'Метка статуса на карточке: дата премьеры, онгоинг, завершён, отменён, текущий сезон и серия (S/E)' },
         { url: 'https://shmitt7.github.io/torrserver.js', name: 'TorrServer Free', description: 'Просмотр торрентов через общедоступные сервера. Работает при включённом встроенном клиенте и дополнительной ссылки. Сервер автоматически переподключается при входе в торренты и в шапке появляется кнопка' }  
     ];  
     var getKey = function(name) { return 'my_plugin_' + name.toLowerCase().replace(/\s+/g, '_'); };  
