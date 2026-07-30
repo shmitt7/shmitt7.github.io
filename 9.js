@@ -17,7 +17,7 @@
         '.card__status-row .card__status{position:static!important;left:auto!important;top:auto!important;bottom:auto!important;background:none!important;padding:0!important;border-radius:0!important;font-size:0.8em!important;display:flex!important;align-items:baseline!important;pointer-events:none;white-space:nowrap}' +  
         '.card__status-row .card__status .tvs-icon{font-size:1.1em;margin-right:0.2em;flex-shrink:0}' +  
         '.card__status-row .card__status .tvs-text{font-size:1em;font-weight:600;color:#ccc;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:1;min-width:0}' +  
-        '.card__badge{display:flex;flex-wrap:nowrap;align-items:baseline;width:100%;margin-left:0.15em;overflow:hidden}' +  
+        '.card__badge{display:flex;flex-wrap:nowrap;align-items:baseline;width:100%;margin-left:0.15em;padding-right:4.2em;box-sizing:border-box;overflow:hidden}' +  
         '.card__badge-year{font-size:0.8em;font-weight:600;color:#ccc;flex-shrink:0}' +  
         '.card__badge-genre,.card__badge .card__type{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-left:0.4em}' +  
         '.card__badge-year+.card__badge-genre::before,.card__badge-year+.card__type::before{content:"\u2022";margin-right:0.4em;color:#999;font-size:0.7em}' +  
