@@ -23,35 +23,36 @@
         '.card__badge .card__type{position:static!important;top:auto!important;left:auto!important;background:none!important;padding:0!important;border-radius:0!important;font-size:0.85em!important;color:#fff!important}' +  
         '.card__badge-right{display:flex;align-items:center;flex-shrink:0;margin-left:auto}' +  
         '.card__badge-right>*+*{margin-left:0.4em}' +  
-        '.card__badge-right .card__quality{position:static!important;left:auto!important;bottom:auto!important;padding:0!important;background:none!important;font-size:1em!important;font-weight:700;border-radius:0!important}' +  
+        '.card__badge-right .card__quality{position:static!important;left:auto!important;bottom:auto!important;padding:0!important;background:none!important;font-size:1em!important;font-weight:700;border-radius:0!important;visibility:hidden}' +  
         '.card__badge-right .card__quality>div{display:inline}' +  
-        '.card__badge-right .card__vote{position:static!important;right:auto!important;bottom:auto!important;background:none!important;font-size:1em!important;font-weight:700;padding:0!important;border-radius:0!important}' +  
-        '.card__status,.card__type,.card__quality,.card__vote{visibility:hidden!important}' +  
-        '.card__status-row .card__status,.card__badge .card__type,.card__badge-right .card__quality,.card__badge-right .card__vote{visibility:visible!important}' +  
+        '.card__badge-right .card__vote{position:static!important;right:auto!important;bottom:auto!important;background:none!important;font-size:1em!important;font-weight:700;padding:0!important;border-radius:0!important;visibility:hidden}' +  
+        '.card__badge-right .card__quality.list-card-colored,.card__badge-right .card__vote.list-card-colored{visibility:visible!important}' +  
+        '.card__status,.card__type{visibility:hidden!important}' +  
+        '.card__status-row .card__status,.card__badge .card__type{visibility:visible!important}' +  
     '</style>');  
-    var WATCH_TIMEOUT = 8000;  
     var activeChildObservers = [];  
-  
+    var activeTimers = [];  
+    var WATCH_TIMEOUT = 8000;  
     function colorizeQuality(quality) {  
         var text = (quality.textContent || '').trim().toUpperCase();  
-        var color = '#3b82f6'; // синий по умолчанию  
-        if (text.indexOf('TS') !== -1) color = '#e53935'; // красный  
-        else if (text.indexOf('4K') !== -1 || text.indexOf('UHD') !== -1) color = '#43a047'; // зелёный  
-        else if (text.indexOf('HD') !== -1) color = '#fdd835'; // жёлтый  
+        var color = '#40C4FF';  
+        if (text.indexOf('TS') !== -1) color = '#FF5252';  
+        else if (text.indexOf('4K') !== -1 || text.indexOf('UHD') !== -1) color = '#00E676';  
+        else if (text.indexOf('HD') !== -1) color = '#FFD740';  
         quality.style.color = color;  
+        quality.classList.add('list-card-colored');  
     }  
-  
     function colorizeVote(vote) {  
         var value = parseFloat((vote.textContent || '').replace(',', '.'));  
-        var color = '#3b82f6';  
+        var color = '#40C4FF';  
         if (!isNaN(value)) {  
-            if (value <= 6.4) color = '#e53935';  
-            else if (value <= 7.9) color = '#fdd835';  
-            else color = '#43a047';  
+            if (value <= 6.4) color = '#FF5252';  
+            else if (value <= 7.9) color = '#FFD740';  
+            else color = '#00E676';  
         }  
         vote.style.color = color;  
+        vote.classList.add('list-card-colored');  
     }  
-  
     function relocateExisting(view, statusRow, badge, badgeRight) {  
         var status = view.querySelector('.card__status');  
         var type = view.querySelector('.card__type');  
@@ -63,9 +64,12 @@
             badgeRight.insertBefore(quality, vote && vote.parentNode === badgeRight ? vote : null);  
         }  
         if (vote && vote.parentNode !== badgeRight) badgeRight.appendChild(vote);  
-        if (quality) colorizeQuality(quality);  
-        if (vote) colorizeVote(vote);  
-        return !!(status && type && quality && vote);  
+        var ready = !!(status && type && quality && vote);  
+        if (ready) {  
+            colorizeQuality(quality);  
+            colorizeVote(vote);  
+        }  
+        return ready;  
     }  
     function watchOverlayInjects(view, statusRow, badge, badgeRight) {  
         if (relocateExisting(view, statusRow, badge, badgeRight)) return;  
@@ -75,11 +79,14 @@
         });  
         function stopWatching() {  
             clearTimeout(watchTimer);  
+            var timerIdx = activeTimers.indexOf(watchTimer);  
+            if (timerIdx !== -1) activeTimers.splice(timerIdx, 1);  
             childObserver.disconnect();  
             var idx = activeChildObservers.indexOf(childObserver);  
             if (idx !== -1) activeChildObservers.splice(idx, 1);  
         }  
         watchTimer = setTimeout(stopWatching, WATCH_TIMEOUT);  
+        activeTimers.push(watchTimer);  
         childObserver.observe(view, { childList: true });  
         activeChildObservers.push(childObserver);  
     }  
@@ -160,6 +167,8 @@
             mutationObserver.disconnect();  
             for (var i = 0; i < activeChildObservers.length; i++) activeChildObservers[i].disconnect();  
             activeChildObservers = [];  
+            for (var t = 0; t < activeTimers.length; t++) clearTimeout(activeTimers[t]);  
+            activeTimers = [];  
         }  
     });  
 })();
