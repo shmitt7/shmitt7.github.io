@@ -1,17 +1,9 @@
-(function () {  
-    'use strict';  
+(function(){  
+    if(window.plugin_force_inner_torrent_ready) return  
+    window.plugin_force_inner_torrent_ready = true  
   
-    if (window.plugin_empty_ready) return;  
-    window.plugin_empty_ready = true;  
-  
-    function startPlugin() {  
-        // Здесь будет логика плагина  
+    // Каждый раз при загрузке принудительно ставим inner для торрентов на Android TV  
+    if(Lampa.Platform.is('android')){  
+        Lampa.Storage.set('player_torrent', 'inner')  
     }  
-  
-    if (window.appready) startPlugin();  
-    else {  
-        Lampa.Listener.follow('app', function (e) {  
-            if (e.type === 'ready') startPlugin();  
-        });  
-    }  
-})();
+})()
