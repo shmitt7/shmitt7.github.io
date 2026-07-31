@@ -34,17 +34,16 @@
     var activeChildObservers = [];  
     var activeTimers = [];  
     function relocateExisting(view, statusRow, badge, badgeRight) {  
-        var status = view.querySelector('.card__status');  
-        var type = view.querySelector('.card__type');  
-        var quality = view.querySelector('.card__quality');  
-        var vote = view.querySelector('.card__vote');  
-        if (status && status.parentNode !== statusRow) statusRow.appendChild(status);  
-        if (type && type.parentNode !== badge) badge.appendChild(type);  
-        if (quality && (quality.parentNode !== badgeRight || quality.nextSibling !== vote)) {  
-            badgeRight.insertBefore(quality, vote && vote.parentNode === badgeRight ? vote : null);  
-        }  
-        if (vote && vote.parentNode !== badgeRight) badgeRight.appendChild(vote);  
-        return !!(status && type && quality && vote);  
+    var status = view.querySelector('.card__status');  
+    var type = view.querySelector('.card__type');  
+    var quality = view.querySelector('.card__quality');  
+    var vote = view.querySelector('.card__vote');  
+    if (status && status.parentNode !== statusRow) statusRow.appendChild(status);  
+    if (type && type.parentNode !== badge) badge.insertBefore(type, badgeRight);  
+    else if (type && type.nextSibling !== badgeRight) badge.insertBefore(type, badgeRight);  
+    if (quality && quality.parentNode !== badgeRight) badgeRight.appendChild(quality);  
+    if (vote && vote.parentNode !== badgeRight) badgeRight.appendChild(vote);  
+    return !!(status && type && quality && vote);  
     }  
     function watchOverlayInjects(view, statusRow, badge, badgeRight) {  
         if (relocateExisting(view, statusRow, badge, badgeRight)) return;  
