@@ -10,7 +10,6 @@
         '.card__icons-inner>.card__icon{margin-bottom:0.2em}' +  
         '.card__icon{filter:drop-shadow(0 1px 4px rgba(0,0,0,1)) drop-shadow(0 0 8px rgba(0,0,0,0.9))!important}' +  
         '.card__overlay{position:absolute;left:0;right:0;bottom:0;padding:3em 0.4em 0.15em 0.4em;background:linear-gradient(to bottom,rgba(0,0,0,0) 0%,rgba(0,0,0,0.97) 100%);border-bottom-left-radius:1em;border-bottom-right-radius:1em;z-index:1;pointer-events:none}' +  
-        '.card__overlay-info{transform:translateY(0)}' +  
         '.card__overlay-title{font-size:1.35em;font-weight:600;line-height:1.1;color:#fff;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;line-clamp:2;-webkit-box-orient:vertical;margin-bottom:0.15em;margin-left:0.15em}' +  
         '.card__status-row{display:flex;align-items:baseline;margin-left:0.15em;margin-bottom:0.08em;line-height:1;overflow:hidden;white-space:nowrap;min-width:0}' +  
         '.card__status-row:empty{display:none;margin-bottom:0}' +  
@@ -22,7 +21,7 @@
         '.card__badge-genre,.card__badge .card__type{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-left:0.4em}' +  
         '.card__badge-year+.card__badge-genre::before,.card__badge-year+.card__type::before{content:"\u2022";margin-right:0.4em;color:#999;font-size:0.7em}' +  
         '.card__badge .card__type{position:static!important;top:auto!important;left:auto!important;background:none!important;padding:0!important;border-radius:0!important;font-size:0.8em!important;font-weight:600!important;color:#ccc!important}' +  
-        '.card__badge-right{position:absolute;right:0.4em;bottom:0.15em;display:flex;align-items:baseline}' +  
+        '.card__badge-right{display:flex;align-items:baseline;flex-shrink:0;margin-left:0.4em;transform:translateY(-0.15em)}' +  
         '.card__badge-right>*+*{margin-left:0.4em}' +  
         '.card__badge-right .card__quality{position:static!important;left:auto!important;bottom:auto!important;padding:0!important;background:none!important;color:#fff!important;font-size:1.1em!important;font-weight:700;border-radius:0!important}' +  
         '.card__badge-right .card__quality>div{display:inline}' +  
@@ -39,17 +38,12 @@
         var quality = view.querySelector('.card__quality');  
         var vote = view.querySelector('.card__vote');  
         if (status && status.parentNode !== statusRow) statusRow.appendChild(status);  
-        if (type && type.parentNode !== badge) badge.appendChild(type);  
+        if (type && type.parentNode !== badge) badge.insertBefore(type, badgeRight);  
         if (quality && (quality.parentNode !== badgeRight || quality.nextSibling !== vote)) {  
             badgeRight.insertBefore(quality, vote && vote.parentNode === badgeRight ? vote : null);  
         }  
         if (vote && vote.parentNode !== badgeRight) badgeRight.appendChild(vote);  
-        var ready = !!(status && type && quality && vote);  
-        if (ready) {  
-            var rightWidth = badgeRight.offsetWidth;  
-            badge.style.paddingRight = (rightWidth + 6) + 'px';  
-        }  
-        return ready;  
+        return !!(status && type && quality && vote);  
     }  
     function watchOverlayInjects(view, statusRow, badge, badgeRight) {  
         if (relocateExisting(view, statusRow, badge, badgeRight)) return;  
@@ -88,15 +82,13 @@
         }  
         var overlay = document.createElement('div');  
         overlay.className = 'card__overlay';  
-        var infoGroup = document.createElement('div');  
-        infoGroup.className = 'card__overlay-info';  
         var overlayTitle = document.createElement('div');  
         overlayTitle.className = 'card__overlay-title';  
         overlayTitle.textContent = data.title || data.name || '';  
-        infoGroup.appendChild(overlayTitle);  
+        overlay.appendChild(overlayTitle);  
         var statusRow = document.createElement('div');  
         statusRow.className = 'card__status-row';  
-        infoGroup.appendChild(statusRow);  
+        overlay.appendChild(statusRow);  
         var badge = document.createElement('div');  
         badge.className = 'card__badge';  
         var year = ((data.release_date || data.first_air_date || '') + '').slice(0, 4);  
@@ -106,11 +98,10 @@
             yearEl.textContent = year;  
             badge.appendChild(yearEl);  
         }  
-        infoGroup.appendChild(badge);  
-        overlay.appendChild(infoGroup);  
         var badgeRight = document.createElement('div');  
         badgeRight.className = 'card__badge-right';  
-        overlay.appendChild(badgeRight);  
+        badge.appendChild(badgeRight);  
+        overlay.appendChild(badge);  
         view.appendChild(overlay);  
         watchOverlayInjects(view, statusRow, badge, badgeRight);  
     }  
