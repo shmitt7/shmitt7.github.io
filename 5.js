@@ -87,9 +87,28 @@
   
     var style = document.createElement('style');  
     style.textContent = ''  
-      // Не трогаем .full-start-new__body / .full-start-new__left / margin-top /  
-      // position / z-index у .full-start-new__right — это родная механика,  
-      // которая кладёт постер сверху и панель текста ниже с overlap+градиентом.  
+      // ---- Показываем картинку целиком, без обрезки ----  
+      // Снимаем фиксированную высоту (padding-bottom) с постера и убираем cover-обрезку  
+      + 'body.fcm--open .full-start-new__poster{padding-bottom:0!important;height:auto!important;background:#000!important;}'  
+      + 'body.fcm--open .full-start-new__poster .full-start-new__img{position:static!important;width:100%!important;height:auto!important;object-fit:contain!important;border-radius:0!important;opacity:1!important;transform:none!important;}'  
+  
+      // ---- Опускаем панель ближе к низу картинки, убираем "ровный" срез ----  
+      // Уменьшаем наезд (было -20vh) и убираем скругления, растягиваем градиент  
+      + 'body.fcm--open .full-start-new__right{'  
+        + 'margin-top:-3em!important;'  
+        + 'position:relative!important;'  
+        + 'z-index:1!important;'  
+        + 'border-radius:0!important;'  
+        + 'padding-top:3em!important;'  
+        + 'background:linear-gradient(to bottom,'  
+          + 'rgba(0,0,0,0) 0%,'  
+          + 'rgba(0,0,0,0.35) 12%,'  
+          + 'rgba(0,0,0,0.65) 30%,'  
+          + 'rgba(0,0,0,0.85) 55%,'  
+          + 'rgba(0,0,0,0.95) 100%'  
+        + ')!important;'  
+      + '}'  
+  
       + 'body.fcm--open .full-start-new__right{display:flex!important;flex-direction:column!important;align-items:center!important;text-align:center!important;}'  
       + 'body.fcm--open .full-start-new__right>*:not(.fcm-row):not(.full-start-new__buttons){display:none!important;}'  
       + '.fcm-row{width:100%;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;margin-bottom:.35em;}'  
