@@ -5,6 +5,7 @@
   var logoCache = {};  
   var logoCacheSize = 0;  
   var network = new Lampa.Reguest();  
+  var styleTag = null;  
   
   var FORMAT_PATTERNS = [  
     { sep: ': ', keep: 1 },  
@@ -82,35 +83,41 @@
     return el;  
   }  
   
-  function init() {  
-    if (Lampa.Platform.screen('tv')) return; // только мобильные/тач-устройства  
+  // ---------- Реальный цвет интерфейса из самой Lampa ----------  
+  // Не хардкодим RGB — читаем актуальный вычисленный фон <body>.  
+  // Если пользователь переключит тему (black_style / кастомная CSS-тема),  
+  // тут будет уже новое значение автоматически.  
+  function getInterfaceRgb() {  
+    try {  
+      var c = window.getComputedStyle(document.body).backgroundColor;  
+      var m = c && c.match(/\d+(\.\d+)?/g);  
+      if (m && m.length >= 3) return m[0] + ',' + m[1] + ',' + m[2];  
+    } catch (e) {}  
+    // запасной вариант — базовый фон Lampa, если что-то пошло не так  
+    return Lampa.Storage.field('black_style') ? '0,0,0' : '29,31,32';  
+  }  
   
-    // Цвет затемнения берём из реального фона приложения:  
-    // обычная (серая) тема — #1d1f20 (rgb(29,31,32)), чёрная — #000  
-    var isBlack = Lampa.Storage.field('black_style');  
-    var baseRgb = isBlack ? '0,0,0' : '29,31,32';  
-  
-    var style = document.createElement('style');  
-    style.textContent = ''  
+  function buildStyleCss(baseRgb) {  
+    return ''  
       // ---- НЕ трогаем родную геометрию постера/картинки (padding-bottom, object-fit:cover) ----  
       + 'body.fcm--open .full-start-new__poster{position:relative!important;overflow:hidden!important;}'  
   
-      // ---- Затемнение отдельным слоем над картинкой, без blur, начинается ниже (меньшая высота зоны) ----  
+      // ---- Затемнение отдельным слоем над картинкой: чёткий переход без "блюра", ----  
+      // ---- начинается ниже, конечный цвет = реальный цвет интерфейса Lampa      ----  
       + 'body.fcm--open .full-start-new__poster::after{'  
         + 'content:""!important;'  
         + 'position:absolute!important;'  
         + 'left:0!important;right:0!important;bottom:0!important;'  
-        + 'height:38%!important;'  
+        + 'height:32%!important;'  
         + 'background:linear-gradient(to bottom,'  
           + 'rgba(' + baseRgb + ',0) 0%,'  
-          + 'rgba(' + baseRgb + ',0.5) 55%,'  
           + 'rgba(' + baseRgb + ',1) 100%'  
         + ')!important;'  
         + 'pointer-events:none!important;'  
         + 'z-index:1!important;'  
       + '}'  
   
-      // ---- Панель текста поднята выше, заходит на картинку (было -2em) ----  
+      // ---- Панель текста продолжает тот же цвет — переход выглядит единым целым ----  
       + 'body.fcm--open .full-start-new__right{'  
         + 'position:relative!important;'  
         + 'z-index:2!important;'  
@@ -125,132 +132,143 @@
       + '.fcm-row{width:100%;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;margin-bottom:.35em;}'  
       + '.fcm-row:empty{display:none;}'  
       + '.fcm-row--title{margin-bottom:.15em;}'  
-      + '.fcm-title-text{font-size:2em;font-weight:600;line-height:1.15;text-shadow:0 2px 10px rgba(0,0,0,.9);}'  
+      + '.fcm-title-text{font-size:2em;font-weight:600;line-height:1.2;text-shadow:0 2px 10px rgba(0,0,0,.9);}'  
       + '.fcm-title-text.fcm-title-split{white-space:normal;}'  
       + '.fcm-logo{max-width:16em;max-height:4.5em;object-fit:contain;}'  
-      + '.fcm-tagline{font-size:1.15em;opacity:.85;text-shadow:0 2px 8px rgba(0,0,0,.9);}'  
-      + '.fcm-badge{display:inline-flex;align-items:center;height:1.6em;padding:0 .55em;background:rgba(255,255,255,.08);color:#fff;font-size:1.05em;font-weight:600;border-radius:.35em;white-space:nowrap;border:1px solid rgba(255,255,255,.2);margin:.12em;}'  
-      + '.fcm-react-icon{width:1em;height:1em;flex-shrink:0;}'  
-      + 'body.fcm--open .full-start-new__buttons{margin-top:.6em!important;}'  
-      ;  
-    document.head.appendChild(style);  
+      + '.fcm-tagline{font-size:1.1em;opacity:.85;}'  
+      + '.fcm-status{font-size:.95em;opacity:.9;}'  
+      + '.fcm-badge{display:inline-flex;align-items:center;font-size:.95em;opacity:.95;}'  
+      + '.fcm-badge+.fcm-badge{margin-left:.5em;}'  
+      + '.fcm-row--info .fcm-badge:not(:last-child)::after,'  
+      + '.fcm-row--rate .fcm-badge:not(:last-child)::after,'  
+      + '.fcm-row--prod .fcm-badge:not(:last-child)::after{content:"\u2022";margin:0 .5em;opacity:.6;}'  
+      + '.fcm-react-icon{width:1em;height:1em;}'  
+      + '.fcm-reactions-badge{font-size:.95em;}';  
+  }  
+  
+  function applyThemeStyle() {  
+    var css = buildStyleCss(getInterfaceRgb());  
+    if (!styleTag) {  
+      styleTag = document.createElement('style');  
+      styleTag.id = 'fcm-theme-style';  
+      document.head.appendChild(styleTag);  
+    }  
+    styleTag.textContent = css;  
+  }  
+  
+  function init() {  
+    if (Lampa.Platform.screen('tv')) return; // только мобильные/тач-устройства  
+  
+    applyThemeStyle();  
+  
+    // Если сменится тема (чёрная/обычная, кастомная CSS-тема) — пересоберём цвет  
+    Lampa.Storage.listener.follow('change', function(event) {  
+      if (event.name === 'black_style' || event.name === 'cub_theme') {  
+        setTimeout(applyThemeStyle, 50); // небольшая задержка, чтобы класс/CSS темы успел применится  
+      }  
+    });  
   
     var currentToken = null;  
     var currentFullComp = null;  
-    var fullTimer;  
+    var currentKP = null;  
+    var currentQuality = null;  
+    var fullTimer = null;  
   
     Lampa.Listener.follow('full', function(e) {  
       if (e.type !== 'complite') return;  
   
-      var fullComp = e.link;  
+      var fullComp = e.object;  
+      if (!fullComp || !fullComp.render) return;  
+  
       var token = {};  
       currentToken = token;  
-      currentFullComp = fullComp;  
-  
-      $('body').addClass('fcm--open');  
+      currentKP = null;  
+      currentQuality = null;  
   
       clearTimeout(fullTimer);  
       fullTimer = setTimeout(function() {  
         if (currentToken !== token) return;  
   
-        var render = fullComp.render ? fullComp.render() : fullComp.activity.render();  
+        var render = fullComp.render();  
         var right = render.find('.full-start-new__right');  
         if (!right.length) return;  
   
         var movie = (e.data && e.data.movie) || {};  
         var mediaType = movie.name ? 'tv' : 'movie';  
   
-        var titleEl = right.find('.full-start-new__title');  
-        var taglineEl = right.find('.full--tagline');  
-        var buttons = right.find('.full-start-new__buttons');  
+        var titleEl = render.find('.full-start-new__title');  
+        var taglineEl = render.find('.full--tagline');  
   
-        // ---------- Строка 1: название/логотип ----------  
+        // ---------- Строка 1: Название / логотип ----------  
         var rowTitle = $('<div class="fcm-row fcm-row--title"></div>');  
-        var titleSpan = $('<span class="fcm-title-text"></span>');  
+        var titleSpan = $('<div class="fcm-title-text"></div>');  
         rowTitle.append(titleSpan);  
   
-        // ---------- Строка 2: слоган ----------  
+        // ---------- Строка 2: Слоган ----------  
         var rowTagline = $('<div class="fcm-row fcm-row--tagline"></div>');  
         var taglineText = (movie.tagline || '').trim();  
-        if (taglineText) {  
-          rowTagline.append($('<span class="fcm-tagline"></span>').text(taglineText));  
-        } else {  
-          rowTagline.hide();  
-        }  
+        if (taglineText) rowTagline.append($('<span class="fcm-tagline"></span>').text(taglineText));  
   
-        // ---------- Строка 3: статус (сериал — всегда, фильм — только если не вышел) ----------  
+        // ---------- Строка 3: Статус (сериал — всегда, фильм — только если не вышел) ----------  
         var rowStatus = $('<div class="fcm-row fcm-row--status"></div>');  
-        var isTv = !!movie.name;  
-        var status = movie.status || '';  
-        var showStatusRow = false;  
+        var isSerial = !!movie.name;  
+        var status = (movie.status || '').trim();  
         if (status) {  
-          if (isTv) showStatusRow = true;  
-          else if (status.toLowerCase() !== 'released') showStatusRow = true;  
-        }  
-        if (showStatusRow) {  
-          rowStatus.append($('<span class="fcm-badge"></span>').text(tvStatusLabel(status)));  
-        } else {  
-          rowStatus.hide();  
+          var showStatusRow3 = isSerial || status.toLowerCase() !== 'released';  
+          if (showStatusRow3) rowStatus.append($('<span class="fcm-status"></span>').text(tvStatusLabel(status)));  
         }  
   
-        // ---------- Строка 4: год • время • страны • статус(если фильм вышел) • quality ----------  
-        var relise = (movie.release_date || movie.first_air_date || '') + '';  
-        var year = relise ? relise.slice(0, 4) : '';  
-        var runtimeText = movie.runtime > 0 ? Lampa.Utils.secondsToTime(movie.runtime * 60, true) : '';  
-        var countries = (movie.production_countries || []).slice(0, 2).map(function(c) {  
-          return Lampa.Lang.translate('country_' + (c.iso_3166_1 || '').toLowerCase()) || c.name;  
-        }).filter(Boolean);  
-        var currentQuality = null;  
-  
-        var infoParts = [];  
-        if (year) infoParts.push(year);  
-        if (runtimeText) infoParts.push(runtimeText);  
-        if (countries.length) infoParts.push(countries.join(', '));  
-        if (!isTv && status && status.toLowerCase() === 'released') infoParts.push(tvStatusLabel(status));  
-  
+        // ---------- Строка 4: Год • Время • Страны • Статус(для фильма, если вышел) • Quality ----------  
         var row4 = $('<div class="fcm-row fcm-row--info"></div>');  
-        var badge4 = $('<span class="fcm-badge"></span>');  
-        row4.append(badge4);  
-  
         function rebuildRow4() {  
-          var parts = infoParts.slice();  
-          if (currentQuality) parts.push(currentQuality);  
-          if (parts.length) {  
-            badge4.text(parts.join(' \u2022 '));  
-            row4.show();  
-          } else {  
-            row4.hide();  
+          row4.empty();  
+          var parts = [];  
+  
+          var relise = (movie.release_date || movie.first_air_date || '') + '';  
+          var year = relise ? relise.slice(0, 4) : '';  
+          if (year) parts.push(year);  
+  
+          if (movie.runtime > 0) {  
+            var h = Math.floor(movie.runtime / 60);  
+            var m = movie.runtime % 60;  
+            parts.push((h ? h + '\u0447' : '') + m + '\u043C');  
           }  
+  
+          var countries = (movie.production_countries || []).slice(0, 2).map(function(c) {  
+            return Lampa.Lang.translate('country_' + (c.iso_3166_1 || '').toLowerCase()) || c.name;  
+          }).filter(Boolean);  
+          if (countries.length) parts.push(countries.join(', '));  
+  
+          if (!isSerial && status && status.toLowerCase() === 'released') {  
+            parts.push(tvStatusLabel(status));  
+          }  
+  
+          if (currentQuality) parts.push(currentQuality);  
+  
+          parts.forEach(function(p) { row4.append($('<span class="fcm-badge"></span>').text(p)); });  
         }  
         rebuildRow4();  
   
-        // ---------- Строка 5: рейтинг • жанры • возраст ----------  
-        var tmdbRating = parseFloat((movie.vote_average || 0) + '');  
-        var genreLabels = getGenreLabels(movie, 2);  
-        var pg = '';  
-        try { pg = Lampa.TMDB.parsePG(movie) || ''; } catch (err) {}  
-  
-        var currentKP = null;  
+        // ---------- Строка 5: Рейтинг (KP приоритетнее) • Жанры • PG ----------  
         var row5 = $('<div class="fcm-row fcm-row--rate"></div>');  
-        var badge5 = $('<span class="fcm-badge"></span>');  
-        row5.append(badge5);  
-  
         function rebuildRow5() {  
+          row5.empty();  
           var parts = [];  
-          if (currentKP !== null && currentKP >= 1) parts.push(currentKP.toFixed(1) + ' KP');  
-          else if (tmdbRating >= 1) parts.push(tmdbRating.toFixed(1) + ' TMDB');  
-          if (genreLabels.length) parts.push(genreLabels.join(', '));  
+  
+          var rating = currentKP ? (currentKP + ' KP') : (movie.vote_average ? parseFloat(movie.vote_average).toFixed(1) + ' TMDB' : '');  
+          if (rating) parts.push(rating);  
+  
+          var genres = getGenreLabels(movie, 2);  
+          if (genres.length) parts.push(genres.join(', '));  
+  
+          var pg = render.find('.full-start__pg').text().trim();  
           if (pg) parts.push(pg);  
-          if (parts.length) {  
-            badge5.text(parts.join(' \u2022 '));  
-            row5.show();  
-          } else {  
-            row5.hide();  
-          }  
+  
+          parts.forEach(function(p) { row5.append($('<span class="fcm-badge"></span>').text(p)); });  
         }  
         rebuildRow5();  
   
-        // ---------- Строка 6: производство • бюджет • реакции ----------  
+        // ---------- Строка 6: Производство • Бюджет • Реакции ----------  
         var companies = (movie.production_companies || []).slice(0, 2).map(function(c) { return c.name; }).filter(Boolean);  
         var budgetText = formatBudget(movie.budget);  
   
@@ -262,6 +280,9 @@
   
         var reactEl = buildReactionsEl(e.data && e.data.reactions);  
         if (reactEl) row6.append(reactEl);  
+  
+        // ---------- Строка 7: Кнопки ----------  
+        var buttons = render.find('.full-start-new__buttons');  
   
         // ---------- Сборка ----------  
         right.find('.fcm-row').remove();  
@@ -336,6 +357,7 @@
     Lampa.Listener.follow('activity', function(e) {  
       if (e.type === 'archive' && e.component === 'full') {  
         $('body').addClass('fcm--open');  
+        applyThemeStyle(); // на случай, если тема сменилась пока карточка была закрыта  
         currentFullComp = e.object && e.object.activity && e.object.activity.component;  
       }  
       if (e.type === 'destroy' && e.component === 'full') {  
