@@ -85,28 +85,39 @@
   function init() {  
     if (Lampa.Platform.screen('tv')) return; // только мобильные/тач-устройства  
   
+    // Цвет затемнения берём из текущей темы (чёрная/серая)  
+    var isBlack = Lampa.Storage.field('black_style');  
+    var baseRgb = isBlack ? '0,0,0' : '26,26,26';  
+  
     var style = document.createElement('style');  
     style.textContent = ''  
-      // ---- Показываем картинку целиком, без обрезки ----  
-      // Снимаем фиксированную высоту (padding-bottom) с постера и убираем cover-обрезку  
-      + 'body.fcm--open .full-start-new__poster{padding-bottom:0!important;height:auto!important;background:#000!important;}'  
-      + 'body.fcm--open .full-start-new__poster .full-start-new__img{position:static!important;width:100%!important;height:auto!important;object-fit:contain!important;border-radius:0!important;opacity:1!important;transform:none!important;}'  
-  
-      // ---- Опускаем панель ближе к низу картинки, убираем "ровный" срез ----  
-      // Уменьшаем наезд (было -20vh) и убираем скругления, растягиваем градиент  
-      + 'body.fcm--open .full-start-new__right{'  
-        + 'margin-top:-3em!important;'  
-        + 'position:relative!important;'  
-        + 'z-index:1!important;'  
-        + 'border-radius:0!important;'  
-        + 'padding-top:3em!important;'  
+      // ---- НЕ трогаем родную геометрию постера/картинки (padding-bottom, object-fit:cover) ----  
+      // Затемнение рисуем отдельным слоем над картинкой через ::after, а не схлопыванием высоты  
+      + 'body.fcm--open .full-start-new__poster{position:relative!important;overflow:hidden!important;}'  
+      + 'body.fcm--open .full-start-new__poster::after{'  
+        + 'content:""!important;'  
+        + 'position:absolute!important;'  
+        + 'left:0!important;right:0!important;bottom:0!important;'  
+        + 'height:60%!important;'  
         + 'background:linear-gradient(to bottom,'  
-          + 'rgba(0,0,0,0) 0%,'  
-          + 'rgba(0,0,0,0.35) 12%,'  
-          + 'rgba(0,0,0,0.65) 30%,'  
-          + 'rgba(0,0,0,0.85) 55%,'  
-          + 'rgba(0,0,0,0.95) 100%'  
+          + 'rgba(' + baseRgb + ',0) 0%,'  
+          + 'rgba(' + baseRgb + ',0.25) 25%,'  
+          + 'rgba(' + baseRgb + ',0.55) 50%,'  
+          + 'rgba(' + baseRgb + ',0.85) 75%,'  
+          + 'rgba(' + baseRgb + ',1) 100%'  
         + ')!important;'  
+        + 'pointer-events:none!important;'  
+        + 'z-index:1!important;'  
+      + '}'  
+  
+      // ---- Панель текста плавно продолжает цвет темы, без "ровного" среза ----  
+      + 'body.fcm--open .full-start-new__right{'  
+        + 'position:relative!important;'  
+        + 'z-index:2!important;'  
+        + 'margin-top:-2em!important;'  
+        + 'border-radius:0!important;'  
+        + 'background:rgb(' + baseRgb + ')!important;'  
+        + 'padding-top:0.6em!important;'  
       + '}'  
   
       + 'body.fcm--open .full-start-new__right{display:flex!important;flex-direction:column!important;align-items:center!important;text-align:center!important;}'  
@@ -118,7 +129,7 @@
       + '.fcm-title-text.fcm-title-split{white-space:normal;}'  
       + '.fcm-logo{max-width:16em;max-height:4.5em;object-fit:contain;}'  
       + '.fcm-tagline{font-size:1.15em;opacity:.85;text-shadow:0 2px 8px rgba(0,0,0,.9);}'  
-      + '.fcm-badge{display:inline-flex;align-items:center;height:1.6em;padding:0 .55em;background:rgba(0,0,0,.6);color:#fff;font-size:1.05em;font-weight:600;border-radius:.35em;white-space:nowrap;border:1px solid rgba(255,255,255,.2);margin:.12em;}'  
+      + '.fcm-badge{display:inline-flex;align-items:center;height:1.6em;padding:0 .55em;background:rgba(255,255,255,.08);color:#fff;font-size:1.05em;font-weight:600;border-radius:.35em;white-space:nowrap;border:1px solid rgba(255,255,255,.2);margin:.12em;}'  
       + '.fcm-react-icon{width:1em;height:1em;flex-shrink:0;}'  
       + 'body.fcm--open .full-start-new__buttons{margin-top:.6em!important;}'  
       ;  
@@ -167,16 +178,16 @@
         var countries = (movie.production_countries || []).slice(0, 2).map(function(c) {  
           var k = 'country_' + (c.iso_3166_1 || '').toLowerCase();  
           var t = Lampa.Lang.translate(k);  
-          return (t && t !== k) ? t : (c.iso_3166_1 || '');  
+          return (t && t !== k) ? t : (c.name || '');  
         }).filter(Boolean);  
   
-        var genreLabels = getGenreLabels(movie, 2);  
-        var tmdbRating = movie.vote_average ? parseFloat(movie.vote_average) : 0;  
-  
         var status = movie.status || '';  
-        var movieReleased = !isTv && status.toLowerCase() === 'released';  
+        var movieReleased = status.toLowerCase() === 'released';  
   
-        // ---------- Строка 1: Название ----------  
+        var tmdbRating = parseFloat((movie.vote_average || 0) + '');  
+        var genreLabels = getGenreLabels(movie, 2);  
+  
+        // ---------- Строка 1: Название / логотип ----------  
         var rowTitle = $('<div class="fcm-row fcm-row--title"></div>');  
         var titleSpan = $('<span class="fcm-title-text"></span>');  
         rowTitle.append(titleSpan);  
