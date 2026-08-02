@@ -48,6 +48,13 @@
         return Lampa.Lang.translate('tv_status_' + status.toLowerCase().replace(/ /g, '_'));  
     }  
   
+    function formatRuntime(minutesTotal) {  
+        if (!minutesTotal || minutesTotal <= 0) return '';  
+        var hours = Math.floor(minutesTotal / 60);  
+        var minutes = minutesTotal % 60;  
+        return (hours > 0 ? hours + '\u0447 ' : '') + minutes + '\u043C';  
+    }  
+  
     function formatBudget(budget) {  
         if (!budget || budget <= 0) return '';  
         if (budget >= 1000000) return Math.round(budget / 1000000) + 'm $';  
@@ -100,7 +107,7 @@
         }  
   
         styleEl.textContent =  
-            'body.fcm--open .full-start-new__poster{position:relative!important;overflow:hidden!important;}' +  
+            'body.fcm--open .full-start-new__poster{position:relative!important;overflow:hidden!important;padding-bottom:150%!important;background:transparent!important;}' +  
             'body.fcm--open .full-start-new__poster::after{' +  
                 'content:""!important;' +  
                 'position:absolute!important;' +  
@@ -255,7 +262,7 @@
   
                 var relise = (movie.release_date || movie.first_air_date || '') + '';  
                 var year = relise ? relise.slice(0, 4) : '';  
-                var runtimeText = movie.runtime > 0 ? Lampa.Utils.secondsToTime(movie.runtime * 60, true) : '';  
+                var runtimeText = formatRuntime(movie.runtime);  
                 var countries = (movie.production_countries || []).slice(0, 2).map(function (country) {  
                     return Lampa.Lang.translate('country_' + (country.iso_3166_1 || '').toLowerCase()) || country.name;  
                 }).filter(Boolean);  
@@ -285,10 +292,10 @@
   
                 var tmdbRating = movie.vote_average ? parseFloat(movie.vote_average) : 0;  
                 var genreLabels = getGenreLabels(movie, 2);  
-                var pg = Lampa.TMDB && typeof Lampa.TMDB.parsePG === 'function' ? (Lampa.TMDB.parsePG(movie) || '') : '';  
   
                 var currentKP = null;  
                 var currentImdb = null;  
+                var currentPg = null;  
   
                 var row5 = $('<div class="fcm-row fcm-row--rate"></div>');  
                 var badge5 = $('<span class="fcm-badge"></span>');  
@@ -302,7 +309,7 @@
   
                     var parts = ratingParts.slice();  
                     if (genreLabels.length) parts.push(genreLabels.join(', '));  
-                    if (pg) parts.push(pg);  
+                    if (currentPg) parts.push(currentPg);  
   
                     if (parts.length) {  
                         badge5.text(parts.join(' \u2022 '));  
@@ -354,6 +361,11 @@
                     var val = parseFloat(el.find('> div').eq(0).text().replace(',', '.'));  
                     return (!isNaN(val) && val > 0) ? val : null;  
                 }, function (val) { currentImdb = val; rebuildRow5(); }, 0);  
+  
+                pollEl('.full-start__pg:not(.hide)', function (el) {  
+                    var val = el.first().text().trim();  
+                    return val || null;  
+                }, function (val) { currentPg = val; rebuildRow5(); }, 0);  
   
                 setTimeout(function () {  
                     pollEl('.tag--quality', function (el) {  
