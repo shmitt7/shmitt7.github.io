@@ -85,36 +85,36 @@
   function init() {  
     if (Lampa.Platform.screen('tv')) return; // только мобильные/тач-устройства  
   
-    // Цвет затемнения берём из текущей темы (чёрная/серая)  
+    // Цвет затемнения берём из реального фона приложения:  
+    // обычная (серая) тема — #1d1f20 (rgb(29,31,32)), чёрная — #000  
     var isBlack = Lampa.Storage.field('black_style');  
-    var baseRgb = isBlack ? '0,0,0' : '26,26,26';  
+    var baseRgb = isBlack ? '0,0,0' : '29,31,32';  
   
     var style = document.createElement('style');  
     style.textContent = ''  
       // ---- НЕ трогаем родную геометрию постера/картинки (padding-bottom, object-fit:cover) ----  
-      // Затемнение рисуем отдельным слоем над картинкой через ::after, а не схлопыванием высоты  
       + 'body.fcm--open .full-start-new__poster{position:relative!important;overflow:hidden!important;}'  
+  
+      // ---- Затемнение отдельным слоем над картинкой, без blur, начинается ниже (меньшая высота зоны) ----  
       + 'body.fcm--open .full-start-new__poster::after{'  
         + 'content:""!important;'  
         + 'position:absolute!important;'  
         + 'left:0!important;right:0!important;bottom:0!important;'  
-        + 'height:60%!important;'  
+        + 'height:38%!important;'  
         + 'background:linear-gradient(to bottom,'  
           + 'rgba(' + baseRgb + ',0) 0%,'  
-          + 'rgba(' + baseRgb + ',0.25) 25%,'  
-          + 'rgba(' + baseRgb + ',0.55) 50%,'  
-          + 'rgba(' + baseRgb + ',0.85) 75%,'  
+          + 'rgba(' + baseRgb + ',0.5) 55%,'  
           + 'rgba(' + baseRgb + ',1) 100%'  
         + ')!important;'  
         + 'pointer-events:none!important;'  
         + 'z-index:1!important;'  
       + '}'  
   
-      // ---- Панель текста плавно продолжает цвет темы, без "ровного" среза ----  
+      // ---- Панель текста поднята выше, заходит на картинку (было -2em) ----  
       + 'body.fcm--open .full-start-new__right{'  
         + 'position:relative!important;'  
         + 'z-index:2!important;'  
-        + 'margin-top:-2em!important;'  
+        + 'margin-top:-6em!important;'  
         + 'border-radius:0!important;'  
         + 'background:rgb(' + baseRgb + ')!important;'  
         + 'padding-top:0.6em!important;'  
@@ -153,64 +153,61 @@
       fullTimer = setTimeout(function() {  
         if (currentToken !== token) return;  
   
-        var render = fullComp.render();  
+        var render = fullComp.render ? fullComp.render() : fullComp.activity.render();  
         var right = render.find('.full-start-new__right');  
-        var titleEl = render.find('.full-start-new__title');  
-        var taglineEl = render.find('.full--tagline');  
-        var buttons = render.find('.full-start-new__buttons');  
+        if (!right.length) return;  
   
-        if (!right.length || !titleEl.length || !buttons.length) return;  
+        var movie = (e.data && e.data.movie) || {};  
+        var mediaType = movie.name ? 'tv' : 'movie';  
   
-        var movie = e.data.movie || {};  
-        var isTv = !!movie.first_air_date;  
-        var mediaType = isTv ? 'tv' : 'movie';  
+        var titleEl = right.find('.full-start-new__title');  
+        var taglineEl = right.find('.full--tagline');  
+        var buttons = right.find('.full-start-new__buttons');  
   
-        var relDate = movie.release_date || movie.first_air_date || '';  
-        var year = relDate ? relDate.slice(0, 4) : '';  
-  
-        var runtimeRaw = (movie.episode_run_time || [])[0] || movie.runtime || 0;  
-        var hours = Math.floor(runtimeRaw / 60);  
-        var minutes = runtimeRaw % 60;  
-        var runtime = runtimeRaw ? (hours > 0 ? hours + '\u0447 ' : '') + minutes + '\u043C' : '';  
-  
-        var pg = render.find('.full-start__pg').not('.hide').text().trim();  
-  
-        var countries = (movie.production_countries || []).slice(0, 2).map(function(c) {  
-          var k = 'country_' + (c.iso_3166_1 || '').toLowerCase();  
-          var t = Lampa.Lang.translate(k);  
-          return (t && t !== k) ? t : (c.name || '');  
-        }).filter(Boolean);  
-  
-        var status = movie.status || '';  
-        var movieReleased = status.toLowerCase() === 'released';  
-  
-        var tmdbRating = parseFloat((movie.vote_average || 0) + '');  
-        var genreLabels = getGenreLabels(movie, 2);  
-  
-        // ---------- Строка 1: Название / логотип ----------  
+        // ---------- Строка 1: название/логотип ----------  
         var rowTitle = $('<div class="fcm-row fcm-row--title"></div>');  
         var titleSpan = $('<span class="fcm-title-text"></span>');  
         rowTitle.append(titleSpan);  
   
-        // ---------- Строка 2: Слоган ----------  
+        // ---------- Строка 2: слоган ----------  
         var rowTagline = $('<div class="fcm-row fcm-row--tagline"></div>');  
-        var taglineText = taglineEl.text().trim();  
-        if (taglineText) rowTagline.append($('<span class="fcm-tagline"></span>').text(taglineText));  
-  
-        // ---------- Строка 3: Статус (сериал — всегда, фильм — только если не вышел) ----------  
-        var rowStatus = $('<div class="fcm-row fcm-row--status"></div>');  
-        if (status && !(!isTv && movieReleased)) {  
-          rowStatus.append($('<span class="fcm-badge"></span>').text(tvStatusLabel(status)));  
+        var taglineText = (movie.tagline || '').trim();  
+        if (taglineText) {  
+          rowTagline.append($('<span class="fcm-tagline"></span>').text(taglineText));  
+        } else {  
+          rowTagline.hide();  
         }  
   
-        // ---------- Строка 4: год • время • страны • статус(фильм) • качество ----------  
+        // ---------- Строка 3: статус (сериал — всегда, фильм — только если не вышел) ----------  
+        var rowStatus = $('<div class="fcm-row fcm-row--status"></div>');  
+        var isTv = !!movie.name;  
+        var status = movie.status || '';  
+        var showStatusRow = false;  
+        if (status) {  
+          if (isTv) showStatusRow = true;  
+          else if (status.toLowerCase() !== 'released') showStatusRow = true;  
+        }  
+        if (showStatusRow) {  
+          rowStatus.append($('<span class="fcm-badge"></span>').text(tvStatusLabel(status)));  
+        } else {  
+          rowStatus.hide();  
+        }  
+  
+        // ---------- Строка 4: год • время • страны • статус(если фильм вышел) • quality ----------  
+        var relise = (movie.release_date || movie.first_air_date || '') + '';  
+        var year = relise ? relise.slice(0, 4) : '';  
+        var runtimeText = movie.runtime > 0 ? Lampa.Utils.secondsToTime(movie.runtime * 60, true) : '';  
+        var countries = (movie.production_countries || []).slice(0, 2).map(function(c) {  
+          return Lampa.Lang.translate('country_' + (c.iso_3166_1 || '').toLowerCase()) || c.name;  
+        }).filter(Boolean);  
+        var currentQuality = null;  
+  
         var infoParts = [];  
         if (year) infoParts.push(year);  
-        if (runtime) infoParts.push(runtime);  
+        if (runtimeText) infoParts.push(runtimeText);  
         if (countries.length) infoParts.push(countries.join(', '));  
-        if (!isTv && status) infoParts.push(tvStatusLabel(status));  
+        if (!isTv && status && status.toLowerCase() === 'released') infoParts.push(tvStatusLabel(status));  
   
-        var currentQuality = null;  
         var row4 = $('<div class="fcm-row fcm-row--info"></div>');  
         var badge4 = $('<span class="fcm-badge"></span>');  
         row4.append(badge4);  
@@ -228,6 +225,11 @@
         rebuildRow4();  
   
         // ---------- Строка 5: рейтинг • жанры • возраст ----------  
+        var tmdbRating = parseFloat((movie.vote_average || 0) + '');  
+        var genreLabels = getGenreLabels(movie, 2);  
+        var pg = '';  
+        try { pg = Lampa.TMDB.parsePG(movie) || ''; } catch (err) {}  
+  
         var currentKP = null;  
         var row5 = $('<div class="fcm-row fcm-row--rate"></div>');  
         var badge5 = $('<span class="fcm-badge"></span>');  
