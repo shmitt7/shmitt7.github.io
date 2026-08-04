@@ -98,8 +98,9 @@
         return Lampa.Storage.field('black_style') ? '0,0,0' : '29,31,32';  
     }  
   
-    function applyThemeStyle() {  
+    function applyThemeStyle(gradientPercent) {  
         var baseRgb = getInterfaceRgb();  
+        var gp = gradientPercent || 32;  
   
         if (!styleEl) {  
             styleEl = document.createElement('style');  
@@ -112,7 +113,7 @@
                 'content:""!important;' +  
                 'position:absolute!important;' +  
                 'left:0!important;right:0!important;bottom:0!important;' +  
-                'height:32%!important;' +  
+                'height:' + gp + '%!important;' +  
                 'background:linear-gradient(to bottom,rgba(' + baseRgb + ',0) 0%,rgba(' + baseRgb + ',1) 100%)!important;' +  
                 'pointer-events:none!important;' +  
                 'z-index:1!important;' +  
@@ -120,7 +121,6 @@
             'body.fcm--open .full-start-new__right{' +  
                 'position:relative!important;' +  
                 'z-index:2!important;' +  
-                'margin-top:-6em!important;' +  
                 'border-radius:0!important;' +  
                 'background:rgb(' + baseRgb + ')!important;' +  
                 'padding-top:0.6em!important;' +  
@@ -135,6 +135,7 @@
             '.fcm-logo{max-width:16em;max-height:4.5em;object-fit:contain;}' +  
             '.fcm-tagline{font-size:1.15em;opacity:.85;text-shadow:0 2px 8px rgba(0,0,0,.9);}' +  
             '.fcm-badge{display:inline-flex;align-items:center;height:1.6em;padding:0 .55em;background:rgba(255,255,255,.08);color:#fff;font-size:1.05em;font-weight:600;border-radius:.35em;white-space:nowrap;border:1px solid rgba(255,255,255,.2);margin:.12em;}' +  
+            '.fcm-row--next-episode .fcm-badge{font-size:0.9em;max-width:92%;white-space:normal;text-align:center;}' +  
             '.fcm-react-icon{width:1em;height:1em;flex-shrink:0;}' +  
             'body.fcm--open .full-start-new__buttons{margin-top:.6em!important;}';  
     }  
@@ -192,6 +193,7 @@
                 }  
   
                 var rowStatus = $('<div class="fcm-row fcm-row--status"></div>');  
+                var rowNextEpisode = $('<div class="fcm-row fcm-row--next-episode"></div>');  
   
                 if (isTv) {  
                     var lastEpisode = movie.last_episode_to_air;  
@@ -242,14 +244,19 @@
                         serialParts.push(Lampa.Lang.translate('title_episodes') + ': ' + episodesText);  
                     }  
   
-                    if (hasNextEpisode) serialParts.push(nextEpisodeText);  
-  
                     if (serialParts.length) {  
                         rowStatus.append($('<span class="fcm-badge"></span>').text(serialParts.join(' \u2022 ')));  
                     } else {  
                         rowStatus.hide();  
                     }  
+  
+                    if (hasNextEpisode) {  
+                        rowNextEpisode.append($('<span class="fcm-badge"></span>').text(nextEpisodeText));  
+                    } else {  
+                        rowNextEpisode.hide();  
+                    }  
                 } else {  
+                    rowNextEpisode.hide();  
                     var movieStatus = movie.status || '';  
                     if (movieStatus && movieStatus.toLowerCase() !== 'released') {  
                         var movieParts = [tvStatusLabel(movieStatus)];  
@@ -336,10 +343,32 @@
                 right.append(rowTitle);  
                 right.append(rowTagline);  
                 right.append(rowStatus);  
+                right.append(rowNextEpisode);  
                 right.append(row4);  
                 right.append(row5);  
                 right.append(row6);  
                 right.append(buttons);  
+  
+                requestAnimationFrame(function () {  
+                    if (currentToken !== token) return;  
+  
+                    var posterEl = render.find('.full-start-new__poster');  
+                    var posterHeight = posterEl.outerHeight() || 0;  
+                    var contentHeight = right.outerHeight() || 0;  
+                    var navBar = document.body.classList.contains('true--mobile') ? $('.navigation-bar') : null;  
+                    var navBarHeight = (navBar && navBar.length && navBar.is(':visible')) ? navBar.outerHeight() : 0;  
+  
+                    var safeGap = 12;  
+                    var maxLift = Math.max(posterHeight * 0.6, 0);  
+                    var lift = Math.min(contentHeight + safeGap, maxLift);  
+  
+                    right.css('margin-top', -lift + 'px');  
+                    right.css('padding-bottom', (navBarHeight + safeGap) + 'px');  
+  
+                    var gradientPercent = posterHeight > 0 ? Math.min(70, Math.ceil((lift / posterHeight) * 100) + 6) : 32;  
+  
+                    applyThemeStyle(gradientPercent);  
+                });  
   
                 function pollEl(selector, extract, onFound, attempt) {  
                     if (currentToken !== token || attempt > 30) return;  
