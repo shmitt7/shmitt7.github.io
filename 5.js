@@ -98,6 +98,27 @@
         return Lampa.Storage.field('black_style') ? '0,0,0' : '29,31,32';  
     }  
   
+    function buildGradient(baseRgb) {  
+        return 'linear-gradient(to bottom,'  
+            + 'rgba(' + baseRgb + ',0) 0%,'  
+            + 'rgba(' + baseRgb + ',0.013) 8.1%,'  
+            + 'rgba(' + baseRgb + ',0.049) 15.5%,'  
+            + 'rgba(' + baseRgb + ',0.104) 22.5%,'  
+            + 'rgba(' + baseRgb + ',0.175) 29%,'  
+            + 'rgba(' + baseRgb + ',0.259) 35.3%,'  
+            + 'rgba(' + baseRgb + ',0.352) 41.2%,'  
+            + 'rgba(' + baseRgb + ',0.45) 47%,'  
+            + 'rgba(' + baseRgb + ',0.55) 53%,'  
+            + 'rgba(' + baseRgb + ',0.648) 58.8%,'  
+            + 'rgba(' + baseRgb + ',0.741) 64.7%,'  
+            + 'rgba(' + baseRgb + ',0.825) 71%,'  
+            + 'rgba(' + baseRgb + ',0.896) 77.5%,'  
+            + 'rgba(' + baseRgb + ',0.951) 84.5%,'  
+            + 'rgba(' + baseRgb + ',0.987) 91.9%,'  
+            + 'rgba(' + baseRgb + ',1) 100%'  
+            + ')';  
+    }  
+  
     function applyThemeStyle(gradientPercent) {  
         var baseRgb = getInterfaceRgb();  
         var gp = gradientPercent || 32;  
@@ -114,7 +135,7 @@
                 'position:absolute!important;' +  
                 'left:0!important;right:0!important;bottom:0!important;' +  
                 'height:' + gp + '%!important;' +  
-                'background:linear-gradient(to bottom,rgba(' + baseRgb + ',0) 0%,rgba(' + baseRgb + ',1) 100%)!important;' +  
+                'background:' + buildGradient(baseRgb) + '!important;' +  
                 'pointer-events:none!important;' +  
                 'z-index:1!important;' +  
             '}' +  
@@ -133,12 +154,13 @@
             '.fcm-title-text{font-size:2em;font-weight:600;line-height:1.15;text-shadow:0 2px 10px rgba(0,0,0,.9);}' +  
             '.fcm-title-text.fcm-title-split{white-space:normal;}' +  
             '.fcm-logo{max-width:16em;max-height:4.5em;object-fit:contain;}' +  
-            '.fcm-tagline{font-size:1.15em;opacity:.85;text-shadow:0 2px 8px rgba(0,0,0,.9);}' +  
-            '.fcm-badge{display:inline-flex;align-items:center;height:1.6em;padding:0 .55em;background:rgba(255,255,255,.08);color:#fff;font-size:1.05em;font-weight:600;border-radius:.35em;white-space:nowrap;border:1px solid rgba(255,255,255,.2);margin:.12em;}' +  
-            '.fcm-row--next-episode .fcm-badge{max-width:92%;white-space:normal;height:auto;text-align:center;}' +  
-            '.fcm-react-icon{width:1em;height:1em;flex-shrink:0;}' +  
-            'body.fcm--open .full-start-new__buttons{margin-top:.6em!important;}';  
+            '.fcm-tagline{font-size:1.15em;opacity:.85;}' +  
+            '.fcm-badge{font-size:1.05em;text-shadow:0 1px 6px rgba(0,0,0,.9);}' +  
+            '.fcm-row--next-episode .fcm-badge{max-width:92%;white-space:normal;height:auto;}' +  
+            '.fcm-react-icon{width:1.1em;height:1.1em;}';  
     }  
+  
+    applyThemeStyle();  
   
     function init() {  
         if (Lampa.Platform.screen('tv')) return;  
@@ -146,50 +168,42 @@
         window.lampa_settings = window.lampa_settings || {};  
         window.lampa_settings.blur_poster = false;  
   
-        applyThemeStyle(32);  
-  
-        Lampa.Storage.listener.follow('change', function (event) {  
-            if (event.name === 'black_style' || event.name === 'cub_theme') applyThemeStyle(32);  
-        });  
-  
         var currentToken = null;  
         var currentFullComp = null;  
-        var fullTimer;  
+        var fullTimer = null;  
+  
+        Lampa.Storage.listener.follow('change', function (event) {  
+            if (event.name === 'black_style') applyThemeStyle();  
+        });  
   
         Lampa.Listener.follow('full', function (e) {  
             if (e.type !== 'complite') return;  
   
-            var fullComp = e.link;  
+            clearTimeout(fullTimer);  
             var token = {};  
             currentToken = token;  
-            currentFullComp = fullComp;  
   
-            $('body').addClass('fcm--open');  
+            var fullComp = e.link;  
+            var render = e.body;  
+            var movie = e.data.movie;  
+            var mediaType = movie.name ? 'tv' : 'movie';  
+            var isTv = !!movie.name;  
   
-            clearTimeout(fullTimer);  
             fullTimer = setTimeout(function () {  
                 if (currentToken !== token) return;  
   
-                var render = fullComp.render ? fullComp.render() : fullComp.activity.render();  
                 var right = render.find('.full-start-new__right');  
-                if (!right.length) return;  
-  
-                var movie = (e.data && e.data.movie) || {};  
-                var mediaType = movie.name ? 'tv' : 'movie';  
-                var isTv = !!movie.name;  
-  
                 var titleEl = render.find('.full-start-new__title');  
+                var buttons = render.find('.full-start-new__buttons');  
+  
                 var rowTitle = $('<div class="fcm-row fcm-row--title"></div>');  
                 var titleSpan = $('<span class="fcm-title-text"></span>');  
                 rowTitle.append(titleSpan);  
   
-                var taglineText = movie.tagline || '';  
+                var tagline = movie.tagline || '';  
                 var rowTagline = $('<div class="fcm-row fcm-row--tagline"></div>');  
-                if (taglineText) {  
-                    rowTagline.append($('<span class="fcm-tagline"></span>').text(taglineText));  
-                } else {  
-                    rowTagline.hide();  
-                }  
+                if (tagline) rowTagline.append($('<span class="fcm-tagline"></span>').text(tagline));  
+                else rowTagline.hide();  
   
                 var rowStatus = $('<div class="fcm-row fcm-row--status"></div>');  
                 var rowNextEpisode = $('<div class="fcm-row fcm-row--next-episode"></div>');  
@@ -266,22 +280,12 @@
                     }  
                 }  
   
-                var relise = (movie.release_date || movie.first_air_date || '') + '';  
-                var year = relise ? relise.slice(0, 4) : '';  
-                var runtimeText = movie.runtime > 0 ? formatRuntime(movie.runtime) : '';  
-                var countries = (movie.production_countries || []).slice(0, 2).map(function (country) {  
-                    return Lampa.Lang.translate('country_' + (country.iso_3166_1 || '').toLowerCase()) || country.name;  
-                }).filter(Boolean);  
                 var currentQuality = null;  
-  
-                var infoParts = [];  
-                if (year) infoParts.push(year);  
-                if (runtimeText) infoParts.push(runtimeText);  
-                if (countries.length) infoParts.push(countries.join(', '));  
-                if (!isTv && movie.status && movie.status.toLowerCase() === 'released') infoParts.push(tvStatusLabel(movie.status));  
-  
-                var row4 = $('<div class="fcm-row fcm-row--info"></div>');  
+                var row4 = $('<div class="fcm-row fcm-row--extra"></div>');  
                 var badge4 = $('<span class="fcm-badge"></span>');  
+                var infoParts = [];  
+                var runtimeText = formatRuntime(movie.runtime || (movie.episode_run_time && movie.episode_run_time[0]) || 0);  
+                if (runtimeText) infoParts.push(runtimeText);  
                 row4.append(badge4);  
   
                 function rebuildRow4() {  
@@ -301,21 +305,17 @@
                 var currentKP = null;  
                 var currentImdb = null;  
                 var currentPg = null;  
-  
                 var row5 = $('<div class="fcm-row fcm-row--rate"></div>');  
                 var badge5 = $('<span class="fcm-badge"></span>');  
                 row5.append(badge5);  
   
                 function rebuildRow5() {  
-                    var ratingParts = [];  
-                    if (tmdbRating >= 1) ratingParts.push(tmdbRating.toFixed(1) + ' TMDB');  
-                    if (currentKP !== null && currentKP >= 1) ratingParts.push(currentKP.toFixed(1) + ' KP');  
-                    if (currentImdb !== null && currentImdb >= 1) ratingParts.push(currentImdb.toFixed(1) + ' IMDB');  
-  
-                    var parts = ratingParts.slice();  
+                    var parts = [];  
+                    if (tmdbRating >= 1) parts.push(tmdbRating.toFixed(1) + ' TMDB');  
+                    if (currentImdb !== null && currentImdb >= 1) parts.push(currentImdb.toFixed(1) + ' IMDB');  
+                    if (currentKP !== null && currentKP >= 1) parts.push(currentKP.toFixed(1) + ' KP');  
                     if (genreLabels.length) parts.push(genreLabels.join(', '));  
                     if (currentPg) parts.push(currentPg);  
-  
                     if (parts.length) {  
                         badge5.text(parts.join(' \u2022 '));  
                         row5.show();  
@@ -397,8 +397,6 @@
                         return el.first().text().trim() || null;  
                     }, function (val) { currentQuality = val; rebuildRow4(); }, 0);  
                 }, 300);  
-  
-                var buttons = render.find('.full-start-new__buttons');  
   
                 if (movie.id) {  
                     var rawText = titleEl.text().trim();  
