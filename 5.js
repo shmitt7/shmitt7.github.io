@@ -122,7 +122,7 @@
                 'position:relative!important;' +  
                 'z-index:2!important;' +  
                 'border-radius:0!important;' +  
-                'background:rgb(' + baseRgb + ')!important;' +  
+                'background:transparent!important;' +  
                 'padding-top:0.6em!important;' +  
             '}' +  
             'body.fcm--open .full-start-new__right{display:flex!important;flex-direction:column!important;align-items:center!important;text-align:center!important;}' +  
@@ -135,7 +135,7 @@
             '.fcm-logo{max-width:16em;max-height:4.5em;object-fit:contain;}' +  
             '.fcm-tagline{font-size:1.15em;opacity:.85;text-shadow:0 2px 8px rgba(0,0,0,.9);}' +  
             '.fcm-badge{display:inline-flex;align-items:center;height:1.6em;padding:0 .55em;background:rgba(255,255,255,.08);color:#fff;font-size:1.05em;font-weight:600;border-radius:.35em;white-space:nowrap;border:1px solid rgba(255,255,255,.2);margin:.12em;}' +  
-            '.fcm-row--next-episode .fcm-badge{font-size:0.9em;max-width:92%;white-space:normal;text-align:center;}' +  
+            '.fcm-row--next-episode .fcm-badge{max-width:92%;white-space:normal;height:auto;text-align:center;}' +  
             '.fcm-react-icon{width:1em;height:1em;flex-shrink:0;}' +  
             'body.fcm--open .full-start-new__buttons{margin-top:.6em!important;}';  
     }  
@@ -143,17 +143,18 @@
     function init() {  
         if (Lampa.Platform.screen('tv')) return;  
   
+        window.lampa_settings = window.lampa_settings || {};  
         window.lampa_settings.blur_poster = false;  
   
-        applyThemeStyle();  
+        applyThemeStyle(32);  
   
         Lampa.Storage.listener.follow('change', function (event) {  
-            if (event.name === 'black_style') applyThemeStyle();  
+            if (event.name === 'black_style' || event.name === 'cub_theme') applyThemeStyle(32);  
         });  
   
         var currentToken = null;  
         var currentFullComp = null;  
-        var fullTimer = null;  
+        var fullTimer;  
   
         Lampa.Listener.follow('full', function (e) {  
             if (e.type !== 'complite') return;  
@@ -174,18 +175,16 @@
                 if (!right.length) return;  
   
                 var movie = (e.data && e.data.movie) || {};  
+                var mediaType = movie.name ? 'tv' : 'movie';  
                 var isTv = !!movie.name;  
-                var mediaType = isTv ? 'tv' : 'movie';  
   
-                var titleEl = right.find('.full-start-new__title');  
-                var buttons = right.find('.full-start-new__buttons');  
-  
+                var titleEl = render.find('.full-start-new__title');  
                 var rowTitle = $('<div class="fcm-row fcm-row--title"></div>');  
                 var titleSpan = $('<span class="fcm-title-text"></span>');  
                 rowTitle.append(titleSpan);  
   
+                var taglineText = movie.tagline || '';  
                 var rowTagline = $('<div class="fcm-row fcm-row--tagline"></div>');  
-                var taglineText = (movie.tagline || '').trim();  
                 if (taglineText) {  
                     rowTagline.append($('<span class="fcm-tagline"></span>').text(taglineText));  
                 } else {  
@@ -269,7 +268,7 @@
   
                 var relise = (movie.release_date || movie.first_air_date || '') + '';  
                 var year = relise ? relise.slice(0, 4) : '';  
-                var runtimeText = formatRuntime(movie.runtime);  
+                var runtimeText = movie.runtime > 0 ? formatRuntime(movie.runtime) : '';  
                 var countries = (movie.production_countries || []).slice(0, 2).map(function (country) {  
                     return Lampa.Lang.translate('country_' + (country.iso_3166_1 || '').toLowerCase()) || country.name;  
                 }).filter(Boolean);  
@@ -297,9 +296,8 @@
                 }  
                 rebuildRow4();  
   
-                var tmdbRating = movie.vote_average ? parseFloat(movie.vote_average) : 0;  
+                var tmdbRating = parseFloat((movie.vote_average || 0) + '');  
                 var genreLabels = getGenreLabels(movie, 2);  
-  
                 var currentKP = null;  
                 var currentImdb = null;  
                 var currentPg = null;  
@@ -355,17 +353,15 @@
                     var posterEl = render.find('.full-start-new__poster');  
                     var posterHeight = posterEl.outerHeight() || 0;  
                     var contentHeight = right.outerHeight() || 0;  
-                    var navBar = document.body.classList.contains('true--mobile') ? $('.navigation-bar') : null;  
-                    var navBarHeight = (navBar && navBar.length && navBar.is(':visible')) ? navBar.outerHeight() : 0;  
   
                     var safeGap = 12;  
                     var maxLift = Math.max(posterHeight * 0.6, 0);  
                     var lift = Math.min(contentHeight + safeGap, maxLift);  
   
                     right.css('margin-top', -lift + 'px');  
-                    right.css('padding-bottom', (navBarHeight + safeGap) + 'px');  
+                    right.css('padding-bottom', '');  
   
-                    var gradientPercent = posterHeight > 0 ? Math.min(70, Math.ceil((lift / posterHeight) * 100) + 6) : 32;  
+                    var gradientPercent = posterHeight > 0 ? Math.min(78, Math.ceil((lift / posterHeight) * 100) + 12) : 32;  
   
                     applyThemeStyle(gradientPercent);  
                 });  
@@ -401,6 +397,8 @@
                         return el.first().text().trim() || null;  
                     }, function (val) { currentQuality = val; rebuildRow4(); }, 0);  
                 }, 300);  
+  
+                var buttons = render.find('.full-start-new__buttons');  
   
                 if (movie.id) {  
                     var rawText = titleEl.text().trim();  
