@@ -9,17 +9,17 @@
         '.card__icons-inner{background:none!important;border-radius:0!important;flex-direction:column!important}' +  
         '.card__icons-inner>.card__icon{margin-bottom:0.2em}' +  
         '.card__icon{filter:drop-shadow(0 1px 4px rgba(0,0,0,1)) drop-shadow(0 0 8px rgba(0,0,0,0.9))!important}' +  
-        '.card__overlay{position:absolute;left:0;right:0;bottom:0;padding:0.4em;display:flex;justify-content:space-between;align-items:flex-end;background:none;z-index:1;pointer-events:none}' +  
+        '.card__overlay{position:absolute;left:0;right:0;bottom:0;padding:0.15em;display:flex;justify-content:space-between;align-items:flex-end;background:none;z-index:1;pointer-events:none}' +  
         '.card__badge{display:flex;flex-wrap:nowrap;overflow:hidden}' +  
         '.card__badge:empty{display:none}' +  
-        '.card__badge-left{align-items:baseline;flex-shrink:1;min-width:0;overflow:hidden;background:rgba(0,0,0,0.65);border-radius:0.5em;padding:0.25em 0.55em}' +  
+        '.card__badge-left{align-items:baseline;flex-shrink:1;min-width:0;overflow:hidden;background:rgba(0,0,0,0.65);border:1px solid rgba(255,255,255,0.2);border-radius:0.35em;padding:0.25em 0.55em}' +  
         '.card__badge-left:empty{display:none}' +  
         '.card__badge-left>*+*{margin-left:0.3em}' +  
         '.card__badge-year{font-size:0.85em;color:#fff;flex-shrink:0}' +  
-        '.card__badge-left .card__status{position:static!important;left:auto!important;top:auto!important;bottom:auto!important;background:none!important;padding:0!important;border-radius:0!important;font-size:0.75em!important;display:flex!important;align-items:baseline!important;pointer-events:none;white-space:nowrap;flex-shrink:1;min-width:0;overflow:hidden}' +  
+        '.card__badge-left .card__status{position:static!important;left:auto!important;top:auto!important;bottom:auto!important;background:none!important;padding:0!important;border-radius:0!important;font-size:0.85em!important;display:flex!important;align-items:baseline!important;pointer-events:none;white-space:nowrap;flex-shrink:1;min-width:0;overflow:hidden}' +  
         '.card__badge-left .card__status .tvs-icon{font-size:1.1em;margin-right:0.2em;flex-shrink:0}' +  
         '.card__badge-left .card__status .tvs-text{font-size:1em;font-weight:600;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:1;min-width:0}' +  
-        '.card__badge-right{align-items:baseline;flex-shrink:0;margin-left:0.4em;background:rgba(0,0,0,0.65);border-radius:0.5em;padding:0.25em 0.55em}' +  
+        '.card__badge-right{align-items:baseline;flex-shrink:0;margin-left:0.4em;background:rgba(0,0,0,0.65);border:1px solid rgba(255,255,255,0.2);border-radius:0.35em;padding:0.25em 0.55em}' +  
         '.card__badge-right:empty{display:none}' +  
         '.card__badge-right>*+*{margin-left:0.4em}' +  
         '.card__badge-right .card__quality{position:static!important;left:auto!important;bottom:auto!important;padding:0!important;background:none!important;color:#ddd!important;font-size:1em!important;font-weight:700;border-radius:0!important}' +  
