@@ -2,15 +2,14 @@
     if (window.listCard) return;  
     window.listCard = true;  
     document.head.insertAdjacentHTML('beforeend', '<style>' +  
-        '.card__title{display:none!important}' +  
+        '.card__title{display:block!important;font-size:1em!important;max-height:none!important;line-height:1.25!important;margin-top:0.4em!important;overflow:hidden!important;text-overflow:ellipsis!important;display:-webkit-box!important;-webkit-line-clamp:1!important;line-clamp:1!important;-webkit-box-orient:vertical!important;white-space:nowrap!important}' +  
         '.card__age{display:none!important}' +  
         '.card.focus .card-watched{display:none!important}' +  
         '.card__icons{top:0.5em!important;left:auto!important;right:0.5em!important;justify-content:flex-end!important}' +  
         '.card__icons-inner{background:none!important;border-radius:0!important;flex-direction:column!important}' +  
         '.card__icons-inner>.card__icon{margin-bottom:0.2em}' +  
         '.card__icon{filter:drop-shadow(0 1px 4px rgba(0,0,0,1)) drop-shadow(0 0 8px rgba(0,0,0,0.9))!important}' +  
-        '.card__overlay{position:absolute;left:0;right:0;bottom:0;padding:3em 0.4em 0.25em 0.4em;background:linear-gradient(to bottom,rgba(0,0,0,0) 0%,rgba(0,0,0,0.55) 40%,rgba(0,0,0,0.97) 100%);border-bottom-left-radius:1em;border-bottom-right-radius:1em;z-index:1;pointer-events:none}' +  
-        '.card__overlay-title{font-size:1.35em;font-weight:600;line-height:1.1;color:#fff;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;line-clamp:2;-webkit-box-orient:vertical;margin-bottom:0.15em}' +  
+        '.card__overlay{position:absolute;left:0;right:0;bottom:0;padding:0.6em 0.4em 0.25em 0.4em;background:rgba(0,0,0,0.65);border-bottom-left-radius:1em;border-bottom-right-radius:1em;z-index:1;pointer-events:none}' +  
         '.card__status-row{display:flex;align-items:baseline;margin-bottom:0.15em;line-height:1;overflow:hidden;white-space:nowrap;min-width:0}' +  
         '.card__status-row:empty{display:none}' +  
         '.card__status-row .card__status{position:static!important;left:auto!important;top:auto!important;bottom:auto!important;background:none!important;padding:0!important;border-radius:0!important;font-size:1em!important;display:flex!important;align-items:baseline!important;pointer-events:none;white-space:nowrap}' +  
@@ -66,9 +65,7 @@
         card.dataset.listCard = '1';  
         var view = card.querySelector('.card__view');  
         if (!view) return;  
-        var titleEl = card.querySelector('.card__title');  
         var ageEl = card.querySelector('.card__age');  
-        if (titleEl) titleEl.style.display = 'none';  
         if (ageEl) ageEl.style.display = 'none';  
         var icons = card.querySelector('.card__icons');  
         if (icons) {  
@@ -78,10 +75,6 @@
         }  
         var overlay = document.createElement('div');  
         overlay.className = 'card__overlay';  
-        var overlayTitle = document.createElement('div');  
-        overlayTitle.className = 'card__overlay-title';  
-        overlayTitle.textContent = data.title || data.name || '';  
-        overlay.appendChild(overlayTitle);  
         var statusRow = document.createElement('div');  
         statusRow.className = 'card__status-row';  
         overlay.appendChild(statusRow);  
