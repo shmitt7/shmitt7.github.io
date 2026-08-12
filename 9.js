@@ -2,7 +2,7 @@
     if (window.listCard) return;  
     window.listCard = true;  
     document.head.insertAdjacentHTML('beforeend', '<style>' +  
-        '.card__title{display:block!important;font-size:1.3em!important;font-weight:600!important;max-height:none!important;line-height:1.2!important;margin-top:0.25em!important;overflow:hidden!important;text-overflow:ellipsis!important;display:-webkit-box!important;-webkit-line-clamp:2!important;line-clamp:2!important;-webkit-box-orient:vertical!important}' +  
+        '.card__title{display:block!important;font-size:1.3em!important;font-weight:600!important;max-height:none!important;line-height:1.2!important;margin-top:0.05em!important;overflow:hidden!important;text-overflow:ellipsis!important;display:-webkit-box!important;-webkit-line-clamp:2!important;line-clamp:2!important;-webkit-box-orient:vertical!important}' +  
         '.card__age{display:none!important}' +  
         '.card.focus .card-watched{display:none!important}' +  
         '.card__icons{top:0.5em!important;left:auto!important;right:0.5em!important;justify-content:flex-end!important}' +  
@@ -10,44 +10,40 @@
         '.card__icons-inner>.card__icon{margin-bottom:0.2em}' +  
         '.card__icon{filter:drop-shadow(0 1px 4px rgba(0,0,0,1)) drop-shadow(0 0 8px rgba(0,0,0,0.9))!important}' +  
         '.card__overlay{position:absolute;left:0;right:0;bottom:0;padding:0.6em 0.4em 0.25em 0.4em;background:linear-gradient(to bottom,rgba(0,0,0,0) 0%,rgba(0,0,0,0.7) 45%,rgba(0,0,0,0.7) 100%);border-bottom-left-radius:1em;border-bottom-right-radius:1em;z-index:1;pointer-events:none}' +  
-        '.card__badge{display:flex;flex-wrap:nowrap;align-items:baseline;width:100%;overflow:hidden}' +  
+        '.card__badge{display:flex;flex-wrap:nowrap;align-items:baseline;justify-content:space-between;width:100%;overflow:hidden}' +  
         '.card__badge:empty{display:none}' +  
+        '.card__badge-left{display:flex;align-items:baseline;flex-shrink:1;min-width:0;overflow:hidden}' +  
+        '.card__badge-left>*+*{margin-left:0.3em}' +  
         '.card__badge-year{font-size:0.85em;color:#fff;flex-shrink:0}' +  
-        '.card__badge .card__status{position:static!important;left:auto!important;top:auto!important;bottom:auto!important;background:none!important;padding:0!important;border-radius:0!important;font-size:0.75em!important;display:flex!important;align-items:baseline!important;pointer-events:none;white-space:nowrap;flex-shrink:0;min-width:0;overflow:hidden}' +  
-        '.card__badge .card__status .tvs-icon{font-size:1.1em;margin-right:0.2em;flex-shrink:0}' +  
-        '.card__badge .card__status .tvs-text{font-size:1em;font-weight:600;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:1;min-width:0}' +  
-        '.card__badge-genre,.card__badge .card__type{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-left:0.4em;color:#fff}' +  
-        '.card__badge-year+.card__status::before,.card__badge-year+.card__badge-genre::before,.card__badge-year+.card__type::before{content:"\u2022";margin-right:0.4em;color:#fff;font-size:0.85em}' +  
-        '.card__status+.card__badge-genre::before,.card__status+.card__type::before{content:"\u2022";margin-right:0.4em;color:#fff;font-size:0.85em}' +  
-        '.card__badge .card__type{position:static!important;top:auto!important;left:auto!important;background:none!important;padding:0!important;border-radius:0!important;font-size:0.85em!important;color:#fff!important}' +  
-        '.card__badge-right{display:flex;align-items:baseline;flex-shrink:0;margin-left:auto}' +  
+        '.card__badge-left .card__status{position:static!important;left:auto!important;top:auto!important;bottom:auto!important;background:none!important;padding:0!important;border-radius:0!important;font-size:0.75em!important;display:flex!important;align-items:baseline!important;pointer-events:none;white-space:nowrap;flex-shrink:1;min-width:0;overflow:hidden}' +  
+        '.card__badge-left .card__status .tvs-icon{font-size:1.1em;margin-right:0.2em;flex-shrink:0}' +  
+        '.card__badge-left .card__status .tvs-text{font-size:1em;font-weight:600;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:1;min-width:0}' +  
+        '.card__badge-right{display:flex;align-items:baseline;flex-shrink:0;margin-left:0.4em}' +  
         '.card__badge-right>*+*{margin-left:0.4em}' +  
         '.card__badge-right .card__quality{position:static!important;left:auto!important;bottom:auto!important;padding:0!important;background:none!important;color:#ddd!important;font-size:1em!important;font-weight:700;border-radius:0!important}' +  
         '.card__badge-right .card__quality>div{display:inline}' +  
         '.card__badge-right .card__vote{position:static!important;right:auto!important;bottom:auto!important;background:none!important;color:#ddd!important;font-size:1em!important;font-weight:700;padding:0!important;border-radius:0!important}' +  
         '.card__status,.card__type,.card__quality,.card__vote{visibility:hidden!important}' +  
-        '.card__badge .card__status,.card__badge .card__type,.card__badge-right .card__quality,.card__badge-right .card__vote{visibility:visible!important}' +  
+        '.card__badge-left .card__status,.card__badge-right .card__quality,.card__badge-right .card__vote{visibility:visible!important}' +  
     '</style>');  
     var WATCH_TIMEOUT = 8000;  
     var activeChildObservers = [];  
-    function relocateExisting(view, badge, badgeRight) {  
+    function relocateExisting(view, badgeLeft, badgeRight) {  
         var status = view.querySelector('.card__status');  
-        var type = view.querySelector('.card__type');  
         var quality = view.querySelector('.card__quality');  
         var vote = view.querySelector('.card__vote');  
-        if (status && status.parentNode !== badge) badge.insertBefore(status, badgeRight);  
-        if (type && type.parentNode !== badge) badge.insertBefore(type, badgeRight);  
+        if (status && status.parentNode !== badgeLeft) badgeLeft.appendChild(status);  
         if (quality && (quality.parentNode !== badgeRight || quality.nextSibling !== vote)) {  
             badgeRight.insertBefore(quality, vote && vote.parentNode === badgeRight ? vote : null);  
         }  
         if (vote && vote.parentNode !== badgeRight) badgeRight.appendChild(vote);  
-        return !!(status && type && quality && vote);  
+        return !!(status && vote);  
     }  
-    function watchOverlayInjects(view, badge, badgeRight) {  
-        if (relocateExisting(view, badge, badgeRight)) return;  
+    function watchOverlayInjects(view, badgeLeft, badgeRight) {  
+        if (relocateExisting(view, badgeLeft, badgeRight)) return;  
         var watchTimer;  
         var childObserver = new MutationObserver(function () {  
-            if (relocateExisting(view, badge, badgeRight)) stopWatching();  
+            if (relocateExisting(view, badgeLeft, badgeRight)) stopWatching();  
         });  
         function stopWatching() {  
             clearTimeout(watchTimer);  
@@ -77,19 +73,22 @@
         overlay.className = 'card__overlay';  
         var badge = document.createElement('div');  
         badge.className = 'card__badge';  
+        var badgeLeft = document.createElement('div');  
+        badgeLeft.className = 'card__badge-left';  
         var year = ((data.release_date || data.first_air_date || '') + '').slice(0, 4);  
         if (year) {  
             var yearEl = document.createElement('span');  
             yearEl.className = 'card__badge-year';  
             yearEl.textContent = year;  
-            badge.appendChild(yearEl);  
+            badgeLeft.appendChild(yearEl);  
         }  
+        badge.appendChild(badgeLeft);  
         var badgeRight = document.createElement('div');  
         badgeRight.className = 'card__badge-right';  
         badge.appendChild(badgeRight);  
         overlay.appendChild(badge);  
         view.appendChild(overlay);  
-        watchOverlayInjects(view, badge, badgeRight);  
+        watchOverlayInjects(view, badgeLeft, badgeRight);  
     }  
     var intersectionObserver = null;  
     if (typeof IntersectionObserver !== 'undefined') {  
