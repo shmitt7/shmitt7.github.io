@@ -9,23 +9,24 @@
         '.card__icons-inner{background:none!important;border-radius:0!important;flex-direction:column!important}' +  
         '.card__icons-inner>.card__icon{margin-bottom:0.2em}' +  
         '.card__icon{filter:drop-shadow(0 1px 4px rgba(0,0,0,1)) drop-shadow(0 0 8px rgba(0,0,0,0.9))!important}' +  
-        '.card__overlay{position:absolute;left:0;right:0;bottom:0;height:45%;display:flex;flex-direction:column;justify-content:flex-end;padding:0 0.6em 0.5em 0.6em;background:linear-gradient(to bottom,rgba(0,0,0,0) 0%,rgba(0,0,0,0.03) 20%,rgba(0,0,0,0.18) 42%,rgba(0,0,0,0.55) 70%,rgba(0,0,0,0.88) 100%);border-bottom-left-radius:1em;border-bottom-right-radius:1em;z-index:1;pointer-events:none}' +  
-        '.card__overlay-title{color:#fff;font-size:1.25em;font-weight:700;line-height:1.12;text-align:left;display:-webkit-box;-webkit-line-clamp:2;line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;text-shadow:0 2px 8px rgba(0,0,0,0.9);margin-bottom:0.3em}' +  
+        '.card__overlay-title{display:none;position:absolute;left:0.6em;right:0.6em;top:50%;-webkit-transform:translateY(-50%);transform:translateY(-50%);text-align:center;color:#fff;font-size:1.2em;font-weight:700;line-height:1.15;background:rgba(0,0,0,0.65);border-radius:0.35em;padding:0.4em 0.6em;overflow:hidden;-webkit-line-clamp:2;line-clamp:2;-webkit-box-orient:vertical;z-index:2;pointer-events:none}' +  
+        '.card.focus .card__overlay-title{display:-webkit-box!important}' +  
+        '.card__overlay{position:absolute;left:0;right:0;bottom:0;display:flex;flex-direction:column;justify-content:flex-end;padding:0.5em 0.6em;background:rgba(0,0,0,0.75);border-bottom-left-radius:1em;border-bottom-right-radius:1em;z-index:1;pointer-events:none}' +  
         '.card__badge{display:flex;align-items:baseline;justify-content:space-between;width:100%;overflow:hidden}' +  
         '.card__badge:empty{display:none}' +  
         '.card__badge-left{display:flex;align-items:baseline;flex-shrink:1;min-width:0;overflow:hidden}' +  
         '.card__badge-left:empty{display:none}' +  
         '.card__badge-left>*+*{margin-left:0.4em}' +  
-        '.card__badge-year{font-size:0.82em;font-weight:500;line-height:1.2;color:rgba(255,255,255,0.78);text-shadow:0 1px 5px rgba(0,0,0,0.9);flex-shrink:0}' +  
-        '.card__badge-left .card__status{position:static!important;left:auto!important;top:auto!important;bottom:auto!important;background:none!important;padding:0!important;border-radius:0!important;font-size:0.82em!important;font-weight:500!important;display:flex!important;align-items:baseline!important;pointer-events:none;white-space:nowrap;flex-shrink:1;min-width:0;overflow:hidden;color:rgba(255,255,255,0.78)!important;text-shadow:0 1px 5px rgba(0,0,0,0.9)!important}' +  
+        '.card__badge-year{font-size:0.82em;font-weight:500;line-height:1.2;color:rgba(255,255,255,0.78);flex-shrink:0}' +  
+        '.card__badge-left .card__status{position:static!important;left:auto!important;top:auto!important;bottom:auto!important;background:none!important;padding:0!important;border-radius:0!important;font-size:0.82em!important;font-weight:500!important;display:flex!important;align-items:baseline!important;pointer-events:none;white-space:nowrap;flex-shrink:1;min-width:0;overflow:hidden;color:rgba(255,255,255,0.78)!important}' +  
         '.card__badge-left .card__status .tvs-icon{font-size:1.1em;margin-right:0.2em;flex-shrink:0}' +  
         '.card__badge-left .card__status .tvs-text{font-size:1em;font-weight:500;color:inherit;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:1;min-width:0}' +  
         '.card__badge-right{display:flex;align-items:baseline;flex-shrink:0;margin-left:0.4em}' +  
         '.card__badge-right:empty{display:none}' +  
         '.card__badge-right>*+*{margin-left:0.4em}' +  
-        '.card__badge-right .card__quality{position:static!important;left:auto!important;bottom:auto!important;padding:0!important;background:none!important;color:#fff!important;font-size:0.9em!important;font-weight:700!important;border-radius:0!important;text-shadow:0 1px 5px rgba(0,0,0,0.9)!important}' +  
+        '.card__badge-right .card__quality{position:static!important;left:auto!important;bottom:auto!important;padding:0!important;background:none!important;color:#fff!important;font-size:1.1em!important;font-weight:700!important;border-radius:0!important}' +  
         '.card__badge-right .card__quality>div{display:inline}' +  
-        '.card__badge-right .card__vote{position:static!important;right:auto!important;bottom:auto!important;background:none!important;color:#fff!important;font-size:0.9em!important;font-weight:700!important;padding:0!important;border-radius:0!important;text-shadow:0 1px 5px rgba(0,0,0,0.9)!important}' +  
+        '.card__badge-right .card__vote{position:static!important;right:auto!important;bottom:auto!important;background:none!important;color:#fff!important;font-size:1.1em!important;font-weight:700!important;padding:0!important;border-radius:0!important}' +  
         '.card__status,.card__type,.card__quality,.card__vote{visibility:hidden!important}' +  
         '.card__badge-left .card__status,.card__badge-right .card__quality,.card__badge-right .card__vote{visibility:visible!important}' +  
     '</style>');  
@@ -72,12 +73,12 @@
             var iconsInner = icons.querySelector('.card__icons-inner');  
             if (iconsInner) iconsInner.style.cssText = 'background:none;border-radius:0;flex-direction:column;';  
         }  
-        var overlay = document.createElement('div');  
-        overlay.className = 'card__overlay';  
         var overlayTitle = document.createElement('div');  
         overlayTitle.className = 'card__overlay-title';  
         overlayTitle.textContent = data.title || data.name || '';  
-        overlay.appendChild(overlayTitle);  
+        view.appendChild(overlayTitle);  
+        var overlay = document.createElement('div');  
+        overlay.className = 'card__overlay';  
         var badge = document.createElement('div');  
         badge.className = 'card__badge';  
         var badgeLeft = document.createElement('div');  
