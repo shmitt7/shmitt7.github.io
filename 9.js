@@ -9,47 +9,55 @@
         '.card__icons-inner{background:none!important;border-radius:0!important;flex-direction:column!important}' +  
         '.card__icons-inner>.card__icon{margin-bottom:0.2em}' +  
         '.card__icon{filter:drop-shadow(0 1px 4px rgba(0,0,0,1)) drop-shadow(0 0 8px rgba(0,0,0,0.9))!important}' +  
-        '.card__title-wrap{display:none;position:absolute;left:0;right:0;bottom:2.4em;padding:1.4em 0.6em 0.4em 0.6em;background:none;z-index:1;pointer-events:none}' +  
+        '.card__quality-corner{position:absolute;top:0.5em;left:0.5em;z-index:2;pointer-events:none;background:#000;border:1px solid #e53935;border-radius:0.35em;padding:0.2em 0.5em}' +  
+        '.card__quality-corner .card__quality{position:static!important;left:auto!important;bottom:auto!important;top:auto!important;padding:0!important;background:none!important;color:#e53935!important;font-size:0.85em!important;font-weight:700!important;border-radius:0!important;text-shadow:none!important}' +  
+        '.card__quality-corner .card__quality>div{display:inline}' +  
+        '.card__title-wrap{display:none;position:absolute;left:0;right:0;bottom:2em;padding:0 0.6em;background:none;z-index:1;pointer-events:none}' +  
         '.card.focus .card__title-wrap{display:block!important}' +  
-        '.card__overlay-title{text-align:center;color:#fff;font-size:1.15em;font-weight:700;line-height:1.15;background:rgba(0,0,0,0.8);border-radius:0.35em;padding:0.35em 0.55em;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;line-clamp:2;-webkit-box-orient:vertical}' +  
-        '.card__overlay{position:absolute;left:0;right:0;bottom:0;display:flex;justify-content:space-between;align-items:flex-end;padding:0.2em 0.35em 0.3em 0.35em;background:linear-gradient(to bottom,rgba(0,0,0,0) 0%,rgba(0,0,0,0.9) 65%,rgba(0,0,0,1) 100%);border-bottom-left-radius:1em;border-bottom-right-radius:1em;z-index:1;pointer-events:none}' +  
-        '.card__badge-left{display:flex;align-items:baseline;flex-shrink:1;min-width:0;overflow:hidden}' +  
+        '.card__overlay-title{text-align:center;color:#fff;font-size:1.3em;font-weight:400;line-height:1.15;background:rgba(0,0,0,0.8);border-radius:0.35em;padding:0.35em 0.55em;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;line-clamp:2;-webkit-box-orient:vertical}' +  
+        '.card__overlay{position:absolute;left:0;right:0;bottom:0;display:flex;justify-content:space-between;align-items:center;padding:0.2em 0.35em 0.3em 0.35em;background:none;z-index:1;pointer-events:none}' +  
+        '.card__badge-left{display:flex;align-items:center;flex-shrink:0}' +  
         '.card__badge-left:empty{display:none}' +  
-        '.card__badge-left>*+*{margin-left:0.4em}' +  
-        '.card__badge-year{font-size:0.82em;font-weight:500;line-height:1.2;color:rgba(255,255,255,0.78);flex-shrink:0}' +  
-        '.card__badge-left .card__status{position:static!important;left:auto!important;top:auto!important;bottom:auto!important;background:none!important;padding:0!important;border-radius:0!important;font-size:0.82em!important;font-weight:500!important;display:flex!important;align-items:baseline!important;pointer-events:none;white-space:nowrap;flex-shrink:1;min-width:0;overflow:hidden;color:rgba(255,255,255,0.78)!important}' +  
-        '.card__badge-left .card__status .tvs-icon{font-size:1.1em;margin-right:0.2em;flex-shrink:0}' +  
-        '.card__badge-left .card__status .tvs-text{font-size:1em;font-weight:500;color:inherit;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:1;min-width:0}' +  
-        '.card__badge-right{display:flex;align-items:baseline;flex-shrink:0;margin-left:0.4em}' +  
+        '.card__badge-year{font-size:0.85em;font-weight:600;color:#fff;background:rgba(0,0,0,0.65);border:1px solid rgba(255,255,255,0.4);border-radius:0.35em;padding:0.2em 0.5em;flex-shrink:0}' +  
+        '.card__badge-mid{flex:1 1 auto;display:flex;justify-content:center;align-items:center;min-width:0;overflow:hidden;margin:0 0.4em}' +  
+        '.card__badge-mid:empty{display:none}' +  
+        '.card__badge-mid .card__status{position:static!important;left:auto!important;top:auto!important;bottom:auto!important;background:rgba(0,0,0,0.65)!important;border:1px solid rgba(255,255,255,0.4)!important;padding:0.2em 0.5em!important;border-radius:0.35em!important;font-size:0.85em!important;font-weight:600!important;display:flex!important;align-items:baseline!important;pointer-events:none;white-space:nowrap;max-width:100%;overflow:hidden;color:#fff!important}' +  
+        '.card__badge-mid .card__status .tvs-icon{font-size:1.1em;margin-right:0.2em;flex-shrink:0}' +  
+        '.card__badge-mid .card__status .tvs-text{font-size:1em;font-weight:600;color:inherit;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:1;min-width:0}' +  
+        '.card__badge-right{display:flex;align-items:center;flex-shrink:0}' +  
         '.card__badge-right:empty{display:none}' +  
-        '.card__badge-right>*+*{margin-left:0.4em}' +  
-        '.card__badge-right .card__quality{position:static!important;left:auto!important;bottom:auto!important;padding:0!important;background:none!important;color:#fff!important;font-size:1.1em!important;font-weight:700!important;border-radius:0!important}' +  
-        '.card__badge-right .card__quality>div{display:inline}' +  
-        '.card__badge-right .card__vote{position:static!important;right:auto!important;bottom:auto!important;background:none!important;color:#fff!important;font-size:1.1em!important;font-weight:700!important;padding:0!important;border-radius:0!important}' +  
+        '.card__badge-right .card__vote{position:static!important;right:auto!important;bottom:auto!important;background:rgba(0,0,0,0.65)!important;border:1px solid rgba(255,255,255,0.4)!important;border-radius:0.35em!important;padding:0.2em 0.5em!important;color:#fff!important;font-size:0.85em!important;font-weight:600!important}' +  
         '.card__status,.card__type,.card__quality,.card__vote{visibility:hidden!important}' +  
-        '.card__badge-left .card__status,.card__badge-right .card__quality,.card__badge-right .card__vote{visibility:visible!important}' +  
+        '.card__badge-mid .card__status,.card__badge-right .card__vote,.card__quality-corner .card__quality{visibility:visible!important}' +  
     '</style>');  
     var WATCH_TIMEOUT = 8000;  
     var activeChildObservers = [];  
-    function relocateExisting(view, badgeLeft, badgeRight) {  
+    function relocateExisting(view, badgeLeft, badgeMid, badgeRight, qualityCorner) {  
         var status = view.querySelector('.card__status');  
         var quality = view.querySelector('.card__quality');  
         var vote = view.querySelector('.card__vote');  
-        if (status && status.parentNode !== badgeLeft) badgeLeft.appendChild(status);  
-        if (quality && (quality.parentNode !== badgeRight || quality.nextSibling !== vote)) {  
-            badgeRight.insertBefore(quality, vote && vote.parentNode === badgeRight ? vote : null);  
-        }  
+        if (status && status.parentNode !== badgeMid) badgeMid.appendChild(status);  
         if (vote && vote.parentNode !== badgeRight) badgeRight.appendChild(vote);  
-        return !!(status && vote);  
+        if (quality) {  
+            var qtext = (quality.innerText || quality.textContent || '').trim().toUpperCase();  
+            if (qtext === 'TS') {  
+                if (quality.parentNode !== qualityCorner) qualityCorner.appendChild(quality);  
+                qualityCorner.style.display = '';  
+            } else {  
+                quality.remove();  
+                qualityCorner.style.display = 'none';  
+            }  
+        } else {  
+            qualityCorner.style.display = 'none';  
+        }  
     }  
-    function watchOverlayInjects(view, badgeLeft, badgeRight) {  
-        if (relocateExisting(view, badgeLeft, badgeRight)) return;  
-        var watchTimer;  
+    function watchOverlayInjects(view, badgeLeft, badgeMid, badgeRight, qualityCorner) {  
+        relocateExisting(view, badgeLeft, badgeMid, badgeRight, qualityCorner);  
+        var watchTimer = null;  
         var childObserver = new MutationObserver(function () {  
-            if (relocateExisting(view, badgeLeft, badgeRight)) stopWatching();  
+            relocateExisting(view, badgeLeft, badgeMid, badgeRight, qualityCorner);  
         });  
         function stopWatching() {  
-            clearTimeout(watchTimer);  
             childObserver.disconnect();  
             var idx = activeChildObservers.indexOf(childObserver);  
             if (idx !== -1) activeChildObservers.splice(idx, 1);  
@@ -72,6 +80,10 @@
             var iconsInner = icons.querySelector('.card__icons-inner');  
             if (iconsInner) iconsInner.style.cssText = 'background:none;border-radius:0;flex-direction:column;';  
         }  
+        var qualityCorner = document.createElement('div');  
+        qualityCorner.className = 'card__quality-corner';  
+        qualityCorner.style.display = 'none';  
+        view.appendChild(qualityCorner);  
         var titleWrap = document.createElement('div');  
         titleWrap.className = 'card__title-wrap';  
         var overlayTitle = document.createElement('div');  
@@ -91,11 +103,14 @@
             badgeLeft.appendChild(yearEl);  
         }  
         overlay.appendChild(badgeLeft);  
+        var badgeMid = document.createElement('div');  
+        badgeMid.className = 'card__badge-mid';  
+        overlay.appendChild(badgeMid);  
         var badgeRight = document.createElement('div');  
         badgeRight.className = 'card__badge-right';  
         overlay.appendChild(badgeRight);  
         view.appendChild(overlay);  
-        watchOverlayInjects(view, badgeLeft, badgeRight);  
+        watchOverlayInjects(view, badgeLeft, badgeMid, badgeRight, qualityCorner);  
     }  
     var intersectionObserver = null;  
     if (typeof IntersectionObserver !== 'undefined') {  
