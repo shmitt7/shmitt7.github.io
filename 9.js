@@ -2,14 +2,14 @@
     if (window.listCard) return;  
     window.listCard = true;  
     document.head.insertAdjacentHTML('beforeend', '<style>' +  
-        '.card__title{display:block!important;font-size:1em!important;max-height:none!important;line-height:1.25!important;margin-top:0.4em!important;overflow:hidden!important;text-overflow:ellipsis!important;display:-webkit-box!important;-webkit-line-clamp:1!important;line-clamp:1!important;-webkit-box-orient:vertical!important;white-space:nowrap!important}' +  
+        '.card__title{display:block!important;font-size:1.15em!important;font-weight:600!important;max-height:none!important;line-height:1.2!important;margin-top:0.25em!important;overflow:hidden!important;text-overflow:ellipsis!important;display:-webkit-box!important;-webkit-line-clamp:2!important;line-clamp:2!important;-webkit-box-orient:vertical!important}' +  
         '.card__age{display:none!important}' +  
         '.card.focus .card-watched{display:none!important}' +  
         '.card__icons{top:0.5em!important;left:auto!important;right:0.5em!important;justify-content:flex-end!important}' +  
         '.card__icons-inner{background:none!important;border-radius:0!important;flex-direction:column!important}' +  
         '.card__icons-inner>.card__icon{margin-bottom:0.2em}' +  
         '.card__icon{filter:drop-shadow(0 1px 4px rgba(0,0,0,1)) drop-shadow(0 0 8px rgba(0,0,0,0.9))!important}' +  
-        '.card__overlay{position:absolute;left:0;right:0;bottom:0;padding:0.6em 0.4em 0.25em 0.4em;background:rgba(0,0,0,0.65);border-bottom-left-radius:1em;border-bottom-right-radius:1em;z-index:1;pointer-events:none}' +  
+        '.card__overlay{position:absolute;left:0;right:0;bottom:0;padding:0.6em 0.4em 0.25em 0.4em;background:linear-gradient(to bottom,rgba(0,0,0,0) 0%,rgba(0,0,0,0.7) 45%,rgba(0,0,0,0.7) 100%);border-bottom-left-radius:1em;border-bottom-right-radius:1em;z-index:1;pointer-events:none}' +  
         '.card__status-row{display:flex;align-items:baseline;margin-bottom:0.15em;line-height:1;overflow:hidden;white-space:nowrap;min-width:0}' +  
         '.card__status-row:empty{display:none}' +  
         '.card__status-row .card__status{position:static!important;left:auto!important;top:auto!important;bottom:auto!important;background:none!important;padding:0!important;border-radius:0!important;font-size:1em!important;display:flex!important;align-items:baseline!important;pointer-events:none;white-space:nowrap}' +  
