@@ -5,58 +5,59 @@
         '.card__title{display:none!important}' +
         '.card__age{display:none!important}' +
         '.card.focus .card-watched{display:none!important}' +
-        '.card__icons{top:0.5em!important;left:auto!important;right:0.5em!important;justify-content:flex-end!important}' +
+        '.card__icons{top:.5em!important;left:auto!important;right:.5em!important;justify-content:flex-end!important}' +
         '.card__icons-inner{background:none!important;border-radius:0!important;flex-direction:column!important}' +
-        '.card__icons-inner>.card__icon{margin-bottom:0.2em}' +
+        '.card__icons-inner>.card__icon{margin-bottom:.2em}' +
         '.card__icon{filter:drop-shadow(0 1px 4px rgba(0,0,0,1)) drop-shadow(0 0 8px rgba(0,0,0,.9))!important}' +
-        '.card__quality-corner{position:absolute;top:.5em;left:.5em;z-index:2;pointer-events:none;background:rgba(25,25,25,.85);border:1px solid rgba(255,82,82,.25);border-radius:.35em;padding:.2em .5em;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}' +
-        '.card__quality-corner .card__quality{position:static!important;left:auto!important;bottom:auto!important;top:auto!important;padding:0!important;background:none!important;color:#ff5252!important;font-size:.85em!important;font-weight:700!important;border-radius:0!important;text-shadow:none!important}' +
+        '.card__quality-corner{position:absolute;top:.5em;left:.5em;z-index:2;pointer-events:none;background:rgba(15,15,15,.82);border:1px solid rgba(255,193,7,.75);border-radius:.35em;padding:.2em .5em;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);box-shadow:0 2px 8px rgba(0,0,0,.35)}' +
+        '.card__quality-corner .card__quality{position:static!important;left:auto!important;bottom:auto!important;top:auto!important;padding:0!important;background:none!important;color:#ffc107!important;font-size:.9em!important;font-weight:700!important;border-radius:0!important;text-shadow:0 1px 3px #000!important}' +
         '.card__quality-corner .card__quality>div{display:inline}' +
-        '.card__title-wrap{display:none;position:absolute;left:0;right:0;bottom:2em;padding:0 .6em;background:none;z-index:1;pointer-events:none}' +
+        '.card__title-wrap{display:none;position:absolute;left:0;right:0;bottom:2.4em;padding:0 .6em;background:none;z-index:1;pointer-events:none}' +
         '.card.focus .card__title-wrap{display:block!important}' +
-        '.card__overlay-title{text-align:center;color:#fff;font-size:1.3em;font-weight:400;line-height:1.15;background:rgba(0,0,0,.8);border-radius:.35em;padding:.35em .55em;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;line-clamp:2;-webkit-box-orient:vertical}' +
-        '.card__overlay{position:absolute;left:0;right:0;bottom:0;display:flex;justify-content:space-between;align-items:center;padding:.3em .5em;background:rgba(15,15,15,.52);border-top:1px solid rgba(255,255,255,.1);backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px);z-index:1;pointer-events:none}' +
+        '.card__overlay-title{text-align:center;color:#fff;font-size:1.3em;font-weight:400;line-height:1.15;background:rgba(0,0,0,.78);border-radius:.35em;padding:.35em .55em;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;line-clamp:2;-webkit-box-orient:vertical}' +
+        '.card__overlay{position:absolute;left:0;right:0;bottom:0;display:flex;justify-content:space-between;align-items:center;padding:1.5em .5em .45em;background:linear-gradient(to bottom,rgba(0,0,0,0),rgba(8,8,8,.32) 30%,rgba(8,8,8,.72) 100%);z-index:1;pointer-events:none}' +
         '.card__badge-left{display:flex;align-items:center;flex-shrink:0}' +
         '.card__badge-left:empty{display:none}' +
-        '.card__badge-year{font-size:.85em;font-weight:600;color:#fff;padding:0;flex-shrink:0}' +
-        '.card__badge-mid{flex:1 1 auto;display:flex;justify-content:center;align-items:center;min-width:0;overflow:hidden;margin:0 .4em}' +
+        '.card__badge-year{font-size:1em;font-weight:600;color:#fff;padding:0;flex-shrink:0;text-shadow:0 1px 4px #000}' +
+        '.card__badge-mid{flex:1 1 auto;display:flex;justify-content:center;align-items:center;min-width:0;overflow:hidden;margin:0 .5em}' +
         '.card__badge-mid:empty{display:none}' +
-        '.card__badge-mid .card__status{position:static!important;left:auto!important;top:auto!important;bottom:auto!important;background:none!important;border:0!important;padding:0!important;border-radius:0!important;font-size:.85em!important;font-weight:600!important;display:flex!important;align-items:baseline!important;pointer-events:none;white-space:nowrap;max-width:100%;overflow:hidden;color:#fff!important}' +
+        '.card__badge-mid .card__status{position:static!important;left:auto!important;top:auto!important;bottom:auto!important;background:none!important;border:0!important;padding:0!important;border-radius:0!important;font-size:1em!important;font-weight:600!important;display:flex!important;align-items:baseline!important;pointer-events:none;white-space:nowrap;max-width:100%;overflow:hidden;color:#fff!important;text-shadow:0 1px 4px #000}' +
         '.card__badge-mid .card__status .tvs-icon{font-size:1.1em;margin-right:.2em;flex-shrink:0}' +
         '.card__badge-mid .card__status .tvs-text{font-size:1em;font-weight:600;color:inherit;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:1;min-width:0}' +
         '.card__badge-right{display:flex;align-items:center;flex-shrink:0}' +
         '.card__badge-right:empty{display:none}' +
-        '.card__badge-right .card__vote{position:static!important;right:auto!important;bottom:auto!important;background:none!important;border:0!important;border-radius:0!important;padding:0!important;color:#ffd54f!important;font-size:.85em!important;font-weight:600!important}' +
+        '.card__badge-right .card__vote{position:static!important;right:auto!important;bottom:auto!important;background:none!important;border:0!important;border-radius:0!important;padding:0!important;color:#ffc107!important;font-size:1em!important;font-weight:600!important;text-shadow:0 1px 4px #000}' +
         '.card__status,.card__type,.card__quality,.card__vote{visibility:hidden!important}' +
         '.card__badge-mid .card__status,.card__badge-right .card__vote,.card__quality-corner .card__quality{visibility:visible!important}' +
     '</style>');
+
     var WATCH_TIMEOUT = 8000;
     var activeChildObservers = [];
 
-    function relocateExisting(view, badgeLeft, badgeMid, badgeRight, qualityCorner) {
+    function relocateExisting(view, badgeMid, badgeRight, qualityCorner) {
         var status = view.querySelector('.card__status');
         var quality = view.querySelector('.card__quality');
         var vote = view.querySelector('.card__vote');
+
         if (status && status.parentNode !== badgeMid) badgeMid.appendChild(status);
         if (vote && vote.parentNode !== badgeRight) badgeRight.appendChild(vote);
+
         if (quality) {
-            var qtext = (quality.innerText || quality.textContent || '').trim().toUpperCase();
-            if (qtext === 'TS') {
+            var qtext = (quality.innerText || quality.textContent || '').trim();
+            if (qtext) {
                 if (quality.parentNode !== qualityCorner) qualityCorner.appendChild(quality);
                 qualityCorner.style.display = '';
-            } else {
-                quality.remove();
-                qualityCorner.style.display = 'none';
             }
         } else {
             qualityCorner.style.display = 'none';
         }
     }
 
-    function watchOverlayInjects(view, badgeLeft, badgeMid, badgeRight, qualityCorner) {
-        relocateExisting(view, badgeLeft, badgeMid, badgeRight, qualityCorner);
+    function watchOverlayInjects(view, badgeMid, badgeRight, qualityCorner) {
+        relocateExisting(view, badgeMid, badgeRight, qualityCorner);
+
         var childObserver = new MutationObserver(function () {
-            relocateExisting(view, badgeLeft, badgeMid, badgeRight, qualityCorner);
+            relocateExisting(view, badgeMid, badgeRight, qualityCorner);
         });
 
         function stopWatching() {
@@ -111,6 +112,7 @@
         badgeLeft.className = 'card__badge-left';
 
         var year = ((data.release_date || data.first_air_date || '') + '').slice(0, 4);
+
         if (year) {
             var yearEl = document.createElement('span');
             yearEl.className = 'card__badge-year';
@@ -129,7 +131,8 @@
         overlay.appendChild(badgeRight);
 
         view.appendChild(overlay);
-        watchOverlayInjects(view, badgeLeft, badgeMid, badgeRight, qualityCorner);
+
+        watchOverlayInjects(view, badgeMid, badgeRight, qualityCorner);
     }
 
     var intersectionObserver = null;
@@ -154,24 +157,43 @@
     var mutationObserver = new MutationObserver(function (mutations) {
         for (var i = 0; i < mutations.length; i++) {
             var addedNodes = mutations[i].addedNodes;
+
             for (var j = 0; j < addedNodes.length; j++) {
                 var node = addedNodes[j];
+
                 if (node.nodeType !== 1) continue;
-                if (node.classList && node.classList.contains('card')) observe(node);
-                if (node.querySelectorAll) [].forEach.call(node.querySelectorAll('.card'), observe);
+
+                if (node.classList && node.classList.contains('card')) {
+                    observe(node);
+                }
+
+                if (node.querySelectorAll) {
+                    [].forEach.call(node.querySelectorAll('.card'), observe);
+                }
             }
         }
     });
 
-    mutationObserver.observe(document.body, { childList: true, subtree: true });
+    mutationObserver.observe(document.body, {
+        childList: true,
+        subtree: true
+    });
+
     [].forEach.call(document.querySelectorAll('.card'), observe);
 
     Lampa.Listener.follow('app', function (e) {
-        if (e.type === 'ready') [].forEach.call(document.querySelectorAll('.card'), observe);
+        if (e.type === 'ready') {
+            [].forEach.call(document.querySelectorAll('.card'), observe);
+        }
+
         if (e.type === 'destroy') {
             if (intersectionObserver) intersectionObserver.disconnect();
             mutationObserver.disconnect();
-            for (var i = 0; i < activeChildObservers.length; i++) activeChildObservers[i].disconnect();
+
+            for (var i = 0; i < activeChildObservers.length; i++) {
+                activeChildObservers[i].disconnect();
+            }
+
             activeChildObservers = [];
         }
     });
