@@ -6,15 +6,22 @@
         'beforeend',
         '<style>' +
 
-        /* =========================
-           БАЗОВЫЙ ВИД КАРТОЧКИ
-           ========================= */
+        /* =========================================================
+           БАЗОВЫЕ ЭЛЕМЕНТЫ
+           ========================================================= */
 
         '.card__title{display:none!important}' +
         '.card__age{display:none!important}' +
-        '.card.focus .card-watched{display:none!important}' +
 
-        /* Иконки */
+        '.card.focus .card-watched{' +
+            'display:none!important' +
+        '}' +
+
+
+        /* =========================================================
+           ИКОНКИ
+           ========================================================= */
+
         '.card__icons{' +
             'top:0.5em!important;' +
             'left:auto!important;' +
@@ -29,19 +36,23 @@
         '}' +
 
         '.card__icons-inner>.card__icon{' +
-            'margin-bottom:0.2em' +
+            'margin-bottom:0.2em;' +
         '}' +
 
         '.card__icon{' +
             'filter:' +
             'drop-shadow(0 1px 4px rgba(0,0,0,1)) ' +
-            'drop-shadow(0 0 8px rgba(0,0,0,0.9))!important' +
+            'drop-shadow(0 0 8px rgba(0,0,0,0.9))!important;' +
         '}' +
 
 
-        /* =========================
-           НИЖНЯЯ ОБЛАСТЬ
-           ========================= */
+        /* =========================================================
+           ОСНОВНОЙ OVERLAY
+
+           ВАЖНО:
+           Теперь это ОДИН цельный слой.
+           Никакого отдельного "второго блюда" над названием.
+           ========================================================= */
 
         '.card__overlay{' +
             'position:absolute;' +
@@ -51,13 +62,22 @@
 
             'padding:0 0.4em 0.25em 0.4em;' +
 
+            /*
+             * Верх практически прозрачный.
+             * Затемнение постепенно усиливается
+             * непосредственно к тексту.
+             */
             'background:' +
             'linear-gradient(' +
                 'to bottom,' +
-                'rgba(0,0,0,0.45) 0%,' +
-                'rgba(0,0,0,0.62) 35%,' +
-                'rgba(0,0,0,0.78) 65%,' +
-                'rgba(0,0,0,0.94) 100%' +
+                'rgba(0,0,0,0) 0%,' +
+                'rgba(0,0,0,0.05) 10%,' +
+                'rgba(0,0,0,0.12) 22%,' +
+                'rgba(0,0,0,0.24) 38%,' +
+                'rgba(0,0,0,0.45) 55%,' +
+                'rgba(0,0,0,0.70) 73%,' +
+                'rgba(0,0,0,0.91) 90%,' +
+                'rgba(0,0,0,0.96) 100%' +
             ');' +
 
             'border-bottom-left-radius:1em;' +
@@ -68,70 +88,89 @@
         '}' +
 
 
-        /* =========================
-           МЯГКОЕ ЗАТЕМНЕНИЕ + BLUR
-           НАД НИЖНЕЙ ЧАСТЬЮ ПОСТЕРА
-           ========================= */
+        /* =========================================================
+           CINEMA FOG
+
+           Очень мягкое рассеивание цветов постера.
+           Оно не является отдельной плашкой:
+           это едва заметный слой внутри overlay.
+           ========================================================= */
 
         '.card__overlay::before{' +
             'content:"";' +
+
             'position:absolute;' +
 
-            'left:0;' +
-            'right:0;' +
+            /*
+             * Немного выходим за границы overlay,
+             * чтобы не было ощущения прямоугольника.
+             */
+            'left:-6%;' +
+            'right:-6%;' +
+            'top:-2.5em;' +
+            'bottom:-4%;' +
 
-            'bottom:100%;' +
-            'height:5em;' +
+            /*
+             * Очень прозрачный слой.
+             */
+            'background:rgba(0,0,0,0.10);' +
 
-            'background:' +
-            'linear-gradient(' +
-                'to bottom,' +
-                'rgba(0,0,0,0) 0%,' +
-                'rgba(0,0,0,0.03) 12%,' +
-                'rgba(0,0,0,0.07) 25%,' +
-                'rgba(0,0,0,0.13) 40%,' +
-                'rgba(0,0,0,0.22) 55%,' +
-                'rgba(0,0,0,0.38) 72%,' +
-                'rgba(0,0,0,0.55) 88%,' +
-                'rgba(0,0,0,0.65) 100%' +
-            ');' +
+            /*
+             * Мягкое рассеивание.
+             */
+            'filter:blur(10px);' +
+            '-webkit-filter:blur(10px);' +
+
+            /*
+             * Немного увеличиваем,
+             * чтобы края blur не были видны.
+             */
+            'transform:scale(1.04);' +
+
+            'opacity:0.32;' +
 
             'pointer-events:none;' +
+
+            /*
+             * Остаётся за контентом overlay.
+             */
+            'z-index:-1;' +
         '}' +
 
 
-        /*
-         * Очень лёгкое размытие только
-         * в нижней части постера.
-         *
-         * Не используется filter:blur()
-         * на самом overlay, поэтому текст
-         * остаётся абсолютно резким.
-         */
+        /* =========================================================
+           ДОПОЛНИТЕЛЬНАЯ МЯГКОСТЬ
+
+           Очень слабое свечение в самом низу.
+           Оно делает переход от постера к тексту
+           более "киношным".
+           ========================================================= */
 
         '.card__overlay::after{' +
             'content:"";' +
-            'position:absolute;' +
 
+            'position:absolute;' +
             'left:0;' +
             'right:0;' +
-
-            'top:-3.5em;' +
             'bottom:0;' +
+            'height:55%;' +
 
-            'background:rgba(0,0,0,0.035);' +
-
-            'backdrop-filter:blur(2px);' +
-            '-webkit-backdrop-filter:blur(2px);' +
+            'background:' +
+            'radial-gradient(' +
+                'ellipse at center bottom,' +
+                'rgba(0,0,0,0.18) 0%,' +
+                'rgba(0,0,0,0.08) 45%,' +
+                'rgba(0,0,0,0) 100%' +
+            ');' +
 
             'pointer-events:none;' +
             'z-index:-1;' +
         '}' +
 
 
-        /* =========================
+        /* =========================================================
            НАЗВАНИЕ
-           ========================= */
+           ========================================================= */
 
         '.card__overlay-title{' +
             'font-size:1.45em;' +
@@ -148,12 +187,20 @@
             '-webkit-box-orient:vertical;' +
 
             'margin-bottom:0.15em;' +
+
+            /*
+             * Небольшая тень делает текст читаемым
+             * даже на светлом постере.
+             */
+            'text-shadow:' +
+                '0 1px 3px rgba(0,0,0,0.95),' +
+                '0 0 8px rgba(0,0,0,0.55);' +
         '}' +
 
 
-        /* =========================
+        /* =========================================================
            СТАТУС
-           ========================= */
+           ========================================================= */
 
         '.card__status-row{' +
             'display:flex;' +
@@ -166,7 +213,7 @@
         '}' +
 
         '.card__status-row:empty{' +
-            'display:none' +
+            'display:none;' +
         '}' +
 
         '.card__status-row .card__status{' +
@@ -186,6 +233,8 @@
 
             'pointer-events:none;' +
             'white-space:nowrap;' +
+
+            'text-shadow:0 1px 4px rgba(0,0,0,0.9);' +
         '}' +
 
         '.card__status-row .card__status .tvs-icon{' +
@@ -205,12 +254,14 @@
 
             'flex-shrink:1;' +
             'min-width:0;' +
+
+            'text-shadow:0 1px 4px rgba(0,0,0,0.9);' +
         '}' +
 
 
-        /* =========================
-           ГОД + ЖАНР
-           ========================= */
+        /* =========================================================
+           НИЖНЯЯ СТРОКА
+           ========================================================= */
 
         '.card__badge{' +
             'display:flex;' +
@@ -247,9 +298,9 @@
         '}' +
 
 
-        /* =========================
+        /* =========================================================
            TYPE
-           ========================= */
+           ========================================================= */
 
         '.card__badge .card__type{' +
             'position:static!important;' +
@@ -262,12 +313,14 @@
 
             'font-size:0.95em!important;' +
             'color:#ccc!important;' +
+
+            'text-shadow:0 1px 4px rgba(0,0,0,0.9);' +
         '}' +
 
 
-        /* =========================
+        /* =========================================================
            ПРАВАЯ ЧАСТЬ
-           ========================= */
+           ========================================================= */
 
         '.card__badge-right{' +
             'display:flex;' +
@@ -282,6 +335,7 @@
 
 
         /* Качество */
+
         '.card__badge-right .card__quality{' +
             'position:static!important;' +
             'left:auto!important;' +
@@ -295,6 +349,8 @@
             'font-weight:500;' +
 
             'border-radius:0!important;' +
+
+            'text-shadow:0 1px 4px rgba(0,0,0,0.9);' +
         '}' +
 
         '.card__badge-right .card__quality>div{' +
@@ -303,6 +359,7 @@
 
 
         /* Рейтинг */
+
         '.card__badge-right .card__vote{' +
             'position:static!important;' +
             'right:auto!important;' +
@@ -316,12 +373,14 @@
 
             'padding:0!important;' +
             'border-radius:0!important;' +
+
+            'text-shadow:0 1px 4px rgba(0,0,0,0.9);' +
         '}' +
 
 
-        /* =========================
-           СКРЫВАЕМ ШТАТНЫЕ ЭЛЕМЕНТЫ
-           ========================= */
+        /* =========================================================
+           СКРЫВАЕМ ОРИГИНАЛЬНЫЕ ЭЛЕМЕНТЫ
+           ========================================================= */
 
         '.card__status,' +
         '.card__type,' +
@@ -341,34 +400,55 @@
     );
 
 
-    /* =========================
+    /* =========================================================
        НАСТРОЙКИ
-       ========================= */
+       ========================================================= */
 
     var WATCH_TIMEOUT = 8000;
 
     var activeChildObservers = [];
 
 
-    /* =========================
-       ПЕРЕНОС ЭЛЕМЕНТОВ
-       ========================= */
+    /* =========================================================
+       ПЕРЕНОС СУЩЕСТВУЮЩИХ ЭЛЕМЕНТОВ
+       ========================================================= */
 
-    function relocateExisting(view, statusRow, badge, badgeRight) {
+    function relocateExisting(
+        view,
+        statusRow,
+        badge,
+        badgeRight
+    ) {
 
-        var status = view.querySelector('.card__status');
-        var type = view.querySelector('.card__type');
-        var quality = view.querySelector('.card__quality');
-        var vote = view.querySelector('.card__vote');
+        var status =
+            view.querySelector('.card__status');
+
+        var type =
+            view.querySelector('.card__type');
+
+        var quality =
+            view.querySelector('.card__quality');
+
+        var vote =
+            view.querySelector('.card__vote');
 
 
-        if (status && status.parentNode !== statusRow) {
+        if (
+            status &&
+            status.parentNode !== statusRow
+        ) {
             statusRow.appendChild(status);
         }
 
 
-        if (type && type.parentNode !== badge) {
-            badge.insertBefore(type, badgeRight);
+        if (
+            type &&
+            type.parentNode !== badge
+        ) {
+            badge.insertBefore(
+                type,
+                badgeRight
+            );
         }
 
 
@@ -379,16 +459,21 @@
                 quality.nextSibling !== vote
             )
         ) {
+
             badgeRight.insertBefore(
                 quality,
-                vote && vote.parentNode === badgeRight
+                vote &&
+                vote.parentNode === badgeRight
                     ? vote
                     : null
             );
         }
 
 
-        if (vote && vote.parentNode !== badgeRight) {
+        if (
+            vote &&
+            vote.parentNode !== badgeRight
+        ) {
             badgeRight.appendChild(vote);
         }
 
@@ -402,9 +487,9 @@
     }
 
 
-    /* =========================
-       ОЖИДАНИЕ ЭЛЕМЕНТОВ LAMPA
-       ========================= */
+    /* =========================================================
+       НАБЛЮДЕНИЕ ЗА ДОБАВЛЕНИЕМ ЭЛЕМЕНТОВ
+       ========================================================= */
 
     function watchOverlayInjects(
         view,
@@ -429,34 +514,41 @@
 
 
         var childObserver =
-            new MutationObserver(function () {
+            new MutationObserver(
+                function () {
 
-                if (
-                    relocateExisting(
-                        view,
-                        statusRow,
-                        badge,
-                        badgeRight
-                    )
-                ) {
-                    stopWatching();
+                    if (
+                        relocateExisting(
+                            view,
+                            statusRow,
+                            badge,
+                            badgeRight
+                        )
+                    ) {
+                        stopWatching();
+                    }
+
                 }
-
-            });
+            );
 
 
         function stopWatching() {
 
-            clearTimeout(watchTimer);
+            clearTimeout(
+                watchTimer
+            );
 
             childObserver.disconnect();
+
 
             var idx =
                 activeChildObservers.indexOf(
                     childObserver
                 );
 
+
             if (idx !== -1) {
+
                 activeChildObservers.splice(
                     idx,
                     1
@@ -465,16 +557,17 @@
         }
 
 
-        watchTimer = setTimeout(
-            stopWatching,
-            WATCH_TIMEOUT
-        );
+        watchTimer =
+            setTimeout(
+                stopWatching,
+                WATCH_TIMEOUT
+            );
 
 
         childObserver.observe(
             view,
             {
-                childList: true
+                childList:true
             }
         );
 
@@ -485,50 +578,68 @@
     }
 
 
-    /* =========================
+    /* =========================================================
        ОБРАБОТКА КАРТОЧКИ
-       ========================= */
+       ========================================================= */
 
     function processCard(card) {
 
-        var data = card.card_data;
+        var data =
+            card.card_data;
 
-        if (!data) return;
+
+        if (!data) {
+            return;
+        }
 
 
         card.dataset.listCard = '1';
 
 
         var view =
-            card.querySelector('.card__view');
+            card.querySelector(
+                '.card__view'
+            );
 
-        if (!view) return;
+
+        if (!view) {
+            return;
+        }
 
 
-        /* Скрываем стандартный заголовок */
+        /* Скрываем стандартные элементы */
 
         var titleEl =
-            card.querySelector('.card__title');
+            card.querySelector(
+                '.card__title'
+            );
 
         var ageEl =
-            card.querySelector('.card__age');
+            card.querySelector(
+                '.card__age'
+            );
 
 
         if (titleEl) {
-            titleEl.style.display = 'none';
+            titleEl.style.display =
+                'none';
         }
+
 
         if (ageEl) {
-            ageEl.style.display = 'none';
+            ageEl.style.display =
+                'none';
         }
 
 
-        /* =========================
+        /* =====================================================
            ИКОНКИ
-           ========================= */
+           ===================================================== */
 
         var icons =
-            card.querySelector('.card__icons');
+            card.querySelector(
+                '.card__icons'
+            );
 
 
         if (icons) {
@@ -556,12 +667,15 @@
         }
 
 
-        /* =========================
-           OVERLAY
-           ========================= */
+        /* =====================================================
+           СОЗДАЁМ ЕДИНСТВЕННЫЙ OVERLAY
+           ===================================================== */
 
         var overlay =
-            document.createElement('div');
+            document.createElement(
+                'div'
+            );
+
 
         overlay.className =
             'card__overlay';
@@ -570,7 +684,10 @@
         /* Название */
 
         var overlayTitle =
-            document.createElement('div');
+            document.createElement(
+                'div'
+            );
+
 
         overlayTitle.className =
             'card__overlay-title';
@@ -590,7 +707,10 @@
         /* Статус */
 
         var statusRow =
-            document.createElement('div');
+            document.createElement(
+                'div'
+            );
+
 
         statusRow.className =
             'card__status-row';
@@ -604,7 +724,10 @@
         /* Нижняя строка */
 
         var badge =
-            document.createElement('div');
+            document.createElement(
+                'div'
+            );
+
 
         badge.className =
             'card__badge';
@@ -618,16 +741,24 @@
             ) + '';
 
 
-        year = year.slice(0, 4);
+        year =
+            year.slice(
+                0,
+                4
+            );
 
 
         if (year) {
 
             var yearEl =
-                document.createElement('span');
+                document.createElement(
+                    'span'
+                );
+
 
             yearEl.className =
                 'card__badge-year';
+
 
             yearEl.textContent =
                 year;
@@ -642,7 +773,10 @@
         /* Правая часть */
 
         var badgeRight =
-            document.createElement('div');
+            document.createElement(
+                'div'
+            );
+
 
         badgeRight.className =
             'card__badge-right';
@@ -663,7 +797,7 @@
         );
 
 
-        /* Ждём штатные элементы Lampa */
+        /* Ожидаем штатные элементы */
 
         watchOverlayInjects(
             view,
@@ -674,9 +808,9 @@
     }
 
 
-    /* =========================
+    /* =========================================================
        INTERSECTION OBSERVER
-       ========================= */
+       ========================================================= */
 
     var intersectionObserver = null;
 
@@ -720,15 +854,15 @@
 
                 },
                 {
-                    rootMargin: '200px'
+                    rootMargin:'200px'
                 }
             );
     }
 
 
-    /* =========================
+    /* =========================================================
        НАБЛЮДЕНИЕ ЗА КАРТОЧКАМИ
-       ========================= */
+       ========================================================= */
 
     function observe(card) {
 
@@ -753,9 +887,9 @@
     }
 
 
-    /* =========================
+    /* =========================================================
        MUTATION OBSERVER
-       ========================= */
+       ========================================================= */
 
     var mutationObserver =
         new MutationObserver(
@@ -819,15 +953,15 @@
     mutationObserver.observe(
         document.body,
         {
-            childList: true,
-            subtree: true
+            childList:true,
+            subtree:true
         }
     );
 
 
-    /* =========================
+    /* =========================================================
        УЖЕ СУЩЕСТВУЮЩИЕ КАРТОЧКИ
-       ========================= */
+       ========================================================= */
 
     [].forEach.call(
         document.querySelectorAll(
@@ -837,15 +971,17 @@
     );
 
 
-    /* =========================
+    /* =========================================================
        LAMPA EVENTS
-       ========================= */
+       ========================================================= */
 
     Lampa.Listener.follow(
         'app',
         function (e) {
 
-            if (e.type === 'ready') {
+            if (
+                e.type === 'ready'
+            ) {
 
                 [].forEach.call(
                     document.querySelectorAll(
@@ -856,11 +992,14 @@
             }
 
 
-            if (e.type === 'destroy') {
+            if (
+                e.type === 'destroy'
+            ) {
 
                 if (
                     intersectionObserver
                 ) {
+
                     intersectionObserver
                         .disconnect();
                 }
@@ -872,7 +1011,8 @@
 
                 for (
                     var i = 0;
-                    i < activeChildObservers.length;
+                    i <
+                    activeChildObservers.length;
                     i++
                 ) {
 
