@@ -7,15 +7,12 @@
         '<style>' +
 
         /* =========================================================
-           БАЗОВЫЕ ЭЛЕМЕНТЫ
+           СКРЫВАЕМ СТАНДАРТНЫЕ ЭЛЕМЕНТЫ
            ========================================================= */
 
         '.card__title{display:none!important}' +
         '.card__age{display:none!important}' +
-
-        '.card.focus .card-watched{' +
-            'display:none!important' +
-        '}' +
+        '.card.focus .card-watched{display:none!important}' +
 
 
         /* =========================================================
@@ -47,11 +44,10 @@
 
 
         /* =========================================================
-           ОСНОВНОЙ OVERLAY
-
-           ВАЖНО:
-           Теперь это ОДИН цельный слой.
-           Никакого отдельного "второго блюда" над названием.
+           ЕДИНСТВЕННЫЙ OVERLAY
+           
+           Без верхней дополнительной полосы.
+           Затемнение плавно усиливается к низу.
            ========================================================= */
 
         '.card__overlay{' +
@@ -60,111 +56,32 @@
             'right:0;' +
             'bottom:0;' +
 
-            'padding:0 0.4em 0.25em 0.4em;' +
+            'padding:0 0.4em 0.3em 0.4em;' +
 
-            /*
-             * Верх практически прозрачный.
-             * Затемнение постепенно усиливается
-             * непосредственно к тексту.
-             */
             'background:' +
             'linear-gradient(' +
                 'to bottom,' +
-                'rgba(0,0,0,0) 0%,' +
-                'rgba(0,0,0,0.05) 10%,' +
-                'rgba(0,0,0,0.12) 22%,' +
-                'rgba(0,0,0,0.24) 38%,' +
-                'rgba(0,0,0,0.45) 55%,' +
-                'rgba(0,0,0,0.70) 73%,' +
-                'rgba(0,0,0,0.91) 90%,' +
-                'rgba(0,0,0,0.96) 100%' +
+                'rgba(0,0,0,0.08) 0%,' +
+                'rgba(0,0,0,0.20) 18%,' +
+                'rgba(0,0,0,0.38) 35%,' +
+                'rgba(0,0,0,0.58) 52%,' +
+                'rgba(0,0,0,0.78) 70%,' +
+                'rgba(0,0,0,0.93) 88%,' +
+                'rgba(0,0,0,0.97) 100%' +
             ');' +
+
+            /*
+             * Лёгкий blur.
+             * Он не используется как отдельная верхняя плашка.
+             */
+            'backdrop-filter:blur(2px);' +
+            '-webkit-backdrop-filter:blur(2px);' +
 
             'border-bottom-left-radius:1em;' +
             'border-bottom-right-radius:1em;' +
 
             'z-index:1;' +
             'pointer-events:none;' +
-        '}' +
-
-
-        /* =========================================================
-           CINEMA FOG
-
-           Очень мягкое рассеивание цветов постера.
-           Оно не является отдельной плашкой:
-           это едва заметный слой внутри overlay.
-           ========================================================= */
-
-        '.card__overlay::before{' +
-            'content:"";' +
-
-            'position:absolute;' +
-
-            /*
-             * Немного выходим за границы overlay,
-             * чтобы не было ощущения прямоугольника.
-             */
-            'left:-6%;' +
-            'right:-6%;' +
-            'top:-2.5em;' +
-            'bottom:-4%;' +
-
-            /*
-             * Очень прозрачный слой.
-             */
-            'background:rgba(0,0,0,0.10);' +
-
-            /*
-             * Мягкое рассеивание.
-             */
-            'filter:blur(10px);' +
-            '-webkit-filter:blur(10px);' +
-
-            /*
-             * Немного увеличиваем,
-             * чтобы края blur не были видны.
-             */
-            'transform:scale(1.04);' +
-
-            'opacity:0.32;' +
-
-            'pointer-events:none;' +
-
-            /*
-             * Остаётся за контентом overlay.
-             */
-            'z-index:-1;' +
-        '}' +
-
-
-        /* =========================================================
-           ДОПОЛНИТЕЛЬНАЯ МЯГКОСТЬ
-
-           Очень слабое свечение в самом низу.
-           Оно делает переход от постера к тексту
-           более "киношным".
-           ========================================================= */
-
-        '.card__overlay::after{' +
-            'content:"";' +
-
-            'position:absolute;' +
-            'left:0;' +
-            'right:0;' +
-            'bottom:0;' +
-            'height:55%;' +
-
-            'background:' +
-            'radial-gradient(' +
-                'ellipse at center bottom,' +
-                'rgba(0,0,0,0.18) 0%,' +
-                'rgba(0,0,0,0.08) 45%,' +
-                'rgba(0,0,0,0) 100%' +
-            ');' +
-
-            'pointer-events:none;' +
-            'z-index:-1;' +
         '}' +
 
 
@@ -189,17 +106,17 @@
             'margin-bottom:0.15em;' +
 
             /*
-             * Небольшая тень делает текст читаемым
-             * даже на светлом постере.
+             * Дополнительная читаемость на светлых постерах.
              */
             'text-shadow:' +
-                '0 1px 3px rgba(0,0,0,0.95),' +
-                '0 0 8px rgba(0,0,0,0.55);' +
+                '0 2px 5px rgba(0,0,0,1),' +
+                '0 0 10px rgba(0,0,0,0.85),' +
+                '0 0 16px rgba(0,0,0,0.45);' +
         '}' +
 
 
         /* =========================================================
-           СТАТУС
+           СТРОКА СТАТУСА
            ========================================================= */
 
         '.card__status-row{' +
@@ -234,7 +151,7 @@
             'pointer-events:none;' +
             'white-space:nowrap;' +
 
-            'text-shadow:0 1px 4px rgba(0,0,0,0.9);' +
+            'text-shadow:0 1px 4px rgba(0,0,0,0.95);' +
         '}' +
 
         '.card__status-row .card__status .tvs-icon{' +
@@ -255,7 +172,7 @@
             'flex-shrink:1;' +
             'min-width:0;' +
 
-            'text-shadow:0 1px 4px rgba(0,0,0,0.9);' +
+            'text-shadow:0 1px 4px rgba(0,0,0,0.95);' +
         '}' +
 
 
@@ -275,17 +192,16 @@
             'font-size:0.95em;' +
             'color:#ccc;' +
             'flex-shrink:0;' +
+            'text-shadow:0 1px 4px rgba(0,0,0,0.95);' +
         '}' +
 
         '.card__badge-genre,' +
         '.card__badge .card__type{' +
             'flex:1 1 auto;' +
             'min-width:0;' +
-
             'overflow:hidden;' +
             'text-overflow:ellipsis;' +
             'white-space:nowrap;' +
-
             'margin-left:0.4em;' +
         '}' +
 
@@ -306,15 +222,12 @@
             'position:static!important;' +
             'top:auto!important;' +
             'left:auto!important;' +
-
             'background:none!important;' +
             'padding:0!important;' +
             'border-radius:0!important;' +
-
             'font-size:0.95em!important;' +
             'color:#ccc!important;' +
-
-            'text-shadow:0 1px 4px rgba(0,0,0,0.9);' +
+            'text-shadow:0 1px 4px rgba(0,0,0,0.95);' +
         '}' +
 
 
@@ -350,7 +263,7 @@
 
             'border-radius:0!important;' +
 
-            'text-shadow:0 1px 4px rgba(0,0,0,0.9);' +
+            'text-shadow:0 1px 5px rgba(0,0,0,1);' +
         '}' +
 
         '.card__badge-right .card__quality>div{' +
@@ -374,7 +287,7 @@
             'padding:0!important;' +
             'border-radius:0!important;' +
 
-            'text-shadow:0 1px 4px rgba(0,0,0,0.9);' +
+            'text-shadow:0 1px 5px rgba(0,0,0,1);' +
         '}' +
 
 
@@ -405,7 +318,6 @@
        ========================================================= */
 
     var WATCH_TIMEOUT = 8000;
-
     var activeChildObservers = [];
 
 
@@ -488,7 +400,7 @@
 
 
     /* =========================================================
-       НАБЛЮДЕНИЕ ЗА ДОБАВЛЕНИЕМ ЭЛЕМЕНТОВ
+       ОЖИДАНИЕ ЭЛЕМЕНТОВ LAMPA
        ========================================================= */
 
     function watchOverlayInjects(
@@ -548,7 +460,6 @@
 
 
             if (idx !== -1) {
-
                 activeChildObservers.splice(
                     idx,
                     1
@@ -588,9 +499,7 @@
             card.card_data;
 
 
-        if (!data) {
-            return;
-        }
+        if (!data) return;
 
 
         card.dataset.listCard = '1';
@@ -602,12 +511,10 @@
             );
 
 
-        if (!view) {
-            return;
-        }
+        if (!view) return;
 
 
-        /* Скрываем стандартные элементы */
+        /* Скрываем штатные заголовок и возраст */
 
         var titleEl =
             card.querySelector(
@@ -668,7 +575,7 @@
 
 
         /* =====================================================
-           СОЗДАЁМ ЕДИНСТВЕННЫЙ OVERLAY
+           СОЗДАЁМ OVERLAY
            ===================================================== */
 
         var overlay =
@@ -721,7 +628,9 @@
         );
 
 
-        /* Нижняя строка */
+        /* =====================================================
+           ГОД / ЖАНР / КАЧЕСТВО / РЕЙТИНГ
+           ===================================================== */
 
         var badge =
             document.createElement(
@@ -770,8 +679,6 @@
         }
 
 
-        /* Правая часть */
-
         var badgeRight =
             document.createElement(
                 'div'
@@ -797,7 +704,7 @@
         );
 
 
-        /* Ожидаем штатные элементы */
+        /* Ждём штатные элементы Lampa */
 
         watchOverlayInjects(
             view,
@@ -928,7 +835,6 @@
                                 'card'
                             )
                         ) {
-
                             observe(node);
                         }
 
@@ -972,7 +878,7 @@
 
 
     /* =========================================================
-       LAMPA EVENTS
+       LAMPA
        ========================================================= */
 
     Lampa.Listener.follow(
@@ -999,7 +905,6 @@
                 if (
                     intersectionObserver
                 ) {
-
                     intersectionObserver
                         .disconnect();
                 }
