@@ -1,6 +1,6 @@
 (function() {  
-    if (window.fullCard) return;  
-    window.fullCard = true;  
+    if (window.fullCardTV) return;  
+    window.fullCardTV = true;  
     var logoCache = {};  
     var logoCacheSize = 0;  
     var network = new Lampa.Reguest();  
