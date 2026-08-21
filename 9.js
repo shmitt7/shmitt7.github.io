@@ -10,7 +10,7 @@
         '.card__icons-inner>.card__icon{margin-bottom:0.2em}' +  
         '.card__icon{filter:drop-shadow(0 1px 4px rgba(0,0,0,1)) drop-shadow(0 0 8px rgba(0,0,0,0.9))!important}' +  
         '.card__overlay{position:absolute;left:0.2em;right:0.2em;bottom:0.2em;padding:0.35em 0.35em 0.2em 0.35em;background:#3c3c3c;border-radius:0.8em;box-shadow:0 0.3em 0.6em rgba(0,0,0,0.55), 0 0.05em 0.15em rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.08);z-index:1;pointer-events:none;display:flex;flex-direction:column}' +  
-        '.card__overlay-title{font-size:1.45em;font-weight:500;line-height:1.15;color:#fff;overflow:hidden;margin-bottom:0.1em;white-space:normal;word-break:normal;max-height:2.3em}' +  
+        '.card__overlay-title{font-size:1.45em;font-weight:500;line-height:1.15;color:#fff;overflow:hidden;margin-bottom:0.1em;white-space:normal;word-break:normal;max-height:2.5em;padding-bottom:0.08em}' +  
         '.card__status-row{display:flex;align-items:baseline;margin-bottom:0.1em;line-height:1;overflow:hidden;white-space:nowrap;min-width:0}' +  
         '.card__status-row:empty{display:none}' +  
         '.card__status-row .card__status{position:static!important;left:auto!important;top:auto!important;bottom:auto!important;background:none!important;padding:0!important;border-radius:0!important;font-size:0.95em!important;display:flex!important;align-items:baseline!important;pointer-events:none;white-space:nowrap}' +  
@@ -31,21 +31,15 @@
     '</style>');  
     var WATCH_TIMEOUT = 8000;  
     var activeChildObservers = [];  
-  
     function clampTitleByChars(el, text) {  
         text = text || '';  
         el.textContent = text;  
         if (!text) return;  
-  
-        // Замеряем реальную высоту ровно одной строки на самом элементе,  
-        // а не парсим line-height из CSS — надёжнее на разных движках/платформах.  
         el.textContent = 'A';  
         var oneLineHeight = el.scrollHeight;  
         el.textContent = text;  
-  
-        var maxHeight = oneLineHeight * 2 + 1;  
-        if (el.scrollHeight <= maxHeight) return; // весь текст помещается в 2 строки без обрезки  
-  
+        var maxHeight = oneLineHeight * 2 + Math.max(4, oneLineHeight * 0.12);  
+        if (el.scrollHeight <= maxHeight) return;  
         var lo = 1, hi = text.length, best = 1;  
         while (lo <= hi) {  
             var mid = (lo + hi) >> 1;  
@@ -60,7 +54,6 @@
         }  
         el.textContent = text.slice(0, best).replace(/\s+$/, '') + '...';  
     }  
-  
     function relocateExisting(view, statusRow, badge, badgeRight) {  
         var status = view.querySelector('.card__status');  
         var type = view.querySelector('.card__type');  
@@ -74,7 +67,6 @@
         if (vote && vote.parentNode !== badgeRight) badgeRight.appendChild(vote);  
         return !!(status && type && quality && vote);  
     }  
-  
     function watchOverlayInjects(view, statusRow, badge, badgeRight) {  
         if (relocateExisting(view, statusRow, badge, badgeRight)) return;  
         var watchTimer;  
@@ -91,7 +83,6 @@
         childObserver.observe(view, { childList: true });  
         activeChildObservers.push(childObserver);  
     }  
-  
     function processCard(card) {  
         var data = card.card_data;  
         if (!data) return;  
@@ -133,7 +124,6 @@
         clampTitleByChars(overlayTitle, data.title || data.name || '');  
         watchOverlayInjects(view, statusRow, badge, badgeRight);  
     }  
-  
     var intersectionObserver = null;  
     if (typeof IntersectionObserver !== 'undefined') {  
         intersectionObserver = new IntersectionObserver(function (entries) {  
