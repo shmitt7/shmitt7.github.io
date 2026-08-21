@@ -33,10 +33,18 @@
     var activeChildObservers = [];  
   
     function clampTitleByChars(el, text) {  
+        text = text || '';  
         el.textContent = text;  
-        var lineHeight = parseFloat(getComputedStyle(el).lineHeight) || (parseFloat(getComputedStyle(el).fontSize) * 1.15);  
-        var maxHeight = lineHeight * 2 + 1;  
-        if (el.scrollHeight <= maxHeight) return; // весь текст помещается без обрезки  
+        if (!text) return;  
+  
+        // Замеряем реальную высоту ровно одной строки на самом элементе,  
+        // а не парсим line-height из CSS — надёжнее на разных движках/платформах.  
+        el.textContent = 'A';  
+        var oneLineHeight = el.scrollHeight;  
+        el.textContent = text;  
+  
+        var maxHeight = oneLineHeight * 2 + 1;  
+        if (el.scrollHeight <= maxHeight) return; // весь текст помещается в 2 строки без обрезки  
   
         var lo = 1, hi = text.length, best = 1;  
         while (lo <= hi) {  
@@ -50,8 +58,7 @@
                 hi = mid - 1;  
             }  
         }  
-        var finalText = text.slice(0, best).replace(/\s+$/, '');  
-        el.textContent = finalText + '...';  
+        el.textContent = text.slice(0, best).replace(/\s+$/, '') + '...';  
     }  
   
     function relocateExisting(view, statusRow, badge, badgeRight) {  
