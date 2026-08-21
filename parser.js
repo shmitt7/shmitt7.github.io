@@ -3,14 +3,13 @@
     window.torrentParser = true;  
     var JACKETT_SERVERS = [  
         'jac.red',  
-        '87.120.84.218:8443=777',  
-        'jacred.stream=pp',  
+        'jac.black',  
+        'jacred.stream=pp', 
+        'jr.maxvol.pro',
+        '87.120.84.218:8443=777',
+        'jac-red.ru',
+        'ru.jac.black',
         'ru.jacred.stream=pp',  
-        'jr.maxvol.pro',  
-        'jacred.pro',  
-        'jac-red.ru',  
-        'jacblack.ru:9117',  
-        'ru.jacred.pro',  
         'jacred.freebie.tom.ru=1',  
         'nmjc.duckdns.org'  
     ];  
