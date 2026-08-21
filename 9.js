@@ -32,26 +32,26 @@
     var WATCH_TIMEOUT = 8000;  
     var activeChildObservers = [];  
   
-    function clampTitleByWords(el, text) {  
+    function clampTitleByChars(el, text) {  
         el.textContent = text;  
         var lineHeight = parseFloat(getComputedStyle(el).lineHeight) || (parseFloat(getComputedStyle(el).fontSize) * 1.15);  
         var maxHeight = lineHeight * 2 + 1;  
-        if (el.scrollHeight <= maxHeight) return;  
-        var words = text.split(' ');  
-        if (words.length <= 1) return;  
-        var lo = 1, hi = words.length, best = words[0];  
+        if (el.scrollHeight <= maxHeight) return; // весь текст помещается без обрезки  
+  
+        var lo = 1, hi = text.length, best = 1;  
         while (lo <= hi) {  
             var mid = (lo + hi) >> 1;  
-            var candidate = words.slice(0, mid).join(' ');  
+            var candidate = text.slice(0, mid).replace(/\s+$/, '');  
             el.textContent = candidate + '...';  
             if (el.scrollHeight <= maxHeight) {  
-                best = candidate;  
+                best = mid;  
                 lo = mid + 1;  
             } else {  
                 hi = mid - 1;  
             }  
         }  
-        el.textContent = best + (best.split(' ').length < words.length ? '...' : '');  
+        var finalText = text.slice(0, best).replace(/\s+$/, '');  
+        el.textContent = finalText + '...';  
     }  
   
     function relocateExisting(view, statusRow, badge, badgeRight) {  
@@ -123,7 +123,7 @@
         badge.appendChild(badgeRight);  
         overlay.appendChild(badge);  
         view.appendChild(overlay);  
-        clampTitleByWords(overlayTitle, data.title || data.name || '');  
+        clampTitleByChars(overlayTitle, data.title || data.name || '');  
         watchOverlayInjects(view, statusRow, badge, badgeRight);  
     }  
   
