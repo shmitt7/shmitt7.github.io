@@ -5,11 +5,10 @@
     var LANG = {  
         list_card_category: { ru: 'Карточки', en: 'Cards', uk: 'Картки' },  
         list_card_bg_color: { ru: 'Цвет фона плашки', en: 'Overlay background color', uk: 'Колір фону плашки' },  
-        list_card_bg_color_custom: { ru: 'Свой цвет фона (HEX/RGBA)', en: 'Custom background color (HEX/RGBA)', uk: 'Свій колір фону (HEX/RGBA)' },  
         list_card_bg_opacity: { ru: 'Прозрачность плашки', en: 'Overlay opacity', uk: 'Прозорість плашки' },  
         list_card_title_color: { ru: 'Цвет заголовка', en: 'Title color', uk: 'Колір заголовку' },  
         list_card_status_color: { ru: 'Цвет статуса', en: 'Status text color', uk: 'Колір статусу' },  
-        list_card_accent_color: { ru: 'Цвет доп. элементов (год, жанр, качество, рейтинг)', en: 'Accent color (year, genre, quality, rating)', uk: 'Колір додаткових елементів' },  
+        list_card_accent_color: { ru: 'Цвет доп. элементов (год, жанр, качество, рейтинг)', en: 'Accent color', uk: 'Колір додаткових елементів' },  
         list_card_border_radius: { ru: 'Скругление углов плашки', en: 'Overlay corner radius', uk: 'Заокруглення плашки' },  
         list_card_shadow_intensity: { ru: 'Тень плашки', en: 'Overlay shadow', uk: 'Тінь плашки' },  
         list_card_title_size: { ru: 'Размер заголовка', en: 'Title size', uk: 'Розмір заголовку' },  
@@ -23,25 +22,40 @@
   
     // ---------- Значения по умолчанию (совпадают с исходным видом плагина) ----------  
     var DEFAULTS = {  
-        list_card_bg_color: 'gray',              // gray | black | navy | green | maroon | purple | transparent | custom  
-        list_card_bg_color_custom: '#3c3c3c',  
-        list_card_bg_opacity: '100',             // 100 | 85 | 70 | 55 | 40 | 25  
-        list_card_title_color: '#ffffff',  
-        list_card_status_color: '#ffffff',  
-        list_card_accent_color: '#ffffff',  
-        list_card_border_radius: '0.8',          // em, без суффикса  
-        list_card_shadow_intensity: 'medium',    // none | weak | medium | strong  
-        list_card_title_size: '1.45'             // em, без суффикса  
+        list_card_bg_color: 'gray',  
+        list_card_bg_opacity: '100',  
+        list_card_title_color: 'white',  
+        list_card_status_color: 'white',  
+        list_card_accent_color: 'white',  
+        list_card_border_radius: '0.8',  
+        list_card_shadow_intensity: 'medium',  
+        list_card_title_size: '1.45'  
     };  
   
-    var PRESET_COLORS = {  
+    // ---------- Пресеты (все значения зафиксированы, ничего не вводится руками) ----------  
+    var BG_PRESETS = {  
         gray: '#3c3c3c',  
         black: '#000000',  
         navy: '#132743',  
         green: '#173d1f',  
         maroon: '#3d1717',  
         purple: '#2e1740',  
+        brown: '#3a2a1a',  
+        teal: '#123734',  
         transparent: 'transparent'  
+    };  
+  
+    var TEXT_PRESETS = {  
+        white: '#ffffff',  
+        light_gray: '#d0d0d0',  
+        yellow: '#ffd54f',  
+        orange: '#ffab40',  
+        red: '#ff5252',  
+        green: '#69f0ae',  
+        blue: '#40c4ff',  
+        purple: '#b388ff',  
+        pink: '#ff80ab',  
+        black: '#000000'  
     };  
   
     var SHADOWS = {  
@@ -50,13 +64,6 @@
         medium: '0 0.3em 0.6em rgba(0,0,0,0.55), 0 0.05em 0.15em rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.08)',  
         strong: '0 0.5em 1em rgba(0,0,0,0.75), 0 0.1em 0.25em rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.1)'  
     };  
-  
-    function isValidColor(value) {  
-        if (!value) return false;  
-        return /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(value) ||  
-               /^rgba?\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*(,\s*[\d.]+\s*)?\)$/.test(value) ||  
-               value === 'transparent';  
-    }  
   
     function hexToRgb(hex) {  
         hex = hex.replace('#', '');  
@@ -67,14 +74,7 @@
   
     function resolveBgColor() {  
         var key = Lampa.Storage.get('list_card_bg_color', DEFAULTS.list_card_bg_color);  
-        var base;  
-  
-        if (key === 'custom') {  
-            var custom = Lampa.Storage.get('list_card_bg_color_custom', DEFAULTS.list_card_bg_color_custom);  
-            base = isValidColor(custom) ? custom : DEFAULTS.list_card_bg_color_custom;  
-        } else {  
-            base = PRESET_COLORS[key] || PRESET_COLORS.gray;  
-        }  
+        var base = BG_PRESETS[key] || BG_PRESETS.gray;  
   
         if (base === 'transparent') return 'transparent';  
   
@@ -82,20 +82,13 @@
         if (isNaN(opacity)) opacity = 100;  
         var alpha = Math.max(0, Math.min(100, opacity)) / 100;  
   
-        var rgb;  
-        if (base.charAt(0) === '#') {  
-            rgb = hexToRgb(base);  
-        } else {  
-            var m = base.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);  
-            rgb = m ? { r: +m[1], g: +m[2], b: +m[3] } : { r: 60, g: 60, b: 60 };  
-        }  
-  
+        var rgb = hexToRgb(base);  
         return 'rgba(' + rgb.r + ',' + rgb.g + ',' + rgb.b + ',' + alpha + ')';  
     }  
   
-    function resolveColorParam(name, fallback) {  
-        var value = Lampa.Storage.get(name, fallback);  
-        return isValidColor(value) ? value : fallback;  
+    function resolveTextColor(name, fallbackKey) {  
+        var key = Lampa.Storage.get(name, fallbackKey);  
+        return TEXT_PRESETS[key] || TEXT_PRESETS[fallbackKey];  
     }  
   
     // ---------- Применение стилей в реальном времени ----------  
@@ -103,9 +96,9 @@
         var root = document.documentElement.style;  
   
         root.setProperty('--lc-bg-color', resolveBgColor());  
-        root.setProperty('--lc-title-color', resolveColorParam('list_card_title_color', DEFAULTS.list_card_title_color));  
-        root.setProperty('--lc-status-color', resolveColorParam('list_card_status_color', DEFAULTS.list_card_status_color));  
-        root.setProperty('--lc-accent-color', resolveColorParam('list_card_accent_color', DEFAULTS.list_card_accent_color));  
+        root.setProperty('--lc-title-color', resolveTextColor('list_card_title_color', DEFAULTS.list_card_title_color));  
+        root.setProperty('--lc-status-color', resolveTextColor('list_card_status_color', DEFAULTS.list_card_status_color));  
+        root.setProperty('--lc-accent-color', resolveTextColor('list_card_accent_color', DEFAULTS.list_card_accent_color));  
   
         var radius = Lampa.Storage.get('list_card_border_radius', DEFAULTS.list_card_border_radius);  
         root.setProperty('--lc-radius', radius + 'em');  
@@ -117,7 +110,7 @@
         root.setProperty('--lc-title-size', titleSize + 'em');  
     }  
   
-    // ---------- Регистрация настроек ----------  
+    // ---------- Регистрация настроек (только select, никаких input) ----------  
     function initSettings() {  
         if (!window.Lampa || !Lampa.SettingsApi || window.listCardSettingsInited) return;  
         window.listCardSettingsInited = true;  
@@ -147,24 +140,13 @@
                     green: 'Тёмно-зелёный',  
                     maroon: 'Бордовый',  
                     purple: 'Фиолетовый',  
-                    transparent: 'Прозрачный',  
-                    custom: 'Свой цвет'  
+                    brown: 'Коричневый',  
+                    teal: 'Изумрудный',  
+                    transparent: 'Прозрачный'  
                 },  
                 default: DEFAULTS.list_card_bg_color  
             },  
             field: { name: Lampa.Lang.translate('list_card_bg_color') },  
-            onChange: applyCardStyles  
-        });  
-  
-        Lampa.SettingsApi.addParam({  
-            component: 'list_card_settings',  
-            param: {  
-                name: 'list_card_bg_color_custom',  
-                type: 'input',  
-                placeholder: '#3c3c3c',  
-                default: DEFAULTS.list_card_bg_color_custom  
-            },  
-            field: { name: Lampa.Lang.translate('list_card_bg_color_custom') },  
             onChange: applyCardStyles  
         });  
   
@@ -184,8 +166,11 @@
             component: 'list_card_settings',  
             param: {  
                 name: 'list_card_title_color',  
-                type: 'input',  
-                placeholder: '#ffffff',  
+                type: 'select',  
+                values: {  
+                    white: 'Белый', light_gray: 'Светло-серый', yellow: 'Жёлтый', orange: 'Оранжевый',  
+                    red: 'Красный', green: 'Зелёный', blue: 'Голубой', purple: 'Фиолетовый', pink: 'Розовый', black: 'Чёрный'  
+                },  
                 default: DEFAULTS.list_card_title_color  
             },  
             field: { name: Lampa.Lang.translate('list_card_title_color') },  
@@ -196,8 +181,11 @@
             component: 'list_card_settings',  
             param: {  
                 name: 'list_card_status_color',  
-                type: 'input',  
-                placeholder: '#ffffff',  
+                type: 'select',  
+                values: {  
+                    white: 'Белый', light_gray: 'Светло-серый', yellow: 'Жёлтый', orange: 'Оранжевый',  
+                    red: 'Красный', green: 'Зелёный', blue: 'Голубой', purple: 'Фиолетовый', pink: 'Розовый', black: 'Чёрный'  
+                },  
                 default: DEFAULTS.list_card_status_color  
             },  
             field: { name: Lampa.Lang.translate('list_card_status_color') },  
@@ -208,8 +196,11 @@
             component: 'list_card_settings',  
             param: {  
                 name: 'list_card_accent_color',  
-                type: 'input',  
-                placeholder: '#ffffff',  
+                type: 'select',  
+                values: {  
+                    white: 'Белый', light_gray: 'Светло-серый', yellow: 'Жёлтый', orange: 'Оранжевый',  
+                    red: 'Красный', green: 'Зелёный', blue: 'Голубой', purple: 'Фиолетовый', pink: 'Розовый', black: 'Чёрный'  
+                },  
                 default: DEFAULTS.list_card_accent_color  
             },  
             field: { name: Lampa.Lang.translate('list_card_accent_color') },  
