@@ -19,7 +19,7 @@
         '.card__badge{display:flex;flex-wrap:nowrap;align-items:center;line-height:1;width:100%;overflow:hidden;margin-top:auto}' +  
         '.card__badge-year{font-size:0.95em;line-height:1;color:#fff;flex-shrink:0}' +  
         '.card__badge-genre,.card__badge .card__type{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-left:0.4em;color:#fff;line-height:1}' +  
-        '.card__badge-year+.card__badge-genre::before,.card__badge-year+.card__type::before{content:"\u2022";margin-right:0.4em;color:#fff;font-size:0.95em}' +  
+        '.card__badge-year+.card__badge-genre::before,.card__badge-year+.card__type::before{content:none}' +  
         '.card__badge .card__type{position:static!important;top:auto!important;left:auto!important;background:none!important;padding:0!important;border-radius:0!important;font-size:0.95em!important;line-height:1!important;color:#fff!important}' +  
         '.card__badge-right{display:flex;align-items:center;flex-shrink:0;margin-left:auto}' +  
         '.card__badge-right>*+*{margin-left:0.4em}' +  
