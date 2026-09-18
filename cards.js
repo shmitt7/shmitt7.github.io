@@ -2,8 +2,9 @@
     if (window.listCard) return;  
     window.listCard = true;  
     document.head.insertAdjacentHTML('beforeend', '<style>' +  
-        '.card__title{display:none!important}' +  
-        '.card__age{display:none!important}' +  
+        '.card[data-list-card] .card__title{display:none!important}' +  
+        '.card[data-list-card] .card__age{display:none!important}' +  
+        '.card[data-list-card] .card__promo{display:none!important}' +  
         '.card.focus .card-watched{display:none!important}' +  
         '.card__icons{top:0.5em!important;left:auto!important;right:0.5em!important;justify-content:flex-end!important}' +  
         '.card__icons-inner{background:none!important;border-radius:0!important;flex-direction:column!important}' +  
@@ -91,8 +92,10 @@
         if (!view) return;  
         var titleEl = card.querySelector('.card__title');  
         var ageEl = card.querySelector('.card__age');  
+        var promoEl = card.querySelector('.card__promo');  
         if (titleEl) titleEl.style.display = 'none';  
         if (ageEl) ageEl.style.display = 'none';  
+        if (promoEl) promoEl.style.display = 'none';  
         var icons = card.querySelector('.card__icons');  
         if (icons) {  
             icons.style.cssText = 'top:0.5em;left:auto;right:0.5em;justify-content:flex-end;';  
