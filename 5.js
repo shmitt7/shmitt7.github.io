@@ -1,32 +1,120 @@
 (function(){  
 var API_URL='https://kinopoiskapiunofficial.tech';  
 var API_KEY='14342b35-714b-449d-bf10-30d0d9ac22e6';  
+var CACHE_NAME='kp_tmdb_resolve_cache';  
+var CACHE_MAX=800;  
 var network=new Lampa.Reguest();  
-var lines=[{type:'TOP_POPULAR_ALL',title:'Сейчас смотрят'},{type:'TOP_250_MOVIES',title:'Топ 250 фильмов'},{type:'TOP_250_TV_SHOWS',title:'Топ 250 сериалов'},{type:'TOP_POPULAR_MOVIES',title:'Популярные фильмы'},{type:'POPULAR_SERIES',title:'Популярные сериалы'},{type:'TOP_100_GREATEST_MOVIES_XXI',title:'Топ 100 величайших фильмов XXI века'},{type:'KIDS_ANIMATION_THEME',title:'Мультфильмы'},{type:'CLOSES_RELEASES',title:'Скоро в кино'}];  
-function requestParams(extra){  
-var params={headers:{'X-API-KEY':API_KEY},cache:{life:180},timeout:15000};  
-if(extra){for(var k in extra){if(extra.hasOwnProperty(k))params[k]=extra[k];}}  
-return params;  
+var lines=[  
+{type:'TOP_POPULAR_ALL',title:'Сейчас смотрят'},  
+{type:'TOP_250_MOVIES',title:'Топ 250 фильмов'},  
+{type:'TOP_250_TV_SHOWS',title:'Топ 250 сериалов'},  
+{type:'TOP_POPULAR_MOVIES',title:'Популярные фильмы'},  
+{type:'POPULAR_SERIES',title:'Популярные сериалы'},  
+{type:'TOP_100_GREATEST_MOVIES_XXI',title:'Топ 100 величайших фильмов XXI века'},  
+{type:'KIDS_ANIMATION_THEME',title:'Мультфильмы'},  
+{type:'CLOSES_RELEASES',title:'Скоро в кино'}  
+];  
+function kpHeader(){  
+return {headers:{'X-API-KEY':API_KEY},cache:{life:180},timeout:15000};  
 }  
-function mapCard(film){  
-if(!film)return null;  
-var isTv=film.type==='TV_SERIES'||film.type==='MINI_SERIES'||film.type==='TV_SHOW';  
-var kpId=film.kinopoiskId||film.filmId;  
-var card={source:'kp',id:'kp_'+kpId,kinopoisk_id:kpId,imdb_id:film.imdbId||'',title:film.nameRu||film.nameEn||film.nameOriginal||'',original_title:film.nameOriginal||film.nameEn||'',overview:film.description||film.shortDescription||'',img:film.posterUrlPreview||film.posterUrl||'',poster:film.posterUrlPreview||film.posterUrl||'',background_image:film.coverUrl||film.posterUrl||film.posterUrlPreview||'',vote_average:parseFloat(film.ratingKinopoisk||film.rating)||0,kp_rating:parseFloat(film.ratingKinopoisk||film.rating)||0,imdb_rating:parseFloat(film.ratingImdb)||0,vote_count:film.ratingKinopoiskVoteCount||film.ratingVoteCount||0,genres:[],production_countries:[]};  
-if(film.genres){for(var i=0;i<film.genres.length;i++)card.genres.push({id:0,name:film.genres[i].genre});}  
-if(film.countries){for(var j=0;j<film.countries.length;j++)card.production_countries.push({name:film.countries[j].country});}  
-if(isTv){card.name=card.title;card.original_name=card.original_title;card.first_air_date=film.startYear?film.startYear+'-01-01':(film.year?film.year+'-01-01':'');if(film.endYear)card.last_air_date=film.endYear+'-01-01';}  
-else card.release_date=film.year?film.year+'-01-01':'';  
-return card;  
-}  
-function loadCollection(type,page,oncomplite,onerror){  
+function loadKpCollection(type,page,oncomplite,onerror){  
 var url=API_URL+'/api/v2.2/films/collections?type='+type+'&page='+(page||1);  
 network.silent(url,function(json){  
-var results=[];  
 var items=json&&json.items?json.items:[];  
-for(var i=0;i<items.length;i++){var c=mapCard(items[i]);if(c)results.push(c);}  
-oncomplite({results:results,page:page||1,total_pages:json&&json.totalPages?json.totalPages:1,total_results:json&&json.total?json.total:results.length});  
-},onerror,false,requestParams());  
+oncomplite({items:items,page:page||1,total_pages:json&&json.totalPages?json.totalPages:1,total_results:json&&json.total?json.total:items.length});  
+},onerror,false,kpHeader());  
+}  
+function getResolveCache(){  
+return Lampa.Storage.cache(CACHE_NAME,CACHE_MAX,{});  
+}  
+function setResolveCache(key,value){  
+var cache=getResolveCache();  
+cache[key]=value;  
+Lampa.Storage.set(CACHE_NAME,cache);  
+}  
+function pickBestResult(results,year){  
+if(!results||!results.length)return null;  
+if(year){  
+for(var i=0;i<results.length;i++){  
+var date=results[i].release_date||results[i].first_air_date||'';  
+var y=parseInt((date+'').slice(0,4));  
+if(y&&Math.abs(y-year)<=1)return results[i];  
+}  
+}  
+return results[0];  
+}  
+function tmdbSearch(method,query,year,cb,errcb){  
+var url=Lampa.TMDB.api('search/'+method+'?query='+encodeURIComponent(query)+'&api_key='+Lampa.TMDB.key()+'&language='+Lampa.Storage.field('language'));  
+if(year)url+='&'+(method==='movie'?'year=':'first_air_date_year=')+year;  
+network.silent(url,function(json){  
+cb(json&&json.results?json.results:[]);  
+},errcb,false,{cache:{life:1440},timeout:8000});  
+}  
+function resolveTmdb(kpItem,cb){  
+var method=(!kpItem.type||kpItem.type==='FILM')?'movie':'tv';  
+var year=kpItem.year||kpItem.startYear||0;  
+var cacheKey=method+'_'+(kpItem.kinopoiskId||kpItem.filmId);  
+var cached=getResolveCache();  
+if(cached[cacheKey]!==undefined){  
+cb(cached[cacheKey]);  
+return;  
+}  
+var queryOriginal=kpItem.nameOriginal||'';  
+var queryFallback=kpItem.nameRu||kpItem.nameEn||'';  
+function finish(card){  
+setResolveCache(cacheKey,card);  
+cb(card);  
+}  
+function tryFallback(){  
+if(!queryFallback){  
+finish(null);  
+return;  
+}  
+tmdbSearch(method,queryFallback,year,function(results){  
+var best=pickBestResult(results,year);  
+if(!best){  
+finish(null);  
+return;  
+}  
+best.method=method;  
+finish(Lampa.Utils.addSource(best,'tmdb'));  
+},function(){finish(null);});  
+}  
+if(queryOriginal){  
+tmdbSearch(method,queryOriginal,year,function(results){  
+var best=pickBestResult(results,year);  
+if(best){  
+best.method=method;  
+finish(Lampa.Utils.addSource(best,'tmdb'));  
+}  
+else tryFallback();  
+},tryFallback);  
+}  
+else tryFallback();  
+}  
+function loadCollectionResolved(type,page,oncomplite,onerror){  
+loadKpCollection(type,page,function(data){  
+var items=data.items;  
+if(!items.length){  
+oncomplite({results:[],page:data.page,total_pages:data.total_pages,total_results:data.total_results});  
+return;  
+}  
+var status=new Lampa.Status(items.length);  
+var resolved=new Array(items.length);  
+status.onComplite=function(){  
+var results=[];  
+for(var i=0;i<resolved.length;i++){  
+if(resolved[i])results.push(resolved[i]);  
+}  
+oncomplite({results:results,page:data.page,total_pages:data.total_pages,total_results:data.total_results});  
+};  
+items.forEach(function(item,index){  
+resolveTmdb(item,function(card){  
+resolved[index]=card;  
+status.append('i'+index,card);  
+});  
+});  
+},onerror);  
 }  
 function apiMain(params,oncomplite,onerror){  
 var status=new Lampa.Status(lines.length);  
@@ -34,75 +122,51 @@ status.onComplite=function(){
 var fulldata=[];  
 for(var i=0;i<lines.length;i++){  
 var data=status.data[lines[i].type];  
-if(!data)continue;  
+if(!data||!data.results||!data.results.length)continue;  
 data.title=lines[i].title;  
-data.type=lines[i].type;  
+data.url=lines[i].type;  
 fulldata.push(data);  
 }  
-if(!fulldata.length)return onerror();  
+if(!fulldata.length){  
+onerror();  
+return;  
+}  
 oncomplite(fulldata);  
 };  
 lines.forEach(function(line){  
-loadCollection(line.type,1,function(data){status.append(line.type,data);},status.error.bind(status));  
+loadCollectionResolved(line.type,1,function(data){  
+status.append(line.type,data);  
+},status.error.bind(status));  
 });  
 }  
 function apiCollection(params,oncomplite,onerror){  
-loadCollection(params.url,params.page||1,oncomplite,onerror);  
+loadCollectionResolved(params.url,params.page||1,oncomplite,onerror);  
 }  
-function apiFull(params,oncomplite,onerror){  
-var kpId=params.kinopoisk_id||String(params.id||'').replace('kp_','');  
-if(!kpId)return onerror();  
-var status=new Lampa.Status(3);  
-status.onComplite=function(){  
-var card=status.data.card;  
-if(!card)return onerror();  
-oncomplite({movie:card,cast:status.data.cast||{cast:[],crew:[]},similar:status.data.similar||{results:[]}});  
-};  
-network.silent(API_URL+'/api/v2.2/films/'+kpId,function(film){status.append('card',mapCard(film));},status.error.bind(status),false,requestParams());  
-network.silent(API_URL+'/api/v2.2/films/'+kpId+'/staff',function(staff){  
-var cast=[];  
-var crew=[];  
-var list=staff||[];  
-for(var i=0;i<list.length;i++){  
-var person=list[i];  
-var item={id:person.staffId,name:person.nameRu||person.nameEn||'',url:'',img:person.posterUrl||'',character:person.description||'',job:Lampa.Utils.capitalizeFirstLetter((person.professionKey||'').toLowerCase())};  
-if(person.professionKey==='ACTOR')cast.push(item);  
-else crew.push(item);  
-}  
-status.append('cast',{cast:cast,crew:crew});  
-},status.error.bind(status),false,requestParams());  
-network.silent(API_URL+'/api/v2.2/films/'+kpId+'/similars',function(json){  
-var results=[];  
-var items=json&&json.items?json.items:[];  
-for(var i=0;i<items.length;i++){var c=mapCard(items[i]);if(c)results.push(c);}  
-status.append('similar',{results:results});  
-},status.error.bind(status),false,requestParams());  
-}  
-function apiClear(){network.clear();}  
-var Api={main:apiMain,collection:apiCollection,full:apiFull,clear:apiClear};  
 function MainComponent(object){  
 var comp=new Lampa.InteractionMain(object);  
 comp.create=function(){  
 comp.activity.loader(true);  
-Api.main(object,function(data){comp.build(data);},comp.empty.bind(comp));  
+apiMain(object,function(data){  
+comp.build(data);  
+},comp.empty.bind(comp));  
 return comp.render();  
 };  
 comp.onMore=function(data){  
-Lampa.Activity.push({url:data.type,title:data.title,component:'kinopoisk_category',page:1});  
+Lampa.Activity.push({url:data.url,title:data.title,component:'kinopoisk_category',page:1});  
 };  
 return comp;  
 }  
 function CategoryComponent(object){  
 var comp=new Lampa.InteractionCategory(object);  
 comp.create=function(){  
-Api.collection(object,comp.build.bind(comp),comp.empty.bind(comp));  
+apiCollection(object,comp.build.bind(comp),comp.empty.bind(comp));  
 };  
 comp.nextPageReuest=function(obj,resolve,reject){  
-Api.collection(obj,resolve.bind(comp),reject.bind(comp));  
+apiCollection(obj,resolve.bind(comp),reject.bind(comp));  
 };  
 comp.cardRender=function(obj,element,card){  
 card.onEnter=function(){  
-Lampa.Activity.push({url:element.id,title:element.title,component:'full',source:'kp',id:element.id,kinopoisk_id:element.kinopoisk_id});  
+Lampa.Activity.push({url:element.id,title:element.title||element.name,component:'full',source:'tmdb',method:element.method,id:element.id});  
 };  
 };  
 return comp;  
@@ -115,9 +179,8 @@ Lampa.Activity.push({url:'',title:manifest.name,component:'kinopoisk_main',page:
 $('.menu .menu__list').eq(0).append(button);  
 }  
 function initPlugin(){  
-var manifest={type:'video',version:'1.0.0',name:'Кинопоиск',description:'Топы и коллекции Кинопоиска',component:'kinopoisk_main'};  
+var manifest={type:'video',version:'2.0.0',name:'Кинопоиск',description:'Топы и коллекции Кинопоиска, карточки из TMDB',component:'kinopoisk_main'};  
 Lampa.Manifest.plugins=manifest;  
-Lampa.Api.sources.kp=Api;  
 Lampa.Component.add('kinopoisk_main',MainComponent);  
 Lampa.Component.add('kinopoisk_category',CategoryComponent);  
 addMenuButton(manifest);  
