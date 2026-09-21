@@ -36,9 +36,12 @@ if(y&&Math.abs(y-year)<=1)return results[i];
 }  
 return results[0];  
 }  
-function tmdbSearch(method,query,year,cb,errcb){  
-var url=Lampa.TMDB.api('search/'+method+'?query='+encodeURIComponent(query)+'&api_key='+Lampa.TMDB.key()+'&language='+Lampa.Storage.field('language'));  
-if(year)url+='&'+(method==='movie'?'year=':'first_air_date_year=')+year;  
+function tmdbSearch(method,query,cb,errcb){  
+if(!query){  
+cb([]);  
+return;  
+}  
+var url=Lampa.TMDB.api('search/'+method+'?query='+encodeURIComponent(query)+'&api_key='+Lampa.TMDB.key()+'&language='+Lampa.Storage.field('tmdb_lang'));  
 network.silent(url,function(json){  
 cb(json&&json.results?json.results:[]);  
 },errcb,false,{cache:{life:1440},timeout:8000});  
@@ -63,7 +66,7 @@ if(!queryFallback){
 finish(null);  
 return;  
 }  
-tmdbSearch(method,queryFallback,year,function(results){  
+tmdbSearch(method,queryFallback,function(results){  
 var best=pickBestResult(results,year);  
 if(!best){  
 finish(null);  
@@ -74,7 +77,7 @@ finish(Lampa.Utils.addSource(best,'tmdb'));
 },function(){finish(null);});  
 }  
 if(queryOriginal){  
-tmdbSearch(method,queryOriginal,year,function(results){  
+tmdbSearch(method,queryOriginal,function(results){  
 var best=pickBestResult(results,year);  
 if(best){  
 best.method=method;  
@@ -172,7 +175,7 @@ Lampa.Activity.push({url:'',title:manifest.name,component:'kinopoisk_main',page:
 $('.menu .menu__list').eq(0).append(button);  
 }  
 function initPlugin(){  
-var manifest={type:'video',version:'2.1.0',name:'Кинопоиск',description:'Популярное с Кинопоиска, карточки из TMDB',component:'kinopoisk_main'};  
+var manifest={type:'video',version:'2.2.0',name:'Кинопоиск',description:'Популярное с Кинопоиска, карточки из TMDB',component:'kinopoisk_main'};  
 Lampa.Manifest.plugins=manifest;  
 Lampa.Component.add('kinopoisk_main',MainComponent);  
 Lampa.Component.add('kinopoisk_category',CategoryComponent);  
