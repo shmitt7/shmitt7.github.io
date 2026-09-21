@@ -150,7 +150,14 @@
     });  
   }  
   
-  // Категория "Ещё" для строки Кинопоиска  
+  function attachCardHandlers(item){  
+    item.params = item.params || {};  
+    item.params.emit = item.params.emit || {};  
+    item.params.emit.onEnter = function(){ openCard(item); };  
+    item.params.emit.onFocus = function(){ Lampa.Background.change(Lampa.Utils.cardImgBackground(item)); };  
+  }  
+  
+  // Категория "Ещё"  
   function CategoryComponent(object){  
     var comp=Lampa.Maker.make('Category',object);  
   
@@ -173,36 +180,30 @@
   }  
   
   function initPlugin(){  
-    var manifest={type:'video',version:'4.0.0',name:'Кинопоиск',description:'Линия Кинопоиска на главной'};  
+    var manifest={type:'video',version:'4.1.0',name:'Кинопоиск',description:'Линия Кинопоиска на главной'};  
     Lampa.Manifest.plugins=manifest;  
   
     Lampa.Component.add('kinopoisk_category', CategoryComponent);  
   
-    // Вставляем линию на главный экран перед "Сегодня в тренде"  
     Lampa.ContentRows.add({  
       name: 'kinopoisk_popular',  
       title: LINE_TITLE,  
-      index: 1, // перед trending/movie/day ("Сегодня в тренде")  
+      // index:5 -> после 4 переключаемых строк (continue_watch, recomend_watch,  
+      // timetable_lately, timetable_recently), перед trending/movie/day.  
+      // Если Lampa в будущем изменит число/состав этих строк - число нужно скорректировать.  
+      index: 5,  
       screen: ['main'],  
       call: function(params, screen){  
         return function(call){  
           loadCollection(LINE_TYPE,1,function(data){  
-            data.results.forEach(function(item){  
-              item.params = {  
-                createInstance: undefined,  
-                emit: {  
-                  onEnter: function(){ openCard(item); },  
-                  onFocus: function(){ Lampa.Background.change(Lampa.Utils.cardImgBackground(item)); }  
-                }  
-              };  
-            });  
+            data.results.forEach(attachCardHandlers);  
   
             call({  
               title: LINE_TITLE,  
               url: LINE_TYPE,  
               results: data.results,  
+              total_pages: data.total_pages > 1 ? data.total_pages : 2, // чтобы модуль More показал кнопку "Ещё"  
               params: {  
-                module: Lampa.Maker.module('Line').toggle(Lampa.Maker.module('Line').MASK.base, 'More', 'Event'),  
                 emit: {  
                   onMore: function(){  
                     Lampa.Activity.push({url: LINE_TYPE, title: LINE_TITLE, component: 'kinopoisk_category', page: 1});  
