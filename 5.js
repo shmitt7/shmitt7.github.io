@@ -126,9 +126,7 @@
   }  
   
   // Резолвит СПИСОК KP-карточек в TMDB параллельно, отдаёт только успешно найденные.  
-  // ВАЖНО: status.onComplite назначается ДО forEach, так как resolveTmdbByCard  
-  // может вызвать cb синхронно (кэш-хит) - иначе status.append/check  
-  // сработает раньше, чем onComplite назначен, и упадёт с "this.onComplite is not a function".  
+  // status.onComplite назначается ДО forEach (см. предыдущий фикс).  
   function resolveTmdbByList(cards, cb){  
     if(!cards.length){ cb([]); return; }  
   
@@ -158,9 +156,6 @@
   }  
   
   // Отдаёт наружу уже резолвленные в TMDB карточки.  
-  // Это устраняет двойной Activity.push, потому что дефолтные хардкодные  
-  // обработчики main.js (Router.call('full', data) / Router.call('category_full', data))  
-  // получают карточки с корректным source:'tmdb' и работают правильно с первого раза.  
   function loadCollectionResolved(type,page,oncomplite,onerror){  
     loadKpMapped(type,page,function(data){  
       resolveTmdbByList(data.results,function(resolved){  
@@ -174,8 +169,7 @@
     },onerror);  
   }  
   
-  // Категория "Ещё": карточки уже полноценные TMDB-карточки,  
-  // поэтому клик - простой прямой Activity.push без резолва в момент клика.  
+  // Категория "Ещё": карточки уже полноценные TMDB-карточки.  
   function CategoryComponent(object){  
     var comp=Lampa.Maker.make('Category',object);  
   
@@ -220,7 +214,7 @@
   }  
   
   function initPlugin(){  
-    var manifest={type:'video',version:'5.1.0',name:'Кинопоиск',description:'Линия Кинопоиска на главной'};  
+    var manifest={type:'video',version:'5.2.0',name:'Кинопоиск',description:'Линия Кинопоиска на главной'};  
     Lampa.Manifest.plugins=manifest;  
   
     Lampa.Component.add('kinopoisk_category', CategoryComponent);  
@@ -238,7 +232,18 @@
               title: LINE_TITLE,  
               url: LINE_TYPE,  
               results: data.results,  
-              total_pages: 2 // гарантирует появление кнопки "Ещё" в модуле More  
+              total_pages: 2, // гарантирует появление кнопки "Ещё" в модуле More  
+              params: {  
+                emit: {  
+                  // onlyMore (не onMore!) - main.js навешивает свой onMore на КАЖДУЮ  
+                  // строку из ContentRows (Router.call('category_full', data)), который  
+                  // не знает про наш KP-урл. only-обработчик имеет приоритет и полностью  
+                  // отменяет дефолтный, поэтому "Ещё" откроет именно kinopoisk_category.  
+                  onlyMore: function(){  
+                    Lampa.Activity.push({url: LINE_TYPE, title: LINE_TITLE, component: 'kinopoisk_category', page: 1});  
+                  }  
+                }  
+              }  
             });  
           },function(){ call({results:[]}); });  
         };  
