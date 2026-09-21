@@ -5,14 +5,7 @@ var CACHE_NAME='kp_tmdb_resolve_cache';
 var CACHE_MAX=800;  
 var network=new Lampa.Reguest();  
 var lines=[  
-{type:'TOP_POPULAR_ALL',title:'Сейчас смотрят'},  
-{type:'TOP_250_MOVIES',title:'Топ 250 фильмов'},  
-{type:'TOP_250_TV_SHOWS',title:'Топ 250 сериалов'},  
-{type:'TOP_POPULAR_MOVIES',title:'Популярные фильмы'},  
-{type:'POPULAR_SERIES',title:'Популярные сериалы'},  
-{type:'TOP_100_GREATEST_MOVIES_XXI',title:'Топ 100 величайших фильмов XXI века'},  
-{type:'KIDS_ANIMATION_THEME',title:'Мультфильмы'},  
-{type:'CLOSES_RELEASES',title:'Скоро в кино'}  
+{type:'TOP_POPULAR_ALL',title:'Популярное'}  
 ];  
 function kpHeader(){  
 return {headers:{'X-API-KEY':API_KEY},cache:{life:180},timeout:15000};  
@@ -179,7 +172,7 @@ Lampa.Activity.push({url:'',title:manifest.name,component:'kinopoisk_main',page:
 $('.menu .menu__list').eq(0).append(button);  
 }  
 function initPlugin(){  
-var manifest={type:'video',version:'2.0.0',name:'Кинопоиск',description:'Топы и коллекции Кинопоиска, карточки из TMDB',component:'kinopoisk_main'};  
+var manifest={type:'video',version:'2.1.0',name:'Кинопоиск',description:'Популярное с Кинопоиска, карточки из TMDB',component:'kinopoisk_main'};  
 Lampa.Manifest.plugins=manifest;  
 Lampa.Component.add('kinopoisk_main',MainComponent);  
 Lampa.Component.add('kinopoisk_category',CategoryComponent);  
