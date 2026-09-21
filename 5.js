@@ -3,9 +3,9 @@
   var API_KEY='14342b35-714b-449d-bf10-30d0d9ac22e6';  
   var CACHE_NAME='kp_tmdb_resolve_cache';  
   var CACHE_MAX=800;  
-  var RESOLVE_MODE='lazy_tmdb';  
   var network=new Lampa.Reguest();  
-  var lines=[{type:'TOP_POPULAR_ALL',title:'Популярное'}];  
+  var LINE_TYPE='TOP_POPULAR_ALL';  
+  var LINE_TITLE='Популярное (Кинопоиск)';  
   
   function kpHeader(){  
     return {headers:{'X-API-KEY':API_KEY},cache:{life:180},timeout:15000};  
@@ -31,17 +31,14 @@
       kp_source:true,  
       id:'kp_'+kpId,  
       kinopoisk_id:kpId,  
-      imdb_id:item.imdbId||'',  
       method:method,  
       title:item.nameRu||item.nameOriginal||item.nameEn||'',  
       original_title:item.nameOriginal||item.nameEn||'',  
       overview:item.description||'',  
       img:item.posterUrlPreview||item.posterUrl||'',  
       poster:item.posterUrlPreview||item.posterUrl||'',  
-      background_image:item.coverUrl||item.posterUrl||'',  
       vote_average:parseFloat(item.ratingKinopoisk||item.ratingImdb)||0,  
       kp_rating:parseFloat(item.ratingKinopoisk)||0,  
-      imdb_rating:parseFloat(item.ratingImdb)||0,  
       kp_year:item.year||0,  
       kp_query_original:item.nameOriginal||'',  
       kp_query_fallback:item.nameRu||item.nameEn||''  
@@ -86,8 +83,6 @@
     },errcb,false,{cache:{life:1440},timeout:8000});  
   }  
   
-  // Ключевая точка: если карточка уже "kp", в момент клика мы ОБЯЗАТЕЛЬНО должны  
-  // подменить source/id/method на tmdb ДО Activity.push, иначе получаем source:'kp'.  
   function resolveTmdbByCard(card,cb){  
     if(!card.kp_source){cb(card);return;}  
   
@@ -126,7 +121,7 @@
     else tryFallback();  
   }  
   
-  function loadCollection_kpOnly(type,page,oncomplite,onerror){  
+  function loadCollection(type,page,oncomplite,onerror){  
     loadKpCollection(type,page,function(data){  
       var results=[];  
       for(var i=0;i<data.items.length;i++)results.push(mapKpCard(data.items[i]));  
@@ -134,66 +129,6 @@
     },onerror);  
   }  
   
-  function loadCollection_eagerTmdb(type,page,oncomplite,onerror){  
-    loadKpCollection(type,page,function(data){  
-      var kpCards=[];  
-      for(var i=0;i<data.items.length;i++)kpCards.push(mapKpCard(data.items[i]));  
-      if(!kpCards.length){  
-        oncomplite({results:[],page:data.page,total_pages:data.total_pages,total_results:data.total_results});  
-        return;  
-      }  
-      var status=new Lampa.Status(kpCards.length);  
-      var resolved=new Array(kpCards.length);  
-      kpCards.forEach(function(card,idx){  
-        resolveTmdbByCard(card,function(tmdbCard){  
-          resolved[idx]=tmdbCard;  
-          status.append('i'+idx,true);  
-        });  
-      });  
-      status.onComplite=function(){  
-        var results=[];  
-        for(var i=0;i<resolved.length;i++)if(resolved[i])results.push(resolved[i]);  
-        oncomplite({results:results,page:data.page,total_pages:data.total_pages,total_results:data.total_results});  
-      };  
-    },onerror);  
-  }  
-  
-  function loadCollection_lazyTmdb(type,page,oncomplite,onerror){  
-    loadCollection_kpOnly(type,page,oncomplite,onerror);  
-  }  
-  
-  function loadCollectionResolved(type,page,oncomplite,onerror){  
-    if(RESOLVE_MODE==='eager_tmdb')loadCollection_eagerTmdb(type,page,oncomplite,onerror);  
-    else if(RESOLVE_MODE==='kp_only')loadCollection_kpOnly(type,page,oncomplite,onerror);  
-    else loadCollection_lazyTmdb(type,page,oncomplite,onerror);  
-  }  
-  
-  function apiMain(params,oncomplite,onerror){  
-    var status=new Lampa.Status(lines.length);  
-    status.onComplite=function(){  
-      var fulldata=[];  
-      for(var i=0;i<lines.length;i++){  
-        var data=status.data[lines[i].type];  
-        if(!data||!data.results||!data.results.length)continue;  
-        data.title=lines[i].title;  
-        data.url=lines[i].type;  
-        fulldata.push(data);  
-      }  
-      if(!fulldata.length){onerror();return;}  
-      oncomplite(fulldata);  
-    };  
-    lines.forEach(function(line){  
-      loadCollectionResolved(line.type,1,function(data){  
-        status.append(line.type,data);  
-      },status.error.bind(status));  
-    });  
-  }  
-  
-  function apiCollection(params,oncomplite,onerror){  
-    loadCollectionResolved(params.url,params.page||1,oncomplite,onerror);  
-  }  
-  
-  // Единая точка обработки клика — работает и для главной линии, и для категории.  
   function openCard(card){  
     Lampa.Loading.start(function(){});  
     resolveTmdbByCard(card,function(tmdbCard){  
@@ -215,57 +150,21 @@
     });  
   }  
   
-  // ---- Современный Maker API вместо устаревших InteractionMain/InteractionCategory ----  
-  
-  function MainComponent(object){  
-    var comp=Lampa.Maker.make('Main',object);  
-  
-    comp.use({  
-      onCreate: function(){  
-        apiMain(object,(data)=>{  
-          this.build(data);  
-        },this.empty.bind(this));  
-      },  
-      onInstance: function(item, data){  
-        item.use({  
-          onMore: function(){  
-            Lampa.Activity.push({url:data.url,title:data.title,component:'kinopoisk_category',page:1});  
-          },  
-          onInstance: function(card, cardData){  
-            card.use({  
-              onEnter: function(){  
-                openCard(cardData);  
-              },  
-              onFocus: function(){  
-                Lampa.Background.change(Lampa.Utils.cardImgBackground(cardData));  
-              }  
-            });  
-          }  
-        });  
-      }  
-    });  
-  
-    return comp;  
-  }  
-  
+  // Категория "Ещё" для строки Кинопоиска  
   function CategoryComponent(object){  
     var comp=Lampa.Maker.make('Category',object);  
   
     comp.use({  
       onCreate: function(){  
-        apiCollection(object,this.build.bind(this),this.empty.bind(this));  
+        loadCollection(object.url,object.page||1,this.build.bind(this),this.empty.bind(this));  
       },  
       onNext: function(resolve, reject){  
-        apiCollection(object, resolve, reject);  
+        loadCollection(object.url,object.page||1,resolve,reject);  
       },  
       onInstance: function(card, data){  
         card.use({  
-          onEnter: function(){  
-            openCard(data);  
-          },  
-          onFocus: function(){  
-            Lampa.Background.change(Lampa.Utils.cardImgBackground(data));  
-          }  
+          onEnter: function(){ openCard(data); },  
+          onFocus: function(){ Lampa.Background.change(Lampa.Utils.cardImgBackground(data)); }  
         });  
       }  
     });  
@@ -273,20 +172,48 @@
     return comp;  
   }  
   
-  function addMenuButton(manifest){  
-    var button=$('<li class="menu__item selector"><div class="menu__ico"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"></circle><text x="12" y="16" font-size="9" text-anchor="middle" fill="currentColor">KP</text></svg></div><div class="menu__text">'+manifest.name+'</div></li>');  
-    button.on('hover:enter',function(){  
-      Lampa.Activity.push({url:'',title:manifest.name,component:'kinopoisk_main',page:1});  
-    });  
-    $('.menu .menu__list').eq(0).append(button);  
-  }  
-  
   function initPlugin(){  
-    var manifest={type:'video',version:'3.1.0',name:'Кинопоиск',description:'Популярное с Кинопоиска',component:'kinopoisk_main'};  
+    var manifest={type:'video',version:'4.0.0',name:'Кинопоиск',description:'Линия Кинопоиска на главной'};  
     Lampa.Manifest.plugins=manifest;  
-    Lampa.Component.add('kinopoisk_main',MainComponent);  
-    Lampa.Component.add('kinopoisk_category',CategoryComponent);  
-    addMenuButton(manifest);  
+  
+    Lampa.Component.add('kinopoisk_category', CategoryComponent);  
+  
+    // Вставляем линию на главный экран перед "Сегодня в тренде"  
+    Lampa.ContentRows.add({  
+      name: 'kinopoisk_popular',  
+      title: LINE_TITLE,  
+      index: 1, // перед trending/movie/day ("Сегодня в тренде")  
+      screen: ['main'],  
+      call: function(params, screen){  
+        return function(call){  
+          loadCollection(LINE_TYPE,1,function(data){  
+            data.results.forEach(function(item){  
+              item.params = {  
+                createInstance: undefined,  
+                emit: {  
+                  onEnter: function(){ openCard(item); },  
+                  onFocus: function(){ Lampa.Background.change(Lampa.Utils.cardImgBackground(item)); }  
+                }  
+              };  
+            });  
+  
+            call({  
+              title: LINE_TITLE,  
+              url: LINE_TYPE,  
+              results: data.results,  
+              params: {  
+                module: Lampa.Maker.module('Line').toggle(Lampa.Maker.module('Line').MASK.base, 'More', 'Event'),  
+                emit: {  
+                  onMore: function(){  
+                    Lampa.Activity.push({url: LINE_TYPE, title: LINE_TITLE, component: 'kinopoisk_category', page: 1});  
+                  }  
+                }  
+              }  
+            });  
+          },call);  
+        };  
+      }  
+    });  
   }  
   
   if(!window.kinopoisk_plugin_installed){  
