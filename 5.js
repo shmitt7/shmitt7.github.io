@@ -9,8 +9,7 @@
     var KP_LINE_TYPE = 'TOP_POPULAR_ALL';  
     var KP_LINE_TITLE = 'Сейчас смотрят Кинопоиск';  
     var CUB_LINE_TITLE = 'Сейчас смотрят CUB';  
-    var KP_LINE_INDEX = 5;  
-    var CUB_LINE_INDEX = 6;  
+    var CORE_TOGGLE_ROWS = ['continue_watch', 'recomend_watch', 'timetable_lately', 'timetable_recently'];  
     var kpHeader = function(){  
         return {headers: {'X-API-KEY': KP_API_KEY}, cache: {life: 180}, timeout: 15000};  
     };  
@@ -204,13 +203,23 @@
         });  
         return comp;  
     };  
+    var computeDynamicIndex = function(){  
+        var enabled = 0;  
+        CORE_TOGGLE_ROWS.forEach(function(name){  
+            var val = Lampa.Storage.get('content_rows_' + name, 'true');  
+            if(val === true || val === 'true') enabled++;  
+        });  
+        return 1 + enabled;  
+    };  
+    var computeCubIndex = function(){  
+        return computeDynamicIndex() + 1;  
+    };  
     var initCubRow = function(){  
         Lampa.Component.add('cub_now_watching_category', CubCategoryComponent);  
         var row = {  
             name: 'cub_now_watching',  
             title: CUB_LINE_TITLE,  
             screen: ['main'],  
-            index: CUB_LINE_INDEX,  
             call: function(params, screen){  
                 return function(call){  
                     loadCubNowWatching(1, function(data){  
@@ -233,6 +242,7 @@
                 };  
             }  
         };  
+        Object.defineProperty(row, 'index', {get: computeCubIndex});  
         Lampa.ContentRows.add(row);  
     };  
     var initPlugin = function(){  
@@ -243,7 +253,6 @@
             name: 'kinopoisk_popular',  
             title: KP_LINE_TITLE,  
             screen: ['main'],  
-            index: KP_LINE_INDEX,  
             call: function(params, screen){  
                 return function(call){  
                     loadCollectionResolved(KP_LINE_TYPE, 1, function(data){  
@@ -261,6 +270,7 @@
                 };  
             }  
         };  
+        Object.defineProperty(row, 'index', {get: computeDynamicIndex});  
         Lampa.ContentRows.add(row);  
         initCubRow();  
     };  
