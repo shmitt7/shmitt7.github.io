@@ -31,6 +31,7 @@
         { url: 'https://shmitt7.github.io/dmca.js', name: 'Разблокировка DMCA', description: 'Автоматически обходит блокировку DMCA-контента' },
         { url: 'https://shmitt7.github.io/menu.js', name: 'Плавающее меню', description: 'Новое оформление всех меню на TV' },  
         { url: 'https://shmitt7.github.io/labels.js', name: 'Цветные метки контента', description: 'Визуальные метки типа контента: синие для фильмов, красные для сериалов' },  
+        { url: 'https://shmitt7.github.io/line.js', name: 'Линии Кинопоиск и CUB', description: 'Добавляет на главный экран линии "Сейчас смотрят Кинопоиск" и "Сейчас смотрят CUB" с карточками, привязанными к TMDB по названию и году' },
         { url: 'https://shmitt7.github.io/parser.js', name: 'Дополнительные кнопки Торрента', description: 'Управление общедоступными парсерами. Доступ: Карточка → Торренты → кнопка µTorrent в шапке | Долгий тап на карточку → Парсер' },  
         { url: 'https://shmitt7.github.io/quality.js', name: 'Отметка качества', description: 'Отображение доступного качества видео 4K, HD, TS' },  
         { url: 'https://shmitt7.github.io/rating.js', name: 'Рейтинг КиноПоиск с логотипом', description: 'Отображение рейтинга КиноПоиск с логотипом на карточке | Рейтинг без логотипа - TMDB' },  
