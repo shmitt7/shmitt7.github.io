@@ -9,8 +9,8 @@
     var KP_LINE_TYPE = 'TOP_POPULAR_ALL';  
     var KP_LINE_TITLE = 'Сейчас смотрят Кинопоиск';  
     var CUB_LINE_TITLE = 'Сейчас смотрят CUB';  
-    var KP_LINE_INDEX = 2;  
-    var CUB_LINE_INDEX = 3;  
+    var KP_LINE_INDEX = 5;  
+    var CUB_LINE_INDEX = 6;  
     var kpHeader = function(){  
         return {headers: {'X-API-KEY': KP_API_KEY}, cache: {life: 180}, timeout: 15000};  
     };  
