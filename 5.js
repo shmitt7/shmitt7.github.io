@@ -5,7 +5,7 @@
     var CACHE_MAX=800;  
     var network=new Lampa.Reguest();  
     var LINE_TYPE='TOP_POPULAR_ALL';  
-    var LINE_TITLE='Популярное (Кинопоиск)';  
+    var LINE_TITLE='Популярное Кинопоиск)';  
     var CORE_TOGGLE_ROWS=['continue_watch','recomend_watch','timetable_lately','timetable_recently'];  
     function kpHeader(){  
         return {headers:{'X-API-KEY':API_KEY},cache:{life:180},timeout:15000};  
