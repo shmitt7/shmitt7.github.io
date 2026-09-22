@@ -5,7 +5,7 @@ var CACHE_NAME='kp_tmdb_resolve_cache';
 var CACHE_MAX=800;  
 var network=new Lampa.Reguest();  
 var LINE_TYPE='TOP_POPULAR_ALL';  
-var LINE_TITLE='Популярное (Кинопоиск)';  
+var LINE_TITLE='Сейчас смотрят Кинопоиск';  
 var CORE_TOGGLE_ROWS=['continue_watch','recomend_watch','timetable_lately','timetable_recently'];  
   
 function kpHeader(){return {headers:{'X-API-KEY':API_KEY},cache:{life:180},timeout:15000};}  
@@ -31,12 +31,16 @@ function CategoryComponent(object){
     return comp;  
 }  
   
-// --- Блок для линии CUB "Сейчас смотрят" ---  
+// --- Блок для линии CUB "Сейчас смотрят CUB" ---  
+var CUB_LINE_TITLE='Сейчас смотрят CUB';  
 var cub_network=new Lampa.Reguest();  
   
-function loadCubNowWatching(oncomplite,onerror){  
+function loadCubNowWatching(page,oncomplite,onerror){  
     var email=Lampa.Storage.get('account','{}').email||'';  
     var url=Lampa.Utils.protocol()+'tmdb.'+Lampa.Manifest.cub_domain+'/?sort=now_playing';  
+  
+    if(page&&page>1) url+='&page='+page;  
+  
     url=Lampa.Utils.addUrlComponent(url,'email='+encodeURIComponent(email));  
   
     cub_network.silent(url,function(json){  
@@ -47,8 +51,23 @@ function loadCubNowWatching(oncomplite,onerror){
             return item;  
         });  
   
-        oncomplite({results:results});  
+        oncomplite({  
+            results:results,  
+            page:page||1,  
+            total_pages:(json&&json.total_pages)?json.total_pages:(results.length?(page||1)+1:(page||1))  
+        });  
     },onerror,false,{cache:{life:180*60*1000}});  
+}  
+  
+// Компонент для страницы "ещё" по линии CUB, аналогичный kinopoisk_category  
+function CubCategoryComponent(object){  
+    var comp=Lampa.Maker.make('Category',object);  
+    comp.use({  
+        onCreate:function(){loadCubNowWatching(object.page||1,this.build.bind(this),this.empty.bind(this));},  
+        onNext:function(resolve,reject){loadCubNowWatching(object.page||1,resolve,reject);},  
+        onInstance:function(card,data){card.use({onEnter:function(){Lampa.Router.call('full',data);},onFocus:function(){Lampa.Background.change(Lampa.Utils.cardImgBackground(data));}});}  
+    });  
+    return comp;  
 }  
   
 function computeCubIndex(){  
@@ -56,17 +75,29 @@ function computeCubIndex(){
 }  
   
 function initCubRow(){  
+    Lampa.Component.add('cub_now_watching_category',CubCategoryComponent);  
+  
     var row={  
         name:'cub_now_watching',  
-        title:Lampa.Lang.translate('title_now_watch'),  
+        title:CUB_LINE_TITLE,  
         screen:['main'],  
         call:function(params,screen){  
             return function(call){  
-                loadCubNowWatching(function(data){  
+                loadCubNowWatching(1,function(data){  
                     if(!data.results.length){call({results:[]});return;}  
                     call({  
-                        title:Lampa.Lang.translate('title_now_watch'),  
-                        results:data.results  
+                        title:CUB_LINE_TITLE,  
+                        url:'cub_now_watching',  
+                        results:data.results,  
+                        total_pages:2, // заставляет Lampa показать кнопку "Ещё"  
+                        params:{emit:{onlyMore:function(){  
+                            Lampa.Activity.push({  
+                                url:'cub_now_watching',  
+                                title:CUB_LINE_TITLE,  
+                                component:'cub_now_watching_category',  
+                                page:1  
+                            });  
+                        }}}  
                     });  
                 },function(){call({results:[]});});  
             };  
@@ -89,7 +120,7 @@ function computeDynamicIndex(){
 }  
   
 function initPlugin(){  
-    var manifest={type:'video',version:'5.3.0',name:'Кинопоиск',description:'Линия Кинопоиска на главной'};  
+    var manifest={type:'video',version:'5.4.0',name:'Кинопоиск',description:'Линия Кинопоиска на главной'};  
     Lampa.Manifest.plugins=manifest;  
   
     Lampa.Component.add('kinopoisk_category',CategoryComponent);  
