@@ -9,7 +9,6 @@
     var KP_LINE_TYPE = 'TOP_POPULAR_ALL';  
     var KP_LINE_TITLE = 'Сейчас смотрят Кинопоиск';  
     var CUB_LINE_TITLE = 'Сейчас смотрят CUB';  
-    var CORE_TOGGLE_ROWS = ['continue_watch', 'recomend_watch', 'timetable_lately', 'timetable_recently'];  
     var kpHeader = function(){  
         return {headers: {'X-API-KEY': KP_API_KEY}, cache: {life: 180}, timeout: 15000};  
     };  
@@ -203,16 +202,14 @@
         });  
         return comp;  
     };  
-    var computeDynamicIndex = function(){  
-        var enabled = 0;  
-        CORE_TOGGLE_ROWS.forEach(function(name){  
-            var val = Lampa.Storage.get('content_rows_' + name, 'true');  
-            if(val === true || val === 'true') enabled++;  
-        });  
-        return 1 + enabled;  
-    };  
-    var computeCubIndex = function(){  
-        return computeDynamicIndex() + 1;  
+    var computeBaseIndex = function(){  
+        try{  
+            var lately = Lampa.TimeTable.lately() || [];  
+            if(!lately.length) return 1;  
+            var recently = Lampa.TimeTable.recently() || [];  
+            return recently.length ? 3 : 2;  
+        }  
+        catch(e){ return 1; }  
     };  
     var initCubRow = function(){  
         Lampa.Component.add('cub_now_watching_category', CubCategoryComponent);  
@@ -242,7 +239,7 @@
                 };  
             }  
         };  
-        Object.defineProperty(row, 'index', {get: computeCubIndex});  
+        Object.defineProperty(row, 'index', {get: function(){ return computeBaseIndex() + 1; }});  
         Lampa.ContentRows.add(row);  
     };  
     var forceMainRefresh = function(){  
@@ -277,7 +274,7 @@
                 };  
             }  
         };  
-        Object.defineProperty(row, 'index', {get: computeDynamicIndex});  
+        Object.defineProperty(row, 'index', {get: computeBaseIndex});  
         Lampa.ContentRows.add(row);  
         initCubRow();  
         forceMainRefresh();  
