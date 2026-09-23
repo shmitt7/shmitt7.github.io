@@ -232,43 +232,30 @@
         }, function(){ cb(null); });  
     }  
     function patchMain(){  
-        var original_main = Lampa.Api.main;  
-        Lampa.Api.main = function(params, oncomplite, onerror){  
-            return original_main(params, function(results){  
-                var now_watch_title = Lampa.Lang.translate('title_now_watch');  
-                var trend_week_title = Lampa.Lang.translate('title_trend_week');  
-                var upcoming_title = Lampa.Lang.translate('title_upcoming_episodes');  
-                results = results || [];  
-                var anchorIndex = results.findIndex(function(line){ return line.title === upcoming_title; });  
-                var anchorIsUpcoming = anchorIndex !== -1;  
-                if(!anchorIsUpcoming){  
-                    anchorIndex = results.findIndex(function(line){ return line.title === now_watch_title; });  
-                }  
-                var filtered = results.filter(function(line){  
-                    return line.title !== now_watch_title && line.title !== trend_week_title;  
+    var original_main = Lampa.Api.main;  
+    Lampa.Api.main = function(params, oncomplite, onerror){  
+        return original_main(params, function(results){  
+            var now_watch_title = Lampa.Lang.translate('title_now_watch');  
+            var trend_week_title = Lampa.Lang.translate('title_trend_week');  
+            var upcoming_title = Lampa.Lang.translate('title_upcoming_episodes');  
+            results = results || [];  
+            var filtered = results.filter(function(line){  
+                return line.title !== trend_week_title;  
+            });  
+            var anchorIndex = filtered.findIndex(function(line){ return line.title === upcoming_title; });  
+            if(anchorIndex === -1) anchorIndex = filtered.findIndex(function(line){ return line.title === now_watch_title; });  
+            var insertAt = anchorIndex === -1 ? 0 : anchorIndex + 1;  
+            buildKpLine(function(kpLine){  
+                buildCubLine(function(cubLine){  
+                    var toInsert = [];  
+                    if(kpLine) toInsert.push(kpLine);  
+                    if(cubLine) toInsert.push(cubLine);  
+                    filtered.splice.apply(filtered, [insertAt, 0].concat(toInsert));  
+                    oncomplite(filtered);  
                 });  
-                var insertAt;  
-                if(anchorIndex === -1){  
-                    insertAt = 0;  
-                }  
-                else{  
-                    var removedBefore = 0;  
-                    for(var i = 0; i < anchorIndex; i++){  
-                        if(results[i].title === now_watch_title || results[i].title === trend_week_title) removedBefore++;  
-                    }  
-                    insertAt = anchorIndex - removedBefore + (anchorIsUpcoming ? 1 : 0);  
-                }  
-                buildKpLine(function(kpLine){  
-                    buildCubLine(function(cubLine){  
-                        var toInsert = [];  
-                        if(kpLine) toInsert.push(kpLine);  
-                        if(cubLine) toInsert.push(cubLine);  
-                        filtered.splice.apply(filtered, [insertAt, 0].concat(toInsert));  
-                        oncomplite(filtered);  
-                    });  
-                });  
-            }, onerror);  
-        };  
+            });  
+        }, onerror);  
+    };  
     }  
     function initPlugin(){  
         var manifest = {type: 'video', version: '5.4.0', name: 'Кинопоиск', description: 'Линии Кинопоиска и CUB вместо трендов недели и кинотеатров'};  
