@@ -236,13 +236,18 @@
             return original_main(params, function(results){  
                 var now_watch_title = Lampa.Lang.translate('title_now_watch');  
                 var trend_week_title = Lampa.Lang.translate('title_trend_week');  
+                var trend_day_title = Lampa.Lang.translate('title_trend_day');  
                 var filtered = (results || []).filter(function(line){  
                     return line.title !== now_watch_title && line.title !== trend_week_title;  
                 });  
+                var insertAt = filtered.findIndex(function(line){ return line.title === trend_day_title; });  
+                insertAt = insertAt === -1 ? 0 : insertAt + 1;  
                 buildKpLine(function(kpLine){  
                     buildCubLine(function(cubLine){  
-                        if(cubLine) filtered.splice(0, 0, cubLine);  
-                        if(kpLine) filtered.splice(0, 0, kpLine);  
+                        var toInsert = [];  
+                        if(kpLine) toInsert.push(kpLine);  
+                        if(cubLine) toInsert.push(cubLine);  
+                        filtered.splice.apply(filtered, [insertAt, 0].concat(toInsert));  
                         oncomplite(filtered);  
                     });  
                 });  
