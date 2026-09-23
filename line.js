@@ -202,82 +202,59 @@
         });  
         return comp;  
     };  
-    var computeBaseIndex = function(){  
-        try{  
-            var lately = Lampa.TimeTable.lately() || [];  
-            if(!lately.length) return 1;  
-            var recently = Lampa.TimeTable.recently() || [];  
-            return recently.length ? 3 : 2;  
-        }  
-        catch(e){ return 1; }  
+    var buildKpLine = function(cb){  
+        loadCollectionResolved(KP_LINE_TYPE, 1, function(data){  
+            if(!data.results.length){ cb(null); return; }  
+            cb({  
+                title: KP_LINE_TITLE,  
+                url: KP_LINE_TYPE,  
+                results: data.results,  
+                total_pages: 2,  
+                params: {emit: {onlyMore: function(){  
+                    Lampa.Activity.push({url: KP_LINE_TYPE, title: KP_LINE_TITLE, component: 'kinopoisk_category', page: 1});  
+                }}}  
+            });  
+        }, function(){ cb(null); });  
     };  
-    var initCubRow = function(){  
-        Lampa.Component.add('cub_now_watching_category', CubCategoryComponent);  
-        var row = {  
-            name: 'cub_now_watching',  
-            title: CUB_LINE_TITLE,  
-            screen: ['main'],  
-            call: function(params, screen){  
-                return function(call){  
-                    loadCubNowWatching(1, function(data){  
-                        if(!data.results.length){ call({results: []}); return; }  
-                        call({  
-                            title: CUB_LINE_TITLE,  
-                            url: 'cub_now_watching',  
-                            results: data.results,  
-                            total_pages: 2,  
-                            params: {emit: {onlyMore: function(){  
-                                Lampa.Activity.push({  
-                                    url: 'cub_now_watching',  
-                                    title: CUB_LINE_TITLE,  
-                                    component: 'cub_now_watching_category',  
-                                    page: 1  
-                                });  
-                            }}}  
-                        });  
-                    }, function(){ call({results: []}); });  
-                };  
-            }  
+    var buildCubLine = function(cb){  
+        loadCubNowWatching(1, function(data){  
+            if(!data.results.length){ cb(null); return; }  
+            cb({  
+                title: CUB_LINE_TITLE,  
+                url: 'cub_now_watching',  
+                results: data.results,  
+                total_pages: 2,  
+                params: {emit: {onlyMore: function(){  
+                    Lampa.Activity.push({url: 'cub_now_watching', title: CUB_LINE_TITLE, component: 'cub_now_watching_category', page: 1});  
+                }}}  
+            });  
+        }, function(){ cb(null); });  
+    };  
+    var patchMain = function(){  
+        var original_main = Lampa.Api.main;  
+        Lampa.Api.main = function(params, oncomplite, onerror){  
+            return original_main(params, function(results){  
+                var now_watch_title = Lampa.Lang.translate('title_now_watch');  
+                var trend_week_title = Lampa.Lang.translate('title_trend_week');  
+                var filtered = (results || []).filter(function(line){  
+                    return line.title !== now_watch_title && line.title !== trend_week_title;  
+                });  
+                buildKpLine(function(kpLine){  
+                    buildCubLine(function(cubLine){  
+                        if(cubLine) filtered.splice(0, 0, cubLine);  
+                        if(kpLine) filtered.splice(0, 0, kpLine);  
+                        oncomplite(filtered);  
+                    });  
+                });  
+            }, onerror);  
         };  
-        Object.defineProperty(row, 'index', {get: function(){ return computeBaseIndex() + 1; }});  
-        Lampa.ContentRows.add(row);  
-    };  
-    var forceMainRefresh = function(){  
-        try{  
-            var current = Lampa.Activity.active();  
-            if(current && current.component === 'main') Lampa.Activity.refresh();  
-        }  
-        catch(e){}  
     };  
     var initPlugin = function(){  
-        var manifest = {type: 'video', version: '5.4.0', name: 'Кинопоиск', description: 'Линии Кинопоиска и CUB на главной'};  
+        var manifest = {type: 'video', version: '5.4.0', name: 'Кинопоиск', description: 'Линии Кинопоиска и CUB вместо трендов недели и кинотеатров'};  
         Lampa.Manifest.plugins = manifest;  
         Lampa.Component.add('kinopoisk_category', KpCategoryComponent);  
-        var row = {  
-            name: 'kinopoisk_popular',  
-            title: KP_LINE_TITLE,  
-            screen: ['main'],  
-            call: function(params, screen){  
-                return function(call){  
-                    loadCollectionResolved(KP_LINE_TYPE, 1, function(data){  
-                        if(!data.results.length){ call({results: []}); return; }  
-                        call({  
-                            title: KP_LINE_TITLE,  
-                            url: KP_LINE_TYPE,  
-                            results: data.results,  
-                            total_pages: 2,  
-                            params: {emit: {onlyMore: function(){  
-                                Lampa.Activity.push({url: KP_LINE_TYPE, title: KP_LINE_TITLE, component: 'kinopoisk_category', page: 1});  
-                            }}}  
-                        });  
-                    }, function(){ call({results: []}); });  
-                };  
-            }  
-        };  
-        Object.defineProperty(row, 'index', {get: computeBaseIndex});  
-        Lampa.ContentRows.add(row);  
-        initCubRow();  
-        forceMainRefresh();  
+        Lampa.Component.add('cub_now_watching_category', CubCategoryComponent);  
+        patchMain();  
     };  
     if(window.appready) initPlugin();  
     else Lampa.Listener.follow('app', function(e){ if(e.type === 'ready') initPlugin(); });  
