@@ -245,6 +245,13 @@
         Object.defineProperty(row, 'index', {get: computeCubIndex});  
         Lampa.ContentRows.add(row);  
     };  
+    var forceMainRefresh = function(){  
+        try{  
+            var current = Lampa.Activity.active();  
+            if(current && current.component === 'main') Lampa.Activity.refresh();  
+        }  
+        catch(e){}  
+    };  
     var initPlugin = function(){  
         var manifest = {type: 'video', version: '5.4.0', name: 'Кинопоиск', description: 'Линии Кинопоиска и CUB на главной'};  
         Lampa.Manifest.plugins = manifest;  
@@ -273,6 +280,7 @@
         Object.defineProperty(row, 'index', {get: computeDynamicIndex});  
         Lampa.ContentRows.add(row);  
         initCubRow();  
+        forceMainRefresh();  
     };  
     if(window.appready) initPlugin();  
     else Lampa.Listener.follow('app', function(e){ if(e.type === 'ready') initPlugin(); });  
