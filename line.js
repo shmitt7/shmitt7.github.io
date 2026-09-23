@@ -3,15 +3,11 @@
     window.lineKpCub = true;  
     var KP_API_URL = 'https://kinopoiskapiunofficial.tech';  
     var KP_API_KEY = '14342b35-714b-449d-bf10-30d0d9ac22e6';  
-    var CACHE_NAME = 'kp_tmdb_resolve_cache';  
-    var CACHE_MAX = 800;  
     var network = new Lampa.Reguest();  
     var KP_LINE_TYPE = 'TOP_POPULAR_ALL';  
     var KP_LINE_TITLE = 'Сейчас смотрят Кинопоиск';  
     var CUB_LINE_TITLE = 'Сейчас смотрят CUB';  
-    function kpHeader(){  
-        return {headers: {'X-API-KEY': KP_API_KEY}, cache: {life: 180}, timeout: 15000};  
-    }  
+    var KP_HEADER = {headers: {'X-API-KEY': KP_API_KEY}, cache: {life: 180}, timeout: 15000};  
     function loadKpCollection(type, page, oncomplite, onerror){  
         var url = KP_API_URL + '/api/v2.2/films/collections?type=' + type + '&page=' + (page || 1);  
         network.silent(url, function(json){  
@@ -22,7 +18,7 @@
                 total_pages: json && json.totalPages ? json.totalPages : 1,  
                 total_results: json && json.total ? json.total : items.length  
             });  
-        }, onerror, false, kpHeader());  
+        }, onerror, false, KP_HEADER);  
     }  
     function kpMethod(item){  
         return (!item.type || item.type === 'FILM') ? 'movie' : 'tv';  
@@ -57,14 +53,6 @@
         }  
         return card;  
     }  
-    function getResolveCache(){  
-        return Lampa.Storage.cache(CACHE_NAME, CACHE_MAX, {});  
-    }  
-    function setResolveCache(key, value){  
-        var cache = getResolveCache();  
-        cache[key] = value;  
-        Lampa.Storage.set(CACHE_NAME, cache);  
-    }  
     function pickBestResult(results, year){  
         if(!results || !results.length) return null;  
         if(year){  
@@ -84,22 +72,15 @@
         }, errcb, false, {cache: {life: 1440}, timeout: 8000});  
     }  
     function resolveTmdbByCard(card, cb){  
-        var cacheKey = card.method + '_' + card.kinopoisk_id;  
-        var cached = getResolveCache();  
-        if(cached[cacheKey] !== undefined){ cb(cached[cacheKey]); return; }  
         var queryOriginal = card.kp_query_original;  
         var queryFallback = card.kp_query_fallback;  
         var year = card.kp_year;  
-        function finish(result){  
-            setResolveCache(cacheKey, result);  
-            cb(result);  
-        }  
         tmdbSearch(card.method, queryOriginal, function(results){  
             var best = pickBestResult(results, year);  
             if(best){  
                 best.method = card.method;  
                 Lampa.Utils.addSource(best, 'tmdb');  
-                finish(best);  
+                cb(best);  
                 return;  
             }  
             tmdbSearch(card.method, queryFallback, function(results2){  
@@ -107,12 +88,12 @@
                 if(best2){  
                     best2.method = card.method;  
                     Lampa.Utils.addSource(best2, 'tmdb');  
-                    finish(best2);  
+                    cb(best2);  
                     return;  
                 }  
-                finish(null);  
-            }, function(){ finish(null); });  
-        }, function(){ finish(null); });  
+                cb(null);  
+            }, function(){ cb(null); });  
+        }, function(){ cb(null); });  
     }  
     function resolveTmdbByList(cards, cb){  
         if(!cards.length){ cb([]); return; }  
@@ -218,6 +199,7 @@
         }, function(){ cb(null); });  
     }  
     function buildCubLine(cb){  
+        if(Lampa.Storage.field('source') === 'cub'){ cb(null); return; }  
         loadCubNowWatching(1, function(data){  
             if(!data.results.length){ cb(null); return; }  
             cb({  
@@ -232,34 +214,34 @@
         }, function(){ cb(null); });  
     }  
     function patchMain(){  
-    var original_main = Lampa.Api.main;  
-    Lampa.Api.main = function(params, oncomplite, onerror){  
-        return original_main(params, function(results){  
-            var now_watch_title = Lampa.Lang.translate('title_now_watch');  
-            var trend_week_title = Lampa.Lang.translate('title_trend_week');  
-            var upcoming_title = Lampa.Lang.translate('title_upcoming_episodes');  
-            results = results || [];  
-            var filtered = results.filter(function(line){  
-                return line.title !== trend_week_title;  
-            });  
-            var anchorIndex = filtered.findIndex(function(line){ return line.title === upcoming_title; });  
-            if(anchorIndex === -1) anchorIndex = filtered.findIndex(function(line){ return line.title === now_watch_title; });  
-            var insertAt = anchorIndex === -1 ? 0 : anchorIndex + 1;  
-            buildKpLine(function(kpLine){  
-                buildCubLine(function(cubLine){  
+        var original_main = Lampa.Api.main;  
+        Lampa.Api.main = function(params, oncomplite, onerror){  
+            return original_main(params, function(results){  
+                var now_watch_title = Lampa.Lang.translate('title_now_watch');  
+                var trend_week_title = Lampa.Lang.translate('title_trend_week');  
+                var upcoming_title = Lampa.Lang.translate('title_upcoming_episodes');  
+                results = results || [];  
+                var filtered = results.filter(function(line){  
+                    return line.title !== trend_week_title;  
+                });  
+                var anchorIndex = filtered.findIndex(function(line){ return line.title === upcoming_title; });  
+                if(anchorIndex === -1) anchorIndex = filtered.findIndex(function(line){ return line.title === now_watch_title; });  
+                var insertAt = anchorIndex === -1 ? 0 : anchorIndex + 1;  
+                var status = new Lampa.Status(2);  
+                var lines = {};  
+                status.onComplite = function(){  
                     var toInsert = [];  
-                    if(kpLine) toInsert.push(kpLine);  
-                    if(cubLine) toInsert.push(cubLine);  
+                    if(lines.kp) toInsert.push(lines.kp);  
+                    if(lines.cub) toInsert.push(lines.cub);  
                     filtered.splice.apply(filtered, [insertAt, 0].concat(toInsert));  
                     oncomplite(filtered);  
-                });  
-            });  
-        }, onerror);  
-    };  
+                };  
+                buildKpLine(function(line){ lines.kp = line; status.append('kp', true); });  
+                buildCubLine(function(line){ lines.cub = line; status.append('cub', true); });  
+            }, onerror);  
+        };  
     }  
     function initPlugin(){  
-        var manifest = {type: 'video', version: '5.4.0', name: 'Кинопоиск', description: 'Линии Кинопоиска и CUB вместо трендов недели и кинотеатров'};  
-        Lampa.Manifest.plugins = manifest;  
         Lampa.Component.add('kinopoisk_category', KpCategoryComponent);  
         Lampa.Component.add('cub_now_watching_category', CubCategoryComponent);  
         patchMain();  
