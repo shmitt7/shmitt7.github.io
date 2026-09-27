@@ -10,6 +10,7 @@
     var network = new Lampa.Reguest();  
     var KP_HEADER = {headers: {'X-API-KEY': KP_API_KEY}, cache: {life: 180}, timeout: 15000};  
     var mainHandled = false;  
+    var scrollHandler = null;  
     function getCache(key){  
         var stored = Lampa.Storage.get(key, '{}');  
         if(stored && stored.time && Date.now() - stored.time < CACHE_LIFE && stored.data) return stored.data;  
@@ -279,16 +280,15 @@
         var rendered = instance && instance.render ? instance.render() : null;  
         if(!rendered) return false;  
         if(rendered.find) return rendered.find('.items-line, .items__line').length > 0;  
-        return rendered.querySelector ? rendered.querySelectorAll('.items-line, .items__line').length > 0 : false;  
+        if(rendered.querySelectorAll) return rendered.querySelectorAll('.items-line, .items__line').length > 0;  
+        return false;  
     }  
     function injectLines(instance){  
         var lines = [];  
         var kpCached = getCache('kp_line_cache');  
+        var cubCached = getCache('cub_line_cache');  
         if(kpCached && kpCached.length) lines.push(kpLine(kpCached));  
-        if(Lampa.Storage.field('source') !== 'cub'){  
-            var cubCached = getCache('cub_line_cache');  
-            if(cubCached && cubCached.length) lines.push(cubLine(cubCached));  
-        }  
+        if(Lampa.Storage.field('source') !== 'cub' && cubCached && cubCached.length) lines.push(cubLine(cubCached));  
         if(lines.length && typeof instance.build === 'function'){  
             try{  
                 instance.build(lines);  
@@ -298,14 +298,44 @@
         }  
         return false;  
     }  
+    function getScrollNode(rendered){  
+        if(!rendered) return null;  
+        var node = null;  
+        if(rendered.find){  
+            var found = rendered.find('.scroll__body');  
+            node = found && found.length ? found[0] : null;  
+        }  
+        else if(rendered.querySelector){  
+            node = rendered.querySelector('.scroll__body');  
+        }  
+        return node;  
+    }  
+    function bindScrollInject(instance, scrollNode){  
+        if(scrollHandler) return;  
+        scrollHandler = function(){  
+            if(mainHandled) return;  
+            var nearBottom = scrollNode.scrollTop + scrollNode.clientHeight > scrollNode.scrollHeight - scrollNode.clientHeight * 2;  
+            if(nearBottom || scrollNode.scrollTop > 0){  
+                mainHandled = true;  
+                scrollNode.removeEventListener('scroll', scrollHandler);  
+                scrollHandler = null;  
+                injectLines(instance);  
+            }  
+        };  
+        scrollNode.addEventListener('scroll', scrollHandler);  
+    }  
     function handleLateMain(){  
         if(mainHandled) return;  
         var instance = getMainInstance();  
         if(!instance) return;  
         if(!mainAlreadyRendered(instance)) return;  
-        mainHandled = true;  
-        if(!injectLines(instance)){  
-            if(typeof Lampa.Activity.refresh === 'function') Lampa.Activity.refresh();  
+        var scrollNode = getScrollNode(instance.render ? instance.render() : null);  
+        if(scrollNode){  
+            bindScrollInject(instance, scrollNode);  
+        }  
+        else {  
+            mainHandled = true;  
+            injectLines(instance);  
         }  
     }  
     function refreshCache(){  
