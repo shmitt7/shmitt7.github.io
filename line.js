@@ -9,7 +9,21 @@
     var KP_LINE_TITLE = 'Сейчас смотрят Кинопоиск';  
     var CUB_LINE_TITLE = 'Сейчас смотрят CUB';  
     var KP_HEADER = {headers: {'X-API-KEY': KP_API_KEY}, cache: {life: 180}, timeout: 15000};  
+    var CACHE_LIFE = 1000 * 60 * 30; // 30 минут  
   
+    // ---------- кэш ----------  
+    function getCache(key){  
+        try{  
+            var c = Lampa.Storage.get(key, '{}');  
+            if(c.time && Date.now() - c.time < CACHE_LIFE && c.data) return c.data;  
+        }catch(e){}  
+        return null;  
+    }  
+    function setCache(key, data){  
+        Lampa.Storage.set(key, {time: Date.now(), data: data});  
+    }  
+  
+    // ---------- загрузка ----------  
     function loadKpCollection(type, page, oncomplite, onerror){  
         var url = KP_API_URL + '/api/v2.2/films/collections?type=' + type + '&page=' + (page || 1);  
         network.silent(url, function(json){  
@@ -31,8 +45,7 @@
         var method = kpMethod(item);  
         var kpId = item.kinopoiskId || item.filmId;  
         var card = {  
-            source: 'kp',  
-            kp_source: true,  
+            source: 'kp', kp_source: true,  
             id: 'kp_' + kpId,  
             kinopoisk_id: kpId,  
             method: method,  
@@ -52,9 +65,7 @@
             card.original_name = card.original_title;  
             card.first_air_date = item.year ? item.year + '-01-01' : '';  
         }  
-        else{  
-            card.release_date = item.year ? item.year + '-01-01' : '';  
-        }  
+        else card.release_date = item.year ? item.year + '-01-01' : '';  
         return card;  
     }  
   
@@ -79,24 +90,19 @@
     }  
   
     function resolveTmdbByCard(card, cb){  
-        var queryOriginal = card.kp_query_original;  
-        var queryFallback = card.kp_query_fallback;  
-        var year = card.kp_year;  
-        tmdbSearch(card.method, queryOriginal, function(results){  
-            var best = pickBestResult(results, year);  
+        tmdbSearch(card.method, card.kp_query_original, function(results){  
+            var best = pickBestResult(results, card.kp_year);  
             if(best){  
                 best.method = card.method;  
                 Lampa.Utils.addSource(best, 'tmdb');  
-                cb(best);  
-                return;  
+                return cb(best);  
             }  
-            tmdbSearch(card.method, queryFallback, function(results2){  
-                var best2 = pickBestResult(results2, year);  
+            tmdbSearch(card.method, card.kp_query_fallback, function(results2){  
+                var best2 = pickBestResult(results2, card.kp_year);  
                 if(best2){  
                     best2.method = card.method;  
                     Lampa.Utils.addSource(best2, 'tmdb');  
-                    cb(best2);  
-                    return;  
+                    return cb(best2);  
                 }  
                 cb(null);  
             }, function(){ cb(null); });  
@@ -104,13 +110,11 @@
     }  
   
     function resolveTmdbByList(cards, cb){  
-        if(!cards.length){ cb([]); return; }  
+        if(!cards.length) return cb([]);  
         var status = new Lampa.Status(cards.length);  
         var resolved = new Array(cards.length);  
         status.onComplite = function(){  
-            var results = [];  
-            for(var i = 0; i < resolved.length; i++) if(resolved[i]) results.push(resolved[i]);  
-            cb(results);  
+            cb(resolved.filter(Boolean));  
         };  
         cards.forEach(function(card, idx){  
             resolveTmdbByCard(card, function(tmdbCard){  
@@ -134,12 +138,7 @@
     function loadCollectionResolved(type, page, oncomplite, onerror){  
         loadKpMapped(type, page, function(data){  
             resolveTmdbByList(data.results, function(resolved){  
-                oncomplite({  
-                    results: resolved,  
-                    page: data.page,  
-                    total_pages: data.total_pages,  
-                    total_results: resolved.length  
-                });  
+                oncomplite({results: resolved, page: data.page, total_pages: data.total_pages, total_results: resolved.length});  
             });  
         }, onerror);  
     }  
@@ -160,9 +159,7 @@
         }, onerror, false, {cache: {life: 180}});  
     }  
   
-    // Компонент полного списка (открывается по "Ещё").  
-    // Баг пагинации исправлен: object.page уже инкрементируется  
-    // модулем Next перед вызовом onNext, просто используем его.  
+    // ---------- компоненты полного списка (пагинация исправлена: object.page уже инкрементирован) ----------  
     function KpCategoryComponent(object){  
         var comp = Lampa.Maker.make('Category', object);  
         comp.use({  
@@ -201,60 +198,97 @@
         return comp;  
     }  
   
-    function initPlugin(){  
-        Lampa.Component.add('kinopoisk_category', KpCategoryComponent);  
-        Lampa.Component.add('cub_now_watching_category', CubCategoryComponent);  
+    // ---------- регистрация: сразу, без ожидания ready ----------  
+    Lampa.Component.add('kinopoisk_category', KpCategoryComponent);  
+    Lampa.Component.add('cub_now_watching_category', CubCategoryComponent);  
   
-        // Линия Кинопоиска на главной  
-        Lampa.ContentRows.add({  
-            name: 'kp_now_watching',  
-            title: KP_LINE_TITLE,  
-            index: 3,  
-            screen: ['main'],  
-            call: function(params, screen){  
-                return function(call){  
-                    loadCollectionResolved(KP_LINE_TYPE, 1, function(data){  
-                        if(!data.results.length){ call(); return; }  
-                        call({  
-                            title: KP_LINE_TITLE,  
-                            url: KP_LINE_TYPE,  
-                            results: data.results,  
-                            total_pages: 2,  
-                            params: {emit: {onlyMore: function(){  
-                                Lampa.Activity.push({url: KP_LINE_TYPE, title: KP_LINE_TITLE, component: 'kinopoisk_category', page: 1});  
-                            }}}  
-                        });  
-                    }, function(){ call(); });  
+    Lampa.ContentRows.add({  
+        name: 'kp_now_watching',  
+        title: KP_LINE_TITLE,  
+        index: 3,  
+        screen: ['main'],  
+        call: function(){  
+            var cached = getCache('kp_line_cache');  
+  
+            if(cached && cached.length){  
+                // отдаём готовые данные синхронно — строка появится мгновенно  
+                return {  
+                    title: KP_LINE_TITLE,  
+                    results: cached,  
+                    params: {emit: {onlyMore: function(){  
+                        Lampa.Activity.push({url: KP_LINE_TYPE, title: KP_LINE_TITLE, component: 'kinopoisk_category', page: 1});  
+                    }}}  
                 };  
             }  
-        });  
   
-        // Линия CUB на главной  
-        Lampa.ContentRows.add({  
-            name: 'cub_now_watching',  
-            title: CUB_LINE_TITLE,  
-            index: 4,  
-            screen: ['main'],  
-            call: function(params, screen){  
-                if(Lampa.Storage.field('source') === 'cub') return;  
-                return function(call){  
-                    loadCubNowWatching(1, function(data){  
-                        if(!data.results.length){ call(); return; }  
-                        call({  
-                            title: CUB_LINE_TITLE,  
-                            url: 'cub_now_watching',  
-                            results: data.results,  
-                            total_pages: 2,  
-                            params: {emit: {onlyMore: function(){  
-                                Lampa.Activity.push({url: 'cub_now_watching', title: CUB_LINE_TITLE, component: 'cub_now_watching_category', page: 1});  
-                            }}}  
-                        });  
-                    }, function(){ call(); });  
+            // кэша нет (первый запуск) — грузим и сохраняем на будущее  
+            return function(call){  
+                loadCollectionResolved(KP_LINE_TYPE, 1, function(data){  
+                    if(!data.results.length) return call();  
+                    setCache('kp_line_cache', data.results);  
+                    call({  
+                        title: KP_LINE_TITLE,  
+                        results: data.results,  
+                        total_pages: 2,  
+                        params: {emit: {onlyMore: function(){  
+                            Lampa.Activity.push({url: KP_LINE_TYPE, title: KP_LINE_TITLE, component: 'kinopoisk_category', page: 1});  
+                        }}}  
+                    });  
+                }, function(){ call(); });  
+            };  
+        }  
+    });  
+  
+    Lampa.ContentRows.add({  
+        name: 'cub_now_watching',  
+        title: CUB_LINE_TITLE,  
+        index: 4,  
+        screen: ['main'],  
+        call: function(){  
+            if(Lampa.Storage.field('source') === 'cub') return;  
+  
+            var cached = getCache('cub_line_cache');  
+            if(cached && cached.length){  
+                return {  
+                    title: CUB_LINE_TITLE,  
+                    results: cached,  
+                    params: {emit: {onlyMore: function(){  
+                        Lampa.Activity.push({url: 'cub_now_watching', title: CUB_LINE_TITLE, component: 'cub_now_watching_category', page: 1});  
+                    }}}  
                 };  
             }  
-        });  
+  
+            return function(call){  
+                loadCubNowWatching(1, function(data){  
+                    if(!data.results.length) return call();  
+                    setCache('cub_line_cache', data.results);  
+                    call({  
+                        title: CUB_LINE_TITLE,  
+                        results: data.results,  
+                        total_pages: 2,  
+                        params: {emit: {onlyMore: function(){  
+                            Lampa.Activity.push({url: 'cub_now_watching', title: CUB_LINE_TITLE, component: 'cub_now_watching_category', page: 1});  
+                        }}}  
+                    });  
+                }, function(){ call(); });  
+            };  
+        }  
+    });  
+  
+    // фоновое обновление кэша после готовности приложения —  
+    // чтобы на следующий запуск данные были свежие  
+    function refreshCache(){  
+        loadCollectionResolved(KP_LINE_TYPE, 1, function(data){  
+            if(data.results.length) setCache('kp_line_cache', data.results);  
+        }, function(){});  
+  
+        if(Lampa.Storage.field('source') !== 'cub'){  
+            loadCubNowWatching(1, function(data){  
+                if(data.results.length) setCache('cub_line_cache', data.results);  
+            }, function(){});  
+        }  
     }  
   
-    if(window.appready) initPlugin();  
-    else Lampa.Listener.follow('app', function(e){ if(e.type === 'ready') initPlugin(); });  
+    if(window.appready) refreshCache();  
+    else Lampa.Listener.follow('app', function(e){ if(e.type === 'ready') refreshCache(); });  
 })();
