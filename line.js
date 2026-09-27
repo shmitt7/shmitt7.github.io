@@ -9,7 +9,7 @@
     var CACHE_LIFE = 1000 * 60 * 30;  
     var network = new Lampa.Reguest();  
     var KP_HEADER = {headers: {'X-API-KEY': KP_API_KEY}, cache: {life: 180}, timeout: 15000};  
-    var mainRefreshed = false;  
+    var mainHandled = false;  
     function getCache(key){  
         var stored = Lampa.Storage.get(key, '{}');  
         if(stored && stored.time && Date.now() - stored.time < CACHE_LIFE && stored.data) return stored.data;  
@@ -17,15 +17,6 @@
     }  
     function setCache(key, data){  
         Lampa.Storage.set(key, {time: Date.now(), data: data});  
-    }  
-    function refreshMain(){  
-        if(mainRefreshed) return;  
-        mainRefreshed = true;  
-        var activity = Lampa.Activity.active();  
-        if(!activity) return;  
-        if(activity.component === 'main' && typeof Lampa.Activity.refresh === 'function'){  
-            Lampa.Activity.refresh();  
-        }  
     }  
     function loadKpCollection(type, page, oncomplite, onerror){  
         var url = KP_API_URL + '/api/v2.2/films/collections?type=' + type + '&page=' + (page || 1);  
@@ -212,6 +203,20 @@
     }  
     Lampa.Component.add('kinopoisk_category', KpCategoryComponent);  
     Lampa.Component.add('cub_now_watching_category', CubCategoryComponent);  
+    function kpLine(results){  
+        return {  
+            title: KP_LINE_TITLE,  
+            results: results,  
+            params: lineParams(KP_LINE_TYPE, KP_LINE_TITLE, 'kinopoisk_category')  
+        };  
+    }  
+    function cubLine(results){  
+        return {  
+            title: CUB_LINE_TITLE,  
+            results: results,  
+            params: lineParams('cub_now_watching', CUB_LINE_TITLE, 'cub_now_watching_category')  
+        };  
+    }  
     Lampa.ContentRows.add({  
         name: 'kp_now_watching',  
         title: KP_LINE_TITLE,  
@@ -221,11 +226,7 @@
             var cached = getCache('kp_line_cache');  
             return function(call){  
                 if(cached && cached.length){  
-                    call({  
-                        title: KP_LINE_TITLE,  
-                        results: cached,  
-                        params: lineParams(KP_LINE_TYPE, KP_LINE_TITLE, 'kinopoisk_category')  
-                    });  
+                    call(kpLine(cached));  
                     return;  
                 }  
                 loadCollectionResolved(KP_LINE_TYPE, 1, function(data){  
@@ -234,12 +235,9 @@
                         return;  
                     }  
                     setCache('kp_line_cache', data.results);  
-                    call({  
-                        title: KP_LINE_TITLE,  
-                        results: data.results,  
-                        total_pages: 2,  
-                        params: lineParams(KP_LINE_TYPE, KP_LINE_TITLE, 'kinopoisk_category')  
-                    });  
+                    var line = kpLine(data.results);  
+                    line.total_pages = 2;  
+                    call(line);  
                 }, function(){ call(); });  
             };  
         }  
@@ -254,11 +252,7 @@
             var cached = getCache('cub_line_cache');  
             return function(call){  
                 if(cached && cached.length){  
-                    call({  
-                        title: CUB_LINE_TITLE,  
-                        results: cached,  
-                        params: lineParams('cub_now_watching', CUB_LINE_TITLE, 'cub_now_watching_category')  
-                    });  
+                    call(cubLine(cached));  
                     return;  
                 }  
                 loadCubNowWatching(1, function(data){  
@@ -267,32 +261,71 @@
                         return;  
                     }  
                     setCache('cub_line_cache', data.results);  
-                    call({  
-                        title: CUB_LINE_TITLE,  
-                        results: data.results,  
-                        total_pages: 2,  
-                        params: lineParams('cub_now_watching', CUB_LINE_TITLE, 'cub_now_watching_category')  
-                    });  
+                    var line = cubLine(data.results);  
+                    line.total_pages = 2;  
+                    call(line);  
                 }, function(){ call(); });  
             };  
         }  
     });  
+    function getMainInstance(){  
+        var activity = Lampa.Activity.active();  
+        if(!activity || activity.component !== 'main') return null;  
+        var instance = typeof activity.activity === 'function' ? activity.activity() : activity.activity;  
+        if(!instance) return null;  
+        return instance;  
+    }  
+    function mainAlreadyRendered(instance){  
+        var rendered = instance && instance.render ? instance.render() : null;  
+        if(!rendered) return false;  
+        if(rendered.find) return rendered.find('.items-line, .items__line').length > 0;  
+        return rendered.querySelector ? rendered.querySelectorAll('.items-line, .items__line').length > 0 : false;  
+    }  
+    function injectLines(instance){  
+        var lines = [];  
+        var kpCached = getCache('kp_line_cache');  
+        if(kpCached && kpCached.length) lines.push(kpLine(kpCached));  
+        if(Lampa.Storage.field('source') !== 'cub'){  
+            var cubCached = getCache('cub_line_cache');  
+            if(cubCached && cubCached.length) lines.push(cubLine(cubCached));  
+        }  
+        if(lines.length && typeof instance.build === 'function'){  
+            try{  
+                instance.build(lines);  
+                return true;  
+            }  
+            catch(e){}  
+        }  
+        return false;  
+    }  
+    function handleLateMain(){  
+        if(mainHandled) return;  
+        var instance = getMainInstance();  
+        if(!instance) return;  
+        if(!mainAlreadyRendered(instance)) return;  
+        mainHandled = true;  
+        if(!injectLines(instance)){  
+            if(typeof Lampa.Activity.refresh === 'function') Lampa.Activity.refresh();  
+        }  
+    }  
     function refreshCache(){  
         loadCollectionResolved(KP_LINE_TYPE, 1, function(data){  
-            if(data.results.length) setCache('kp_line_cache', data.results);  
+            if(data.results.length){  
+                setCache('kp_line_cache', data.results);  
+                handleLateMain();  
+            }  
         }, function(){});  
         if(Lampa.Storage.field('source') !== 'cub'){  
             loadCubNowWatching(1, function(data){  
-                if(data.results.length) setCache('cub_line_cache', data.results);  
+                if(data.results.length){  
+                    setCache('cub_line_cache', data.results);  
+                    handleLateMain();  
+                }  
             }, function(){});  
         }  
     }  
-    function onAppReady(){  
-        refreshCache();  
-        refreshMain();  
-    }  
-    if(window.appready) onAppReady();  
+    if(window.appready) refreshCache();  
     else Lampa.Listener.follow('app', function(event){  
-        if(event.type === 'ready') onAppReady();  
+        if(event.type === 'ready') refreshCache();  
     });  
 })();
