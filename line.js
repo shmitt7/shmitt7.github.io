@@ -9,6 +9,7 @@
     var CACHE_LIFE = 1000 * 60 * 30;  
     var network = new Lampa.Reguest();  
     var KP_HEADER = {headers: {'X-API-KEY': KP_API_KEY}, cache: {life: 180}, timeout: 15000};  
+    var mainRefreshed = false;  
     function getCache(key){  
         var stored = Lampa.Storage.get(key, '{}');  
         if(stored && stored.time && Date.now() - stored.time < CACHE_LIFE && stored.data) return stored.data;  
@@ -16,6 +17,15 @@
     }  
     function setCache(key, data){  
         Lampa.Storage.set(key, {time: Date.now(), data: data});  
+    }  
+    function refreshMain(){  
+        if(mainRefreshed) return;  
+        mainRefreshed = true;  
+        var activity = Lampa.Activity.active();  
+        if(!activity) return;  
+        if(activity.component === 'main' && typeof Lampa.Activity.refresh === 'function'){  
+            Lampa.Activity.refresh();  
+        }  
     }  
     function loadKpCollection(type, page, oncomplite, onerror){  
         var url = KP_API_URL + '/api/v2.2/films/collections?type=' + type + '&page=' + (page || 1);  
@@ -277,6 +287,12 @@
             }, function(){});  
         }  
     }  
-    if(window.appready) refreshCache();  
-    else Lampa.Listener.follow('app', function(event){ if(event.type === 'ready') refreshCache(); });  
+    function onAppReady(){  
+        refreshCache();  
+        refreshMain();  
+    }  
+    if(window.appready) onAppReady();  
+    else Lampa.Listener.follow('app', function(event){  
+        if(event.type === 'ready') onAppReady();  
+    });  
 })();
