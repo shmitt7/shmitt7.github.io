@@ -6,11 +6,10 @@
     var KP_LINE_TYPE = 'TOP_POPULAR_ALL';  
     var KP_LINE_TITLE = 'Сейчас смотрят Кинопоиск';  
     var CUB_LINE_TITLE = 'Сейчас смотрят CUB';  
+    var MENU_TITLE = 'Сейчас смотрят';  
     var CACHE_LIFE = 1000 * 60 * 30;  
     var network = new Lampa.Reguest();  
     var KP_HEADER = {headers: {'X-API-KEY': KP_API_KEY}, cache: {life: 180}, timeout: 15000};  
-    var mainHandled = false;  
-    var scrollHandler = null;  
     function getCache(key){  
         var stored = Lampa.Storage.get(key, '{}');  
         if(stored && stored.time && Date.now() - stored.time < CACHE_LIFE && stored.data) return stored.data;  
@@ -166,6 +165,26 @@
             Lampa.Activity.push({url: url, title: title, component: component, page: 1});  
         }}};  
     }  
+    function kpLine(results){  
+        return {  
+            title: KP_LINE_TITLE,  
+            results: results,  
+            params: lineParams(KP_LINE_TYPE, KP_LINE_TITLE, 'kinopoisk_category')  
+        };  
+    }  
+    function cubLine(results){  
+        return {  
+            title: CUB_LINE_TITLE,  
+            results: results,  
+            params: lineParams('cub_now_watching', CUB_LINE_TITLE, 'cub_now_watching_category')  
+        };  
+    }  
+    function cardHooks(){  
+        return {  
+            onEnter: function(data){ Lampa.Router.call('full', data); },  
+            onFocus: function(data){ Lampa.Background.change(Lampa.Utils.cardImgBackground(data)); }  
+        };  
+    }  
     function KpCategoryComponent(object){  
         var comp = Lampa.Maker.make('Category', object);  
         comp.use({  
@@ -202,160 +221,70 @@
         });  
         return comp;  
     }  
+    function NowWatchingComponent(object){  
+        var comp = Lampa.Maker.make('Main', object);  
+        comp.use({  
+            onCreate: function(){  
+                var self = this;  
+                var lines = [];  
+                var status = new Lampa.Status(2);  
+                status.onComplite = function(){  
+                    if(lines.length) self.build(lines);  
+                    else self.empty();  
+                };  
+                loadCollectionResolved(KP_LINE_TYPE, 1, function(data){  
+                    if(data.results.length){  
+                        setCache('kp_line_cache', data.results);  
+                        lines.push(kpLine(data.results));  
+                    }  
+                    status.append('kp', true);  
+                }, function(){ status.append('kp', true); });  
+                if(Lampa.Storage.field('source') === 'cub'){  
+                    status.append('cub', true);  
+                }  
+                else {  
+                    loadCubNowWatching(1, function(data){  
+                        if(data.results.length){  
+                            setCache('cub_line_cache', data.results);  
+                            lines.push(cubLine(data.results));  
+                        }  
+                        status.append('cub', true);  
+                    }, function(){ status.append('cub', true); });  
+                }  
+            },  
+            onInstance: function(item, data){  
+                item.use({  
+                    onMore: function(){  
+                        if(data.params && data.params.emit && data.params.emit.onlyMore) data.params.emit.onlyMore();  
+                    },  
+                    onInstance: function(card, cardData){  
+                        card.use({  
+                            onEnter: function(){ Lampa.Router.call('full', cardData); },  
+                            onFocus: function(){ Lampa.Background.change(Lampa.Utils.cardImgBackground(cardData)); }  
+                        });  
+                    }  
+                });  
+            }  
+        });  
+        return comp;  
+    }  
     Lampa.Component.add('kinopoisk_category', KpCategoryComponent);  
     Lampa.Component.add('cub_now_watching_category', CubCategoryComponent);  
-    function kpLine(results){  
-        return {  
-            title: KP_LINE_TITLE,  
-            results: results,  
-            params: lineParams(KP_LINE_TYPE, KP_LINE_TITLE, 'kinopoisk_category')  
-        };  
+    Lampa.Component.add('now_watching_main', NowWatchingComponent);  
+    function addMenuItem(){  
+        var button = $('<li class="menu__item selector"><div class="menu__ico"><svg height="36" viewBox="0 0 38 36" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="8" width="34" height="21" rx="3" stroke="currentColor" stroke-width="3"/><line x1="13.0925" y1="2.34874" x2="16.3487" y2="6.90754" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><line x1="1.5" y1="-1.5" x2="9.31665" y2="-1.5" transform="matrix(-0.757816 0.652468 0.652468 0.757816 26.197 2)" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><line x1="9.5" y1="34.5" x2="29.5" y2="34.5" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg></div><div class="menu__text">' + MENU_TITLE + '</div></li>');  
+        button.on('hover:enter', function(){  
+            Lampa.Activity.push({  
+                url: '',  
+                title: MENU_TITLE,  
+                component: 'now_watching_main',  
+                page: 1  
+            });  
+        });  
+        $('.menu .menu__list').eq(0).append(button);  
     }  
-    function cubLine(results){  
-        return {  
-            title: CUB_LINE_TITLE,  
-            results: results,  
-            params: lineParams('cub_now_watching', CUB_LINE_TITLE, 'cub_now_watching_category')  
-        };  
-    }  
-    Lampa.ContentRows.add({  
-        name: 'kp_now_watching',  
-        title: KP_LINE_TITLE,  
-        index: 3,  
-        screen: ['main'],  
-        call: function(){  
-            var cached = getCache('kp_line_cache');  
-            return function(call){  
-                if(cached && cached.length){  
-                    call(kpLine(cached));  
-                    return;  
-                }  
-                loadCollectionResolved(KP_LINE_TYPE, 1, function(data){  
-                    if(!data.results.length){  
-                        call();  
-                        return;  
-                    }  
-                    setCache('kp_line_cache', data.results);  
-                    var line = kpLine(data.results);  
-                    line.total_pages = 2;  
-                    call(line);  
-                }, function(){ call(); });  
-            };  
-        }  
-    });  
-    Lampa.ContentRows.add({  
-        name: 'cub_now_watching',  
-        title: CUB_LINE_TITLE,  
-        index: 4,  
-        screen: ['main'],  
-        call: function(){  
-            if(Lampa.Storage.field('source') === 'cub') return;  
-            var cached = getCache('cub_line_cache');  
-            return function(call){  
-                if(cached && cached.length){  
-                    call(cubLine(cached));  
-                    return;  
-                }  
-                loadCubNowWatching(1, function(data){  
-                    if(!data.results.length){  
-                        call();  
-                        return;  
-                    }  
-                    setCache('cub_line_cache', data.results);  
-                    var line = cubLine(data.results);  
-                    line.total_pages = 2;  
-                    call(line);  
-                }, function(){ call(); });  
-            };  
-        }  
-    });  
-    function getMainInstance(){  
-        var activity = Lampa.Activity.active();  
-        if(!activity || activity.component !== 'main') return null;  
-        var instance = typeof activity.activity === 'function' ? activity.activity() : activity.activity;  
-        if(!instance) return null;  
-        return instance;  
-    }  
-    function mainAlreadyRendered(instance){  
-        var rendered = instance && instance.render ? instance.render() : null;  
-        if(!rendered) return false;  
-        if(rendered.find) return rendered.find('.items-line, .items__line').length > 0;  
-        if(rendered.querySelectorAll) return rendered.querySelectorAll('.items-line, .items__line').length > 0;  
-        return false;  
-    }  
-    function injectLines(instance){  
-        var lines = [];  
-        var kpCached = getCache('kp_line_cache');  
-        var cubCached = getCache('cub_line_cache');  
-        if(kpCached && kpCached.length) lines.push(kpLine(kpCached));  
-        if(Lampa.Storage.field('source') !== 'cub' && cubCached && cubCached.length) lines.push(cubLine(cubCached));  
-        if(lines.length && typeof instance.build === 'function'){  
-            try{  
-                instance.build(lines);  
-                return true;  
-            }  
-            catch(e){}  
-        }  
-        return false;  
-    }  
-    function getScrollNode(rendered){  
-        if(!rendered) return null;  
-        var node = null;  
-        if(rendered.find){  
-            var found = rendered.find('.scroll__body');  
-            node = found && found.length ? found[0] : null;  
-        }  
-        else if(rendered.querySelector){  
-            node = rendered.querySelector('.scroll__body');  
-        }  
-        return node;  
-    }  
-    function bindScrollInject(instance, scrollNode){  
-        if(scrollHandler) return;  
-        scrollHandler = function(){  
-            if(mainHandled) return;  
-            var nearBottom = scrollNode.scrollTop + scrollNode.clientHeight > scrollNode.scrollHeight - scrollNode.clientHeight * 2;  
-            if(nearBottom || scrollNode.scrollTop > 0){  
-                mainHandled = true;  
-                scrollNode.removeEventListener('scroll', scrollHandler);  
-                scrollHandler = null;  
-                injectLines(instance);  
-            }  
-        };  
-        scrollNode.addEventListener('scroll', scrollHandler);  
-    }  
-    function handleLateMain(){  
-        if(mainHandled) return;  
-        var instance = getMainInstance();  
-        if(!instance) return;  
-        if(!mainAlreadyRendered(instance)) return;  
-        var scrollNode = getScrollNode(instance.render ? instance.render() : null);  
-        if(scrollNode){  
-            bindScrollInject(instance, scrollNode);  
-        }  
-        else {  
-            mainHandled = true;  
-            injectLines(instance);  
-        }  
-    }  
-    function refreshCache(){  
-        loadCollectionResolved(KP_LINE_TYPE, 1, function(data){  
-            if(data.results.length){  
-                setCache('kp_line_cache', data.results);  
-                handleLateMain();  
-            }  
-        }, function(){});  
-        if(Lampa.Storage.field('source') !== 'cub'){  
-            loadCubNowWatching(1, function(data){  
-                if(data.results.length){  
-                    setCache('cub_line_cache', data.results);  
-                    handleLateMain();  
-                }  
-            }, function(){});  
-        }  
-    }  
-    if(window.appready) refreshCache();  
+    if(window.appready) addMenuItem();  
     else Lampa.Listener.follow('app', function(event){  
-        if(event.type === 'ready') refreshCache();  
+        if(event.type === 'ready') addMenuItem();  
     });  
 })();
