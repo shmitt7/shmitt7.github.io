@@ -6,7 +6,7 @@
     var KP_LINE_TYPE = 'TOP_POPULAR_ALL';  
     var KP_LINE_TITLE = 'Сейчас смотрят Кинопоиск';  
     var CUB_LINE_TITLE = 'Сейчас смотрят CUB';  
-    var MENU_TITLE = 'Сейчас смотрят';  
+    var MENU_TITLE = 'Популярное';  
     var CACHE_LIFE = 1000 * 60 * 30;  
     var network = new Lampa.Reguest();  
     var KP_HEADER = {headers: {'X-API-KEY': KP_API_KEY}, cache: {life: 180}, timeout: 15000};  
@@ -152,12 +152,7 @@
         url = Lampa.Utils.addUrlComponent(url, 'email=' + encodeURIComponent(email));  
         network.silent(url, function(json){  
             var data = Lampa.Utils.addSource(json || {}, 'cub');  
-            var results = data.results || [];  
-            oncomplite({  
-                results: results,  
-                page: page || 1,  
-                total_pages: json && json.total_pages ? json.total_pages : (results.length ? (page || 1) + 1 : (page || 1))  
-            });  
+            oncomplite(data.results || []);  
         }, onerror, false, {cache: {life: 180}, timeout: 15000});  
     }  
     function lineParams(url, title, component){  
@@ -169,6 +164,10 @@
         return {  
             title: KP_LINE_TITLE,  
             results: results,  
+            page: 1,  
+            total_pages: 2,  
+            url: KP_LINE_TYPE,  
+            component: 'kinopoisk_category',  
             params: lineParams(KP_LINE_TYPE, KP_LINE_TITLE, 'kinopoisk_category')  
         };  
     }  
@@ -176,13 +175,11 @@
         return {  
             title: CUB_LINE_TITLE,  
             results: results,  
+            page: 1,  
+            total_pages: 2,  
+            url: 'cub_now_watching',  
+            component: 'cub_now_watching_category',  
             params: lineParams('cub_now_watching', CUB_LINE_TITLE, 'cub_now_watching_category')  
-        };  
-    }  
-    function cardHooks(){  
-        return {  
-            onEnter: function(data){ Lampa.Router.call('full', data); },  
-            onFocus: function(data){ Lampa.Background.change(Lampa.Utils.cardImgBackground(data)); }  
         };  
     }  
     function KpCategoryComponent(object){  
@@ -232,30 +229,48 @@
                     if(lines.length) self.build(lines);  
                     else self.empty();  
                 };  
-                loadCollectionResolved(KP_LINE_TYPE, 1, function(data){  
-                    if(data.results.length){  
-                        setCache('kp_line_cache', data.results);  
-                        lines.push(kpLine(data.results));  
-                    }  
+                var kpCached = getCache('kp_line_cache');  
+                if(kpCached && kpCached.length){  
+                    lines.push(kpLine(kpCached));  
                     status.append('kp', true);  
-                }, function(){ status.append('kp', true); });  
+                }  
+                else {  
+                    loadCollectionResolved(KP_LINE_TYPE, 1, function(data){  
+                        if(data.results.length){  
+                            setCache('kp_line_cache', data.results);  
+                            lines.push(kpLine(data.results));  
+                        }  
+                        status.append('kp', true);  
+                    }, function(){ status.append('kp', true); });  
+                }  
                 if(Lampa.Storage.field('source') === 'cub'){  
                     status.append('cub', true);  
                 }  
                 else {  
-                    loadCubNowWatching(1, function(data){  
-                        if(data.results.length){  
-                            setCache('cub_line_cache', data.results);  
-                            lines.push(cubLine(data.results));  
-                        }  
+                    var cubCached = getCache('cub_line_cache');  
+                    if(cubCached && cubCached.length){  
+                        lines.push(cubLine(cubCached));  
                         status.append('cub', true);  
-                    }, function(){ status.append('cub', true); });  
+                    }  
+                    else {  
+                        loadCubNowWatching(1, function(data){  
+                            if(data.results.length){  
+                                setCache('cub_line_cache', data.results);  
+                                lines.push(cubLine(data.results));  
+                            }  
+                            status.append('cub', true);  
+                        }, function(){ status.append('cub', true); });  
+                    }  
                 }  
             },  
             onInstance: function(item, data){  
                 item.use({  
                     onMore: function(){  
-                        if(data.params && data.params.emit && data.params.emit.onlyMore) data.params.emit.onlyMore();  
+                        var lineData = data || {};  
+                        var url = lineData.url || '';  
+                        var component = lineData.component || 'kinopoisk_category';  
+                        var title = lineData.title || MENU_TITLE;  
+                        Lampa.Activity.push({url: url, title: title, component: component, page: 1});  
                     },  
                     onInstance: function(card, cardData){  
                         card.use({  
@@ -272,7 +287,8 @@
     Lampa.Component.add('cub_now_watching_category', CubCategoryComponent);  
     Lampa.Component.add('now_watching_main', NowWatchingComponent);  
     function addMenuItem(){  
-        var button = $('<li class="menu__item selector"><div class="menu__ico"><svg height="36" viewBox="0 0 38 36" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="8" width="34" height="21" rx="3" stroke="currentColor" stroke-width="3"/><line x1="13.0925" y1="2.34874" x2="16.3487" y2="6.90754" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><line x1="1.5" y1="-1.5" x2="9.31665" y2="-1.5" transform="matrix(-0.757816 0.652468 0.652468 0.757816 26.197 2)" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><line x1="9.5" y1="34.5" x2="29.5" y2="34.5" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg></div><div class="menu__text">' + MENU_TITLE + '</div></li>');  
+        if($('.menu .menu__list .menu__item[data-line_kp_cub]').length) return;  
+        var button = $('<li class="menu__item selector" data-line_kp_cub="1"><div class="menu__ico"><svg><use xlink:href="#sprite-fire"></use></svg></div><div class="menu__text">' + MENU_TITLE + '</div></li>');  
         button.on('hover:enter', function(){  
             Lampa.Activity.push({  
                 url: '',  
