@@ -1,7 +1,4 @@
 (function () {  
-    'use strict';  
-  
-    // ================== СПИСОК ПЛАГИНОВ ==================  
     var plugins = [  
         { url: 'https://nb557.github.io/plugins/online_mod.js', name: 'Online Mod', descr: 'Источники онлайн-просмотра фильмов и сериалов. Необходимое зеркало: hdrezka.club | @t_anton/nb557' },  
         { url: 'https://cub.red/plugin/sport', name: 'Спорт', descr: 'Раздел Спорт в меню: прямые трансляции спортивных событий | @lampa' },  
@@ -21,69 +18,47 @@
         { url: 'https://shmitt7.github.io/torrserver.js', name: 'TorrServer Free', descr: 'Просмотр торрентов через общедоступные сервера. Работает при включённом встроенном клиенте и дополнительной ссылки. Сервер автоматически переподключается при входе в торренты и в шапке появляется кнопка' },  
         { url: 'https://shmitt7.github.io/tweaks.js', name: 'Очистка интерфейса', descr: 'Убирает лишние иконки/кнопки/пункты меню. Отключает рекламу, DMCA, подписки и сервисы. Фильтр контента: только латиница и кириллица' }  
     ];  
-    // =====================================================  
-  
-    var KEY = 'myplugins_';  
-  
-    // --- Скрытие: подменяем Plugins.get до отрисовки магазина ---  
-    var origGet = Lampa.Plugins.get.bind(Lampa.Plugins);  
-  
-    var hiddenUrls = plugins.map(function (p) { return p.url; });  
-  
+    var keyPrefix = 'myplugins_';  
+    var originalGet = Lampa.Plugins.get.bind(Lampa.Plugins);  
+    var hiddenUrls = plugins.map(function (plugin) { return plugin.url; });  
     Lampa.Plugins.get = function () {  
-        return origGet().filter(function (p) {  
-            return hiddenUrls.indexOf(p.url) === -1;  
+        return originalGet().filter(function (plugin) {  
+            return hiddenUrls.indexOf(plugin.url) === -1;  
         });  
     };  
-  
-    // Реальный список (включая скрытые) — для внутренних проверок  
-    function allPlugins() {  
-        return origGet();  
-    }  
-  
-    function getPlugin(url) {  
-        return allPlugins().find(function (p) { return p.url === url; });  
-    }  
-  
     function isEnabled(key) {  
-        var v = Lampa.Storage.get(key, 'true');  
-        return v === true || v === 'true';  
+        var value = Lampa.Storage.get(key, 'true');  
+        return value === true || value === 'true';  
     }  
-  
-    function apply(p, enabled) {  
-        var plug = getPlugin(p.url);  
-  
+    function applyPlugin(plugin, enabled) {  
+        var installed = originalGet().find(function (item) { return item.url === plugin.url; });  
         if (enabled) {  
-            if (!plug) {  
-                Lampa.Plugins.add({ url: p.url, status: 1, name: p.name });  
-            } else if (plug.status !== 1) {  
-                plug.status = 1;  
-                Lampa.Plugins.save(plug);  
-                Lampa.Plugins.push(plug);  
+            if (!installed) {  
+                Lampa.Plugins.add({ url: plugin.url, status: 1, manager: 1 });  
+            } else if (installed.status !== 1) {  
+                installed.status = 1;  
+                Lampa.Plugins.save(installed);  
+                Lampa.Plugins.push(installed);  
             }  
-        } else {  
-            if (plug && plug.status === 1) {  
-                plug.status = 0;  
-                Lampa.Plugins.save(plug);  
-                Lampa.Noty.show(p.name + ': отключится после перезагрузки');  
-            }  
+        } else if (installed && installed.status === 1) {  
+            installed.status = 0;  
+            Lampa.Plugins.save(installed);  
         }  
     }  
-  
     function start() {  
+        originalGet().forEach(function (installed) {  
+            if (installed.manager === 1 && hiddenUrls.indexOf(installed.url) === -1) {  
+                Lampa.Plugins.remove(installed);  
+            }  
+        });  
         Lampa.SettingsApi.addComponent({  
             component: 'myplugins',  
             name: 'Плагины',  
             icon: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>'  
         });  
-  
-        // Первый пункт — перезагрузка приложения  
         Lampa.SettingsApi.addParam({  
             component: 'myplugins',  
-            param: {  
-                name: 'myplugins_reload',  
-                type: 'button'  
-            },  
+            param: { name: 'myplugins_reload', type: 'button' },  
             field: {  
                 name: 'Перезагрузить приложение',  
                 description: 'Перезагрузить приложение для применения изменений в плагинах'  
@@ -92,37 +67,23 @@
                 window.location.reload();  
             }  
         });  
-  
-        plugins.forEach(function (p) {  
-            var key = KEY + encodeURIComponent(p.url).slice(0, 60);  
-  
-            Lampa.Params.trigger(key, true);  
-  
+        plugins.forEach(function (plugin) {  
+            var key = keyPrefix + encodeURIComponent(plugin.url).slice(0, 60);  
             Lampa.SettingsApi.addParam({  
                 component: 'myplugins',  
-                param: {  
-                    name: key,  
-                    type: 'trigger',  
-                    default: true  
-                },  
-                field: {  
-                    name: p.name,  
-                    description: p.descr  
-                },  
+                param: { name: key, type: 'trigger', default: true },  
+                field: { name: plugin.name, description: plugin.descr },  
                 onChange: function () {  
-                    apply(p, isEnabled(key));  
+                    applyPlugin(plugin, isEnabled(key));  
                 }  
             });  
-  
-            // приводим состояние плагина к тумблеру при каждом старте  
-            apply(p, isEnabled(key));  
+            applyPlugin(plugin, isEnabled(key));  
         });  
     }  
-  
     if (window.appready) start();  
     else {  
-        Lampa.Listener.follow('app', function (e) {  
-            if (e.type === 'ready') start();  
+        Lampa.Listener.follow('app', function (event) {  
+            if (event.type === 'ready') start();  
         });  
     }  
 })();
