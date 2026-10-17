@@ -1,6 +1,11 @@
 (function () {  
     'use strict';  
   
+    // ================== НАСТРОЙКА ==================  
+    // URL этого самого файла (укажите raw-ссылку после заливки на GitHub),  
+    // чтобы менеджер тоже был скрыт в магазине расширений  
+    var MANAGER_URL = 'https://raw.githubusercontent.com/<user>/<repo>/main/myplugins.js';  
+  
     var plugins = [  
         { url: 'https://nb557.github.io/plugins/online_mod.js', name: 'Online Mod', descr: 'Онлайн-просмотр фильмов и сериалов. Зеркало: hdrezka.club' },  
         { url: 'https://cub.red/plugin/sport', name: 'Спорт', descr: 'Прямые трансляции спортивных событий' },  
@@ -19,38 +24,57 @@
         { url: 'https://shmitt7.github.io/status.js', name: 'Статус контента', descr: 'Дата премьеры, онгоинг, сезон и серия' },  
         { url: 'https://shmitt7.github.io/torrserver.js', name: 'TorrServer Free', descr: 'Просмотр торрентов через общедоступные сервера' }  
     ];  
+    // ===============================================  
   
-    var KEY = 'my_plugins_'; // префикс ключа настройки для каждого плагина  
+    var KEY = 'myplugins_';  
   
-    function getPlugin(url) {  
-        return Lampa.Plugins.get().find(function (p) { return p.url === url; });  
+    // --- Скрытие: подменяем Plugins.get до отрисовки магазина ---  
+    var origGet = Lampa.Plugins.get.bind(Lampa.Plugins);  
+  
+    var hiddenUrls = plugins.map(function (p) { return p.url; });  
+    hiddenUrls.push(MANAGER_URL);  
+  
+    Lampa.Plugins.get = function () {  
+        return origGet().filter(function (p) {  
+            return hiddenUrls.indexOf(p.url) === -1;  
+        });  
+    };  
+  
+    // Реальный список (включая скрытые) — для внутренних проверок  
+    function allPlugins() {  
+        return origGet();  
     }  
   
-    function apply(url, enabled) {  
-        var plug = getPlugin(url);  
+    function getPlugin(url) {  
+        return allPlugins().find(function (p) { return p.url === url; });  
+    }  
+  
+    function isEnabled(key) {  
+        var v = Lampa.Storage.get(key, 'true');  
+        return v === true || v === 'true';  
+    }  
+  
+    function apply(p, enabled) {  
+        var plug = getPlugin(p.url);  
   
         if (enabled) {  
             if (!plug) {  
-                // плагина ещё нет — добавляем включённым  
-                Lampa.Plugins.add({ url: url, status: 1 });  
+                Lampa.Plugins.add({ url: p.url, status: 1, name: p.name });  
             } else if (plug.status !== 1) {  
-                // есть, но выключен — включаем и подгружаем  
                 plug.status = 1;  
                 Lampa.Plugins.save(plug);  
                 Lampa.Plugins.push(plug);  
             }  
         } else {  
             if (plug && plug.status === 1) {  
-                // выключаем — отключится после перезагрузки  
                 plug.status = 0;  
                 Lampa.Plugins.save(plug);  
-                Lampa.Noty.show('Отключится после перезагрузки');  
+                Lampa.Noty.show(p.name + ': отключится после перезагрузки');  
             }  
         }  
     }  
   
     function start() {  
-        // создаём раздел "Мои плагины" в настройках  
         Lampa.SettingsApi.addComponent({  
             component: 'myplugins',  
             name: 'Мои плагины',  
@@ -60,7 +84,6 @@
         plugins.forEach(function (p) {  
             var key = KEY + encodeURIComponent(p.url).slice(0, 60);  
   
-            // состояние по умолчанию — включено  
             Lampa.Params.trigger(key, true);  
   
             Lampa.SettingsApi.addParam({  
@@ -72,15 +95,15 @@
                 },  
                 field: {  
                     name: p.name,  
-                    description: p.descr + '\n' + p.url  
+                    description: p.descr  
                 },  
                 onChange: function () {  
-                    apply(p.url, Lampa.Storage.get(key, 'true') === true || Lampa.Storage.get(key) === 'true');  
+                    apply(p, isEnabled(key));  
                 }  
             });  
   
-            // при старте приводим реальное состояние плагина к состоянию тумблера  
-            apply(p.url, Lampa.Storage.get(key, 'true') === true || Lampa.Storage.get(key) === 'true');  
+            // приводим состояние плагина к тумблеру при каждом старте  
+            apply(p, isEnabled(key));  
         });  
     }  
   
