@@ -1,5 +1,6 @@
 (function () {  
     var plugins = [  
+        { url: 'https://nb557.github.io/plugins/online_mod.js', name: 'Online Mod', descr: 'Источники онлайн-просмотра фильмов и сериалов. Необходимое зеркало: hdrezka.club | @t_anton/nb557' },  
         { url: 'https://cub.red/plugin/sport', name: 'Спорт', descr: 'Раздел Спорт в меню: прямые трансляции спортивных событий | @lampa' },  
         { url: 'https://shmitt7.github.io/buttons.js', name: 'Цветные кнопки просмотра', descr: 'Раздельные цветные кнопки для источников просмотра в карточке фильма' },  
         { url: 'https://shmitt7.github.io/cardMobile.js', name: 'Карточка фильма для телефона', descr: 'Меняет визуальный вид полной карточки на телефоне' },  
@@ -17,14 +18,21 @@
         { url: 'https://shmitt7.github.io/torrserver.js', name: 'TorrServer Free', descr: 'Просмотр торрентов через общедоступные сервера. Работает при включённом встроенном клиенте и дополнительной ссылки. Сервер автоматически переподключается при входе в торренты и в шапке появляется кнопка' },  
         { url: 'https://shmitt7.github.io/tweaks.js', name: 'Очистка интерфейса', descr: 'Убирает лишние иконки/кнопки/пункты меню. Отключает рекламу, DMCA, подписки и сервисы. Фильтр контента: только латиница и кириллица' }  
     ];  
-    var keyPrefix = 'myplugins_';  
-    var managedKey = 'myplugins_managed';  
+    var keyPrefix = 'shmitt7_';  
+    var managedKey = 'shmitt7_managed';  
+    var componentName = 'shmitt7_plugins';  
     var originalGet = Lampa.Plugins.get.bind(Lampa.Plugins);  
     var hiddenUrls = plugins.map(function (plugin) { return plugin.url; });  
     Lampa.Plugins.get = function () {  
         return originalGet().filter(function (plugin) {  
             return hiddenUrls.indexOf(plugin.url) === -1;  
         });  
+    };  
+    var originalNotyShow = Lampa.Noty.show.bind(Lampa.Noty);  
+    var addSuccessText = Lampa.Lang.translate('plugins_add_success');  
+    Lampa.Noty.show = function (text, params) {  
+        if (text === addSuccessText) return;  
+        return originalNotyShow(text, params);  
     };  
     function isEnabled(key) {  
         var value = Lampa.Storage.get(key, 'true');  
@@ -37,12 +45,12 @@
                 Lampa.Plugins.add({ url: plugin.url, status: 1 });  
             } else if (installed.status !== 1) {  
                 installed.status = 1;  
-                Lampa.Plugins.save(installed);  
+                Lampa.Plugins.save();  
                 Lampa.Plugins.push(installed);  
             }  
         } else if (installed && installed.status === 1) {  
             installed.status = 0;  
-            Lampa.Plugins.save(installed);  
+            Lampa.Plugins.save();  
         }  
     }  
     function syncRemoved() {  
@@ -62,15 +70,15 @@
     function start() {  
         syncRemoved();  
         Lampa.SettingsApi.addComponent({  
-            component: 'myplugins',  
+            component: componentName,  
             name: 'Плагины',  
             icon: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>'  
         });  
         Lampa.SettingsApi.addParam({  
-            component: 'myplugins',  
-            param: { name: 'myplugins_reload', type: 'button' },  
+            component: componentName,  
+            param: { name: 'shmitt7_reload', type: 'button' },  
             field: {  
-                name: 'Перезагрузить приложение',  
+                name: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align:middle;margin-right:8px"><path d="M21 12a9 9 0 1 1-2.64-6.36" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M21 3v6h-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Перезагрузить приложение',  
                 description: 'Перезагрузить приложение для применения изменений в плагинах'  
             },  
             onChange: function () {  
@@ -80,7 +88,7 @@
         plugins.forEach(function (plugin) {  
             var key = keyPrefix + encodeURIComponent(plugin.url).slice(0, 60);  
             Lampa.SettingsApi.addParam({  
-                component: 'myplugins',  
+                component: componentName,  
                 param: { name: key, type: 'trigger', default: true },  
                 field: { name: plugin.name, description: plugin.descr },  
                 onChange: function () {  
