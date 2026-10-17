@@ -1,5 +1,6 @@
 (function () {  
     var plugins = [  
+        { url: 'https://nb557.github.io/plugins/online_mod.js', name: 'Online Mod', descr: 'Источники онлайн-просмотра фильмов и сериалов. Необходимое зеркало: hdrezka.club | @t_anton/nb557' },  
         { url: 'https://cub.red/plugin/sport', name: 'Спорт', descr: 'Раздел Спорт в меню: прямые трансляции спортивных событий | @lampa' },  
         { url: 'https://shmitt7.github.io/buttons.js', name: 'Цветные кнопки просмотра', descr: 'Раздельные цветные кнопки для источников просмотра в карточке фильма' },  
         { url: 'https://shmitt7.github.io/cardMobile.js', name: 'Карточка фильма для телефона', descr: 'Меняет визуальный вид полной карточки на телефоне' },  
@@ -18,6 +19,7 @@
         { url: 'https://shmitt7.github.io/tweaks.js', name: 'Очистка интерфейса', descr: 'Убирает лишние иконки/кнопки/пункты меню. Отключает рекламу, DMCA, подписки и сервисы. Фильтр контента: только латиница и кириллица' }  
     ];  
     var keyPrefix = 'myplugins_';  
+    var managedKey = 'myplugins_managed';  
     var originalGet = Lampa.Plugins.get.bind(Lampa.Plugins);  
     var hiddenUrls = plugins.map(function (plugin) { return plugin.url; });  
     Lampa.Plugins.get = function () {  
@@ -33,7 +35,7 @@
         var installed = originalGet().find(function (item) { return item.url === plugin.url; });  
         if (enabled) {  
             if (!installed) {  
-                Lampa.Plugins.add({ url: plugin.url, status: 1, manager: 1 });  
+                Lampa.Plugins.add({ url: plugin.url, status: 1 });  
             } else if (installed.status !== 1) {  
                 installed.status = 1;  
                 Lampa.Plugins.save(installed);  
@@ -44,12 +46,22 @@
             Lampa.Plugins.save(installed);  
         }  
     }  
-    function start() {  
-        originalGet().forEach(function (installed) {  
-            if (installed.manager === 1 && hiddenUrls.indexOf(installed.url) === -1) {  
-                Lampa.Plugins.remove(installed);  
+    function syncRemoved() {  
+        var managed = Lampa.Storage.get(managedKey, '[]');  
+        if (!Array.isArray(managed)) managed = [];  
+        plugins.forEach(function (plugin) {  
+            if (managed.indexOf(plugin.url) === -1) managed.push(plugin.url);  
+        });  
+        managed.forEach(function (url) {  
+            if (hiddenUrls.indexOf(url) === -1) {  
+                var installed = originalGet().find(function (item) { return item.url === url; });  
+                if (installed) Lampa.Plugins.remove(installed);  
             }  
         });  
+        Lampa.Storage.set(managedKey, hiddenUrls.slice());  
+    }  
+    function start() {  
+        syncRemoved();  
         Lampa.SettingsApi.addComponent({  
             component: 'myplugins',  
             name: 'Плагины',  
