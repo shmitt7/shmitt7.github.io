@@ -6,7 +6,8 @@
         { url: 'https://shmitt7.github.io/cardMobile.js', name: 'Карточка фильма для телефона', descr: 'Меняет визуальный вид полной карточки на телефоне' },  
         { url: 'https://shmitt7.github.io/cardTV.js', name: 'Карточка фильма', descr: 'Меняет визуальный вид полной карточки на TV' },  
         { url: 'https://shmitt7.github.io/cards.js', name: 'Карточки в списках', descr: 'Меняет визуальный вид карточки в списках' },  
-        { url: 'https://shmitt7.github.io/dmca.js', name: 'Разблокировка DMCA', descr: 'Автоматически обходит блокировку DMCA-контента' },  
+        { url: 'https://shmitt7.github.io/dmca.js', name: 'Разблокировка DMCA', descr: 'Автоматически обходит блокировку DMCA-контента' },
+        { url: 'https://shmitt7.github.io/filter.js', name: 'Фильтр контента', description: 'Оставляет карточки с русским названием или с оригиналом на английском/русском языке. Поиск, персоны и коллекции не фильтруются' }
         { url: 'https://shmitt7.github.io/menu.js', name: 'Плавающее меню', descr: 'Новое оформление всех меню на TV' },  
         { url: 'https://shmitt7.github.io/labels.js', name: 'Цветные метки контента', descr: 'Визуальные метки типа контента: синие для фильмов, красные для сериалов' },  
         { url: 'https://shmitt7.github.io/line.js', name: 'Линии Кинопоиск и CUB', descr: 'Добавляет на главный экран линии "Сейчас смотрят Кинопоиск" и "Сейчас смотрят CUB" с карточками, привязанными к TMDB по названию и году' },  
