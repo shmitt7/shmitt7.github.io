@@ -1,81 +1,92 @@
 (function () {  
-    if (window.onlineGroupBtn) return;  
-    window.onlineGroupBtn = true;  
+    'use strict'  
   
-    var ICON = '<svg width="24" height="24" viewBox="0 0 48 48" fill="none">' +  
-        '<circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3"/>' +  
-        '<path d="M24 4c-5 5.5-7.5 12-7.5 20S19 38.5 24 44c5-5.5 7.5-12 7.5-20S29 9.5 24 4z" stroke="currentColor" stroke-width="3"/>' +  
-        '<path d="M5 19h38M5 29h38" stroke="currentColor" stroke-width="3"/>' +  
-        '</svg><span>Онлайн</span>';  
+    function startPlugin() {  
+        if (window.online_folder_plugin_started) return  
+        window.online_folder_plugin_started = true  
   
-    // кнопки, которые прячем из общего ряда (всё, кроме штатных)  
-    var SKIP = '.button--play,.button--book,.button--reaction,.button--subscribe,.button--options,.view--torrent,.view--trailer,.view--online-src,.button--priority';  
+        Lampa.Lang.add({  
+            online_folder_title: {  
+                ru: 'Онлайн',  
+                uk: 'Онлайн',  
+                en: 'Online'  
+            }  
+        })  
   
-    function openFolder(e, $target) {  
-        var options = [];  
+        var FOLDER_CLASS = 'view--online-folder'  
   
-        // плагины сами положат сюда свои пункты — как в кнопке "Ещё"  
-        Lampa.Listener.send('full', {  
-            link: e.link,  
-            type: 'options',  
-            props: e.props,  
-            options: options  
-        });  
+        // иконка-папка (та же svg, что у папок в online-плагине)  
+        var folder_button = '<div class="full-start__button selector ' + FOLDER_CLASS + '">' +  
+            '<svg viewBox="0 0 128 112" fill="none" xmlns="http://www.w3.org/2000/svg">' +  
+                '<rect y="20" width="128" height="92" rx="13" fill="currentColor"/>' +  
+                '<path d="M29.9963 8H98.0037C96.0446 3.3021 91.4079 0 86 0H42C36.5921 0 31.9555 3.3021 29.9963 8Z" fill="currentColor" fill-opacity="0.23"/>' +  
+                '<rect x="11" y="8" width="106" height="76" rx="13" fill="currentColor" fill-opacity="0.51"/>' +  
+            '</svg>' +  
+            '<span>#{online_folder_title}</span>' +  
+        '</div>'  
   
-        // чистим служебные пункты вроде сепараторов/AI, если не нужны — убери фильтр  
-        var items = options.filter(function (o) {  
-            return o && o.onSelect;  
-        }).map(function (o) {  
-            return {  
-                title: o.title,  
-                subtitle: o.subtitle,  
-                template: o.icon ? 'selectbox_icon' : 'selectbox_item',  
-                icon: o.icon,  
-                item: o  
-            };  
-        });  
+        function build(render) {  
+            // убираем прошлую сборку (если перерисовка)  
+            render.find('.' + FOLDER_CLASS).remove()  
+            render.find('.full-start__button.view--online').removeClass('hide')  
   
-        if (!items.length) {  
-            Lampa.Noty.show('Нет онлайн-источников');  
-            return;  
+            // все онлайн-кнопки чужих плагинов  
+            var sources = render.find('.buttons--container > .full-start__button.view--online, ' +  
+                                      '.full-start__button.view--online').not('.' + FOLDER_CLASS)  
+  
+            if (!sources.length) return  
+  
+            sources.addClass('hide')  
+  
+            var btn = $(Lampa.Lang.translate(folder_button))  
+  
+            btn.on('hover:enter', function () {  
+                var items = []  
+  
+                sources.each(function () {  
+                    var icon = $(this).find('svg').prop('outerHTML')  
+  
+                    items.push({  
+                        title: $(this).text().trim(),  
+                        subtitle: $(this).data('subtitle'),  
+                        template: icon ? 'selectbox_icon' : 'selectbox_item',  
+                        icon: icon,  
+                        btn: $(this)  
+                    })  
+                })  
+  
+                Lampa.Select.show({  
+                    title: Lampa.Lang.translate('online_folder_title'),  
+                    items: items,  
+                    onSelect: function (a) {  
+                        a.btn.trigger('hover:enter')  
+                    },  
+                    onBack: function () {  
+                        Lampa.Controller.toggle('content')  
+                    }  
+                })  
+            })  
+  
+            var torrent = render.find('.view--torrent')  
+            if (torrent.length) torrent.last().after(btn)  
+            else render.find('.buttons--container').prepend(btn)  
         }  
   
-        Lampa.Select.show({  
-            title: 'Онлайн',  
-            items: items,  
-            onSelect: function (a) {  
-                a.item.onSelect(); // вызываем обработчик плагина напрямую  
-            },  
-            onBack: function () {  
-                Lampa.Controller.toggle('content');  
-            }  
-        });  
+        Lampa.Listener.follow('full', function (e) {  
+            if (e.type !== 'complite') return  
+  
+            // ждём, пока остальные плагины вставят свои кнопки  
+            setTimeout(function () {  
+                var render = e.object.activity.render()  
+                build(render)  
+            }, 50)  
+        })  
     }  
   
-    Lampa.Listener.follow('full', function (e) {  
-        if (e.type !== 'complite') return;  
-  
-        var $target = e.body.find('.full-start-new__buttons');  
-        if (!$target.length || $target.find('.view--online-src').length) return;  
-  
-        var $btn = $('<div class="full-start__button selector view--online-src">' + ICON + '</div>');  
-  
-        $btn.on('hover:enter', function () {  
-            openFolder(e, $target);  
-        });  
-  
-        var $torrent = $target.find('.view--torrent').not('.hide').last();  
-        if ($torrent.length) $torrent.after($btn);  
-        else $target.prepend($btn);  
-  
-        // прячем кнопки онлайн-плагинов из ряда — они живут теперь в нашей "папке"  
-        $target.find('.full-start__button').not(SKIP).addClass('hide');  
-  
-        var start = e.link && e.link.items && e.link.items[0];  
-        if (start) {  
-            $btn.on('hover:focus hover:enter hover:hover hover:touch', function (ev) {  
-                start.last = ev.target;  
-            });  
-        }  
-    });  
-})();
+    if (window.appready) startPlugin()  
+    else {  
+        Lampa.Listener.follow('app', function (e) {  
+            if (e.type === 'ready') startPlugin()  
+        })  
+    }  
+})()
