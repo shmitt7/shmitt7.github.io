@@ -1,40 +1,88 @@
 (function () {  
     'use strict';  
   
-    function reorder(e) {  
-        if (e.type !== 'complite') return;  
+    var FOLDER_CLASS = 'online-folder';  
+    var PROCESSED    = 'online-folder-processed';  
   
-        let body  = e.body;  
-        let play  = body.find('.button--play');  
-        let cont  = body.find('.full-start-new__buttons');  
-        let torrent = body.find('.buttons--container .view--torrent');  
-        let trailer = body.find('.buttons--container .view--trailer');  
+    function collect(container) {  
+        var items = [];  
   
-        // Торренты — перед "Смотреть"  
-        torrent.removeClass('hide').addClass('selector').insertBefore(play);  
-        // Трейлеры — сразу после "Смотреть"  
-        trailer.removeClass('hide').addClass('selector').insertAfter(play);  
+        container.find('> .full-start__button.view--online').each(function () {  
+            var icon = $(this).find('svg').prop('outerHTML');  
   
-        // groupButtons() выполняется после события 'complite' и может  
-        // скрыть "Смотреть", если в контейнере ничего не осталось —  
-        // возвращаем её на место  
-        setTimeout(() => {  
-            let rest = body.find('.buttons--container > .full-start__button').not('.hide');  
-            if (!rest.length) {  
-                play.removeClass('hide').off('hover:enter').on('hover:enter', () => {  
-                    // нечего показывать — можно повесить свою реакцию или оставить пустым  
-                });  
-            }  
-            Lampa.Controller.collectionSet(body);  
-            Lampa.Controller.collectionFocus(play[0], body);  
-        }, 0);  
+            items.push({  
+                title:    $(this).text(),  
+                subtitle: $(this).data('subtitle'),  
+                template: icon ? 'selectbox_icon' : 'selectbox_item',  
+                icon:     icon,  
+                btn:      $(this)  
+            });  
+        });  
+  
+        return items;  
     }  
   
-    if (window.appready) {  
-        Lampa.Listener.follow('full', reorder);  
-    } else {  
+    function group(render) {  
+        var container = render.find('.buttons--container');  
+        if (!container.length) return;  
+  
+        // прячем новые онлайн-кнопки, чтобы не попадали в список "Смотреть"  
+        container.find('> .full-start__button.view--online').not('.' + PROCESSED)  
+            .addClass('hide ' + PROCESSED);  
+  
+        var all = container.find('> .full-start__button.view--online');  
+        var folder = container.find('> .full-start__button.' + FOLDER_CLASS);  
+  
+        if (!all.length) {  
+            folder.remove();  
+            return;  
+        }  
+  
+        if (!folder.length) {  
+            folder = $(  
+                '<div class="full-start__button selector ' + FOLDER_CLASS + '">' +  
+                    '<svg><use xlink:href="#sprite-play"></use></svg>' +  
+                    '<span>Онлайн</span>' +  
+                '</div>'  
+            );  
+  
+            folder.on('hover:enter', function () {  
+                Lampa.Select.show({  
+                    title: 'Онлайн',  
+                    items: collect(container),  
+                    onSelect: function (a) {  
+                        a.btn.trigger('hover:enter');  
+                    },  
+                    onBack: function () {  
+                        Lampa.Controller.toggle('content');  
+                    }  
+                });  
+            });  
+  
+            container.prepend(folder);  
+        }  
+  
+        folder.attr('data-subtitle', all.length);  
+    }  
+  
+    function start() {  
+        Lampa.Listener.follow('full', function (e) {  
+            if (e.type !== 'complite') return;  
+  
+            var render = e.object.activity.render();  
+  
+            group(render);  
+  
+            // другие плагины могут добавлять кнопки с задержкой  
+            setTimeout(function () { group(render); }, 300);  
+            setTimeout(function () { group(render); }, 1500);  
+        });  
+    }  
+  
+    if (window.appready) start();  
+    else {  
         Lampa.Listener.follow('app', function (e) {  
-            if (e.type === 'ready') Lampa.Listener.follow('full', reorder);  
+            if (e.type === 'ready') start();  
         });  
     }  
 })();
