@@ -21,14 +21,21 @@
         ads: true,  
         remote_configuration: true  
     });  
-    function run() {  
-        document.head.insertAdjacentHTML('beforeend', '<style>.head .open--broadcast,.head .open--profile,.head .notice--icon{display:none!important}.menu [data-action="catalog"],.menu [data-action="relise"],.menu [data-action="timetable"],.menu [data-action="about"],.menu [data-action="mytorrents"]{display:none!important}.button--options{display:none!important}</style>');  
-        var editItem = $('.menu [data-action="edit"]').detach();  
-        $('.menu .nosort:first .menu__list').append(editItem);  
-        var lastNosort = $('.menu .nosort:last');  
-        lastNosort.prev('.menu__split').remove();  
-        lastNosort.remove();  
-    }  
+    function hideItems() {  
+    $('.menu .menu__item[data-action="catalog"],.menu .menu__item[data-action="relise"],.menu .menu__item[data-action="timetable"],.menu .menu__item[data-action="about"],.menu .menu__item[data-action="mytorrents"]').remove();  
+    var editItem = $('.menu [data-action="edit"]').detach();  
+    $('.menu .nosort:first .menu__list').append(editItem);  
+    var lastNosort = $('.menu .nosort:last');  
+    lastNosort.prev('.menu__split').remove();  
+    lastNosort.remove();  
+}  
+function run() {  
+    document.head.insertAdjacentHTML('beforeend', '<style>.head .open--broadcast,.head .open--profile,.head .notice--icon{display:none!important}.button--options{display:none!important}</style>');  
+    hideItems();  
+    Lampa.Listener.follow('menu', function(event) {  
+        if (event.type === 'end') hideItems();  
+    });  
+}  
     if (window.appready) run();  
     else Lampa.Listener.follow('app', function(event) {  
         if (event.type === 'ready') run();  
