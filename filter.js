@@ -1,6 +1,6 @@
 (function() {  
-    if (window.langFilter) return;  
-    window.langFilter = true;  
+    if (window.contentFilter) return;  
+    window.contentFilter = true;  
     var CYRILLIC = /[\u0400-\u04FF]/;  
     var LATIN = /[A-Za-z\u00C0-\u024F]/;  
     var DIGIT = /[0-9]/;  
