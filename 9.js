@@ -1,46 +1,40 @@
-(function() {  
-    if (window.watchButtons) return;  
-    window.watchButtons = true;  
+(function () {  
+    'use strict';  
   
-    var ICONS = {  
-        torrent: '<svg width="24" height="24" viewBox="0 0 48 48"><path fill="#4caf50" d="M23.501,44.125c11.016,0,20-8.984,20-20c0-11.015-8.984-20-20-20c-11.016,0-20,8.985-20,20C3.501,35.141,12.485,44.125,23.501,44.125z"/><path fill="#fff" d="M43.252,27.114C39.718,25.992,38.055,19.625,34,11l-7,1.077c1.615,4.905,8.781,16.872,0.728,18.853C20.825,32.722,17.573,20.519,15,14l-8,2l10.178,27.081c1.991,0.67,4.112,1.044,6.323,1.044c0.982,0,1.941-0.094,2.885-0.232l-4.443-8.376c6.868,1.552,12.308-0.869,12.962-6.203c1.727,2.29,4.089,3.183,6.734,3.172C42.419,30.807,42.965,29.006,43.252,27.114z"/></svg><span>Торренты</span>',  
-        trailer: '<svg width="24" height="24" viewBox="0 0 48 48"><path d="M47.044 12.3709C46.7726 11.3497 46.2378 10.4178 45.493 9.66822C44.7483 8.91869 43.8197 8.37791 42.8003 8.1C39.0476 7.09091 24.0476 7.09091 24.0476 7.09091C24.0476 7.09091 9.04761 7.09091 5.29488 8.1C4.27547 8.37791 3.34693 8.91869 2.60218 9.66822C1.85744 10.4178 1.32262 11.3497 1.05124 12.3709C0.0476075 16.14 0.0476075 24 0.0476075 24C0.0476075 24 0.0476075 31.86 1.05124 35.6291C1.32262 36.6503 1.85744 37.5822 2.60218 38.3318C3.34693 39.0813 4.27547 39.6221 5.29488 39.9C9.04761 40.9091 24.0476 40.9091 24.0476 40.9091C24.0476 40.9091 39.0476 40.9091 42.8003 39.9C43.8197 39.6221 44.7483 39.0813 45.493 38.3318C46.2378 37.5822 46.7726 36.6503 47.044 35.6291C48.0476 31.86 48.0476 24 48.0476 24C48.0476 24 48.0476 16.14 47.044 12.3709Z" fill="#FF0302"/><path d="M19.1385 31.1373V16.8628L31.684 24.0001L19.1385 31.1373Z" fill="#FEFEFE"/></svg><span>Трейлеры</span>',  
-        play: '<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="#0596f1"><title fill="#0596f1">play-solid</title><path fill="#0596f1" d="M10.01 5.887c-1.667-.972-3.76.23-3.76 2.16v7.906c0 1.93 2.093 3.132 3.76 2.16l6.777-3.954c1.653-.964 1.653-3.354 0-4.318z"/></svg>'  
-    };  
-  
-    Lampa.Listener.follow('full', function(e) {  
+    function reorder(e) {  
         if (e.type !== 'complite') return;  
   
-        var $container = e.body.find('.buttons--container');  
-        var $target    = e.body.find('.full-start-new__buttons');  
-        var $play      = $target.find('.button--play');  
-  
-        // Цветная иконка у кнопки "Смотреть"  
-        $play.find('svg').replaceWith(ICONS.play);  
+        let body  = e.body;  
+        let play  = body.find('.button--play');  
+        let cont  = body.find('.full-start-new__buttons');  
+        let torrent = body.find('.buttons--container .view--torrent');  
+        let trailer = body.find('.buttons--container .view--trailer');  
   
         // Торренты — перед "Смотреть"  
-        var $torrent = $container.find('.view--torrent');  
-        if ($torrent.length) {  
-            $torrent.html(ICONS.torrent);  
-            $torrent.insertBefore($play);  
-        }  
-  
+        torrent.removeClass('hide').addClass('selector').insertBefore(play);  
         // Трейлеры — сразу после "Смотреть"  
-        var $trailer = $container.find('.view--trailer');  
-        if ($trailer.length) {  
-            $trailer.html(ICONS.trailer);  
-            $trailer.insertAfter($play);  
-        }  
+        trailer.removeClass('hide').addClass('selector').insertAfter(play);  
   
-        // Навигация: при входе на экран фокус на "Торренты" (если есть), иначе на "Смотреть"  
-        var start = e.link && e.link.items && e.link.items[0];  
-        if (start) {  
-            var first = ($torrent.length && $torrent.hasClass('selector')) ? $torrent[0] : $play[0];  
-            start.last = first;  
+        // groupButtons() выполняется после события 'complite' и может  
+        // скрыть "Смотреть", если в контейнере ничего не осталось —  
+        // возвращаем её на место  
+        setTimeout(() => {  
+            let rest = body.find('.buttons--container > .full-start__button').not('.hide');  
+            if (!rest.length) {  
+                play.removeClass('hide').off('hover:enter').on('hover:enter', () => {  
+                    // нечего показывать — можно повесить свою реакцию или оставить пустым  
+                });  
+            }  
+            Lampa.Controller.collectionSet(body);  
+            Lampa.Controller.collectionFocus(play[0], body);  
+        }, 0);  
+    }  
   
-            $target.find('.selector').on('hover:focus hover:enter hover:hover hover:touch', function(ev) {  
-                start.last = ev.target;  
-            });  
-        }  
-    });  
+    if (window.appready) {  
+        Lampa.Listener.follow('full', reorder);  
+    } else {  
+        Lampa.Listener.follow('app', function (e) {  
+            if (e.type === 'ready') Lampa.Listener.follow('full', reorder);  
+        });  
+    }  
 })();
