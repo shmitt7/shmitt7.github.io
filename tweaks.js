@@ -2,17 +2,6 @@
     if (window.cleanTweaks) return;  
     window.cleanTweaks = true;  
     window.plugin_shots_ready = true;  
-    var NON_LATIN_CYR = /[\u0530-\u06FF\u0900-\u0FFF\u1000-\u11FF\u1780-\u18AF\u3040-\u30FF\u31F0-\u31FF\u4E00-\u9FFF\uA960-\uA97F\uAC00-\uD7FF\uFF66-\uFF9F]/;  
-    var CYRILLIC = /[\u0400-\u04FF]/;  
-    Lampa.Listener.follow('request_secuses', function(request) {  
-        if (request.data && Array.isArray(request.data.results))  
-            request.data.results = request.data.results.filter(function(item) {  
-                var title = item.title || item.name || '';  
-                var lang = item.original_language;  
-                if (lang === 'en' || lang === 'ru') return !NON_LATIN_CYR.test(title);  
-                return CYRILLIC.test(title);  
-            });  
-    });  
     Object.assign(window.lampa_settings || (window.lampa_settings = {}), {  
         torrents_use: true,  
         feed: false,  
