@@ -1,13 +1,19 @@
 (function () {  
     'use strict';  
   
-    var BTN_SEL      = '.view--online'; // селектор онлайн-кнопок, можно расширить  
     var FOLDER_CLASS = 'online-folder';  
+  
+    // кнопки, которые НЕ должны попадать в папку "Онлайн"  
+    var EXCLUDE = '.view--torrent, .view--trailer, .' + FOLDER_CLASS;  
+  
+    function onlineButtons(render) {  
+        return render.find('.buttons--container > .full-start__button').not(EXCLUDE);  
+    }  
   
     function collect(render) {  
         var items = [];  
   
-        render.find('.full-start__button' + BTN_SEL).not('.' + FOLDER_CLASS).each(function () {  
+        onlineButtons(render).each(function () {  
             var icon = $(this).find('svg').prop('outerHTML');  
   
             items.push({  
@@ -22,7 +28,7 @@
         return items;  
     }  
   
-    function makeFolder(render) {  
+    function makeFolder(render, container) {  
         var f = $(  
             '<div class="full-start__button selector ' + FOLDER_CLASS + '">' +  
                 '<svg><use xlink:href="#sprite-play"></use></svg>' +  
@@ -47,29 +53,26 @@
     }  
   
     function group(render) {  
-        var cont   = render.find('.buttons--container');  
-        var row    = render.find('.full-start-new__buttons');  
-        var online = render.find('.full-start__button' + BTN_SEL).not('.' + FOLDER_CLASS);  
+        var container = render.find('.buttons--container');  
+        if (!container.length) return;  
+  
+        var online = onlineButtons(render);  
+        var folder = container.children('.' + FOLDER_CLASS);  
   
         if (!online.length) {  
-            render.find('.' + FOLDER_CLASS).remove();  
+            folder.remove();  
             return;  
         }  
   
-        // прячем оригинальные кнопки — они выпадают из меню "Смотреть" и из видимого ряда  
+        // прячем оригиналы — они выпадают из меню "Смотреть"  
         online.addClass('hide');  
   
-        // папка в скрытом контейнере -> появится пунктом в меню "Смотреть"  
-        if (cont.length && !cont.children('.' + FOLDER_CLASS).length) {  
-            cont.prepend(makeFolder(render));  
+        if (!folder.length) {  
+            folder = makeFolder(render, container);  
+            container.prepend(folder);  
         }  
   
-        // папка в видимом ряду — только если онлайн-кнопки были там  
-        if (row.length && row.children(BTN_SEL).length && !row.children('.' + FOLDER_CLASS).length) {  
-            row.children(BTN_SEL).first().before(makeFolder(render));  
-        }  
-  
-        render.find('.' + FOLDER_CLASS).attr('data-subtitle', online.length);  
+        folder.attr('data-subtitle', online.length);  
     }  
   
     function observe(render) {  
