@@ -23,7 +23,9 @@
         Lampa.Storage.set('lgbt_content_block', true);  
     }  
     var plugins = [  
-        { url: 'https://nb557.github.io/plugins/online_mod.js', name: 'Online Mod', descr: 'Источники онлайн-просмотра фильмов и сериалов. Необходимое зеркало: hdrezka.club | @t_anton/nb557' },  
+        { url: 'https://nb557.github.io/plugins/online_mod.js', name: 'Online Mod', descr: 'Источники онлайн-просмотра фильмов и сериалов | @t_anton/nb557' },  
+        { url: 'http://z01.online/online.js?v=2', name: 'Z01 Online', descr: 'Источники онлайн-просмотра фильмов и сериалов | @skaztv/lena' },  
+        { url: 'https://bwa.ad/rc', name: 'BwaRC', descr: 'Бесплатный онлайн просмотр фильмов и сериалов из множества источников' },  
         { url: 'https://cub.red/plugin/sport', name: 'Спорт', descr: 'Раздел Спорт в меню: прямые трансляции спортивных событий | @lampa' },  
         { url: 'https://shmitt7.github.io/buttons.js', name: 'Цветные кнопки просмотра', descr: 'Раздельные цветные кнопки для источников просмотра в карточке фильма' },  
         { url: 'https://shmitt7.github.io/cardMobile.js', name: 'Карточка фильма для телефона', descr: 'Меняет визуальный вид полной карточки на телефоне' },  
