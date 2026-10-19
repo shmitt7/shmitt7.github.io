@@ -1,6 +1,7 @@
 (function () {  
     if (!window.cleanTweaks) {  
-        window.cleanTweaks = true;  
+        window.cleanTweaks = true;
+        window.plugin_shots_ready = true;
         Object.assign(window.lampa_settings || (window.lampa_settings = {}), {  
             torrents_use: true,  
             feed: false,  
