@@ -15,20 +15,32 @@
             });  
         }  
     }  
-    function pinButtons(card) {  
+    function pinButtons(comp, card) {  
         var cont = card.find('.full-start-new__buttons');  
         var play = cont.find('.button--play');  
         var firstPinned = null;  
         if (!cont.length || !play.length) return;  
+        cont.find('.button--priority').remove();  
+        Lampa.Storage.set('full_btn_priority', '');  
         for (var i = 0; i < PINNED.length; i++) {  
             var src = card.find('.buttons--container > ' + PINNED[i]).first();  
             if (!src.length || src.hasClass('hide')) continue;  
-            src.addClass('button--priority');  
-            play.before(src);  
-            if (!firstPinned) firstPinned = src;  
+            var clon = src.clone();  
+            (function (original, cloneBtn) {  
+                cloneBtn.addClass('selector button--pinned')  
+                    .on('hover:enter', function () {  
+                        original.trigger('hover:enter');  
+                    })  
+                    .on('hover:focus', function () {  
+                        comp.last = cloneBtn[0];  
+                    });  
+            })(src, clon);  
+            play.before(clon);  
+            if (!firstPinned) firstPinned = clon;  
         }  
         replaceIcons(card);  
         if (firstPinned) {  
+            comp.last = firstPinned[0];  
             setTimeout(function () {  
                 Lampa.Controller.collectionSet(cont);  
                 Lampa.Controller.collectionFocus(firstPinned[0], cont);  
@@ -42,7 +54,7 @@
         var card = $(act.render());  
         if (renderTimer) clearTimeout(renderTimer);  
         renderTimer = setTimeout(function () {  
-            pinButtons(card);  
+            pinButtons(e.object, card);  
         }, 100);  
     });  
     Lampa.Listener.follow('app', function (e) {  
