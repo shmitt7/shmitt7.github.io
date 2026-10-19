@@ -1,8 +1,6 @@
 (function () {  
-    /* === tweaks.js: флаги === */  
     if (!window.cleanTweaks) {  
         window.cleanTweaks = true;  
-        window.plugin_shots_ready = true;  
         Object.assign(window.lampa_settings || (window.lampa_settings = {}), {  
             torrents_use: true,  
             feed: false,  
@@ -14,7 +12,7 @@
         });  
         Object.assign(window.lampa_settings.disable_features || (window.lampa_settings.disable_features = {}), {  
             dmca: true,  
-            lgbt: true,  
+            lgbt: false,  
             ai: true,  
             subscribe: true,  
             blacklist: true,  
@@ -22,9 +20,8 @@
             ads: true,  
             remote_configuration: true  
         });  
+        Lampa.Storage.set('lgbt_content_block', true);  
     }  
-  
-    /* === список плагинов (без tweaks.js) === */  
     var plugins = [  
         { url: 'https://nb557.github.io/plugins/online_mod.js', name: 'Online Mod', descr: 'Источники онлайн-просмотра фильмов и сериалов. Необходимое зеркало: hdrezka.club | @t_anton/nb557' },  
         { url: 'https://cub.red/plugin/sport', name: 'Спорт', descr: 'Раздел Спорт в меню: прямые трансляции спортивных событий | @lampa' },  
@@ -44,7 +41,6 @@
         { url: 'https://shmitt7.github.io/status.js', name: 'Статус контента', descr: 'Метка статуса на карточке: дата премьеры, онгоинг, завершён, отменён, текущий сезон и серия (S/E)' },  
         { url: 'https://shmitt7.github.io/torrserver.js', name: 'TorrServer Free', descr: 'Просмотр торрентов через общедоступные сервера. Работает при включённом встроенном клиенте и дополнительной ссылки. Сервер автоматически переподключается при входе в торренты и в шапке появляется кнопка' }  
     ];  
-  
     var keyPrefix = 'shmitt7_';  
     var componentName = 'shmitt7_plugins';  
     function pluginKey(plugin) {  
@@ -62,8 +58,6 @@
             if (isEnabled(pluginKey(plugin))) loadPlugin(plugin);  
         });  
     }  
-  
-    /* === tweaks.js: очистка интерфейса === */  
     function hideItems() {  
         $('.menu .menu__item[data-action="catalog"],.menu .menu__item[data-action="relise"],.menu .menu__item[data-action="timetable"],.menu .menu__item[data-action="about"],.menu .menu__item[data-action="mytorrents"]').remove();  
         var editItem = $('.menu [data-action="edit"]').detach();  
@@ -72,14 +66,13 @@
         lastNosort.prev('.menu__split').remove();  
         lastNosort.remove();  
     }  
-    function run() {  
+    function runTweaks() {  
         document.head.insertAdjacentHTML('beforeend', '<style>.head .open--broadcast,.head .open--profile,.head .notice--icon{display:none!important}.button--options{display:none!important}</style>');  
         hideItems();  
         Lampa.Listener.follow('menu', function (event) {  
             if (event.type === 'end') hideItems();  
         });  
     }  
-  
     function start() {  
         Lampa.SettingsApi.addComponent({  
             component: componentName,  
@@ -110,12 +103,16 @@
             });  
         });  
     }  
-  
     loadEnabled();  
-    if (window.appready) { run(); start(); }  
-    else {  
+    if (window.appready) {  
+        runTweaks();  
+        start();  
+    } else {  
         Lampa.Listener.follow('app', function (event) {  
-            if (event.type === 'ready') { run(); start(); }  
+            if (event.type === 'ready') {  
+                runTweaks();  
+                start();  
+            }  
         });  
     }  
-})();
+})(); 
