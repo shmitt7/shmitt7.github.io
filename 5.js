@@ -1,4 +1,30 @@
 (function () {  
+    /* === tweaks.js: флаги === */  
+    if (!window.cleanTweaks) {  
+        window.cleanTweaks = true;  
+        window.plugin_shots_ready = true;  
+        Object.assign(window.lampa_settings || (window.lampa_settings = {}), {  
+            torrents_use: true,  
+            feed: false,  
+            services: false,  
+            lang_use: false,  
+            white_use: false,  
+            read_only: false,  
+            demo: false  
+        });  
+        Object.assign(window.lampa_settings.disable_features || (window.lampa_settings.disable_features = {}), {  
+            dmca: true,  
+            lgbt: true,  
+            ai: true,  
+            subscribe: true,  
+            blacklist: true,  
+            persons: true,  
+            ads: true,  
+            remote_configuration: true  
+        });  
+    }  
+  
+    /* === список плагинов (без tweaks.js) === */  
     var plugins = [  
         { url: 'https://nb557.github.io/plugins/online_mod.js', name: 'Online Mod', descr: 'Источники онлайн-просмотра фильмов и сериалов. Необходимое зеркало: hdrezka.club | @t_anton/nb557' },  
         { url: 'https://cub.red/plugin/sport', name: 'Спорт', descr: 'Раздел Спорт в меню: прямые трансляции спортивных событий | @lampa' },  
@@ -16,9 +42,9 @@
         { url: 'https://shmitt7.github.io/rating.js', name: 'Рейтинг КиноПоиск с логотипом', descr: 'Отображение рейтинга КиноПоиск с логотипом на карточке | Рейтинг без логотипа - TMDB' },  
         { url: 'https://shmitt7.github.io/russkoe.js', name: 'Русский контент', descr: 'Добавляет категорию Русское: новинки, популярное, фильмы, сериалы, мультфильмы, реалити...' },  
         { url: 'https://shmitt7.github.io/status.js', name: 'Статус контента', descr: 'Метка статуса на карточке: дата премьеры, онгоинг, завершён, отменён, текущий сезон и серия (S/E)' },  
-        { url: 'https://shmitt7.github.io/torrserver.js', name: 'TorrServer Free', descr: 'Просмотр торрентов через общедоступные сервера. Работает при включённом встроенном клиенте и дополнительной ссылки. Сервер автоматически переподключается при входе в торренты и в шапке появляется кнопка' },  
-        { url: 'https://shmitt7.github.io/tweaks.js', name: 'Очистка интерфейса', descr: 'Убирает лишние иконки/кнопки/пункты меню. Отключает рекламу, DMCA, подписки и сервисы' }  
+        { url: 'https://shmitt7.github.io/torrserver.js', name: 'TorrServer Free', descr: 'Просмотр торрентов через общедоступные сервера. Работает при включённом встроенном клиенте и дополнительной ссылки. Сервер автоматически переподключается при входе в торренты и в шапке появляется кнопка' }  
     ];  
+  
     var keyPrefix = 'shmitt7_';  
     var componentName = 'shmitt7_plugins';  
     function pluginKey(plugin) {  
@@ -36,6 +62,24 @@
             if (isEnabled(pluginKey(plugin))) loadPlugin(plugin);  
         });  
     }  
+  
+    /* === tweaks.js: очистка интерфейса === */  
+    function hideItems() {  
+        $('.menu .menu__item[data-action="catalog"],.menu .menu__item[data-action="relise"],.menu .menu__item[data-action="timetable"],.menu .menu__item[data-action="about"],.menu .menu__item[data-action="mytorrents"]').remove();  
+        var editItem = $('.menu [data-action="edit"]').detach();  
+        $('.menu .nosort:first .menu__list').append(editItem);  
+        var lastNosort = $('.menu .nosort:last');  
+        lastNosort.prev('.menu__split').remove();  
+        lastNosort.remove();  
+    }  
+    function run() {  
+        document.head.insertAdjacentHTML('beforeend', '<style>.head .open--broadcast,.head .open--profile,.head .notice--icon{display:none!important}.button--options{display:none!important}</style>');  
+        hideItems();  
+        Lampa.Listener.follow('menu', function (event) {  
+            if (event.type === 'end') hideItems();  
+        });  
+    }  
+  
     function start() {  
         Lampa.SettingsApi.addComponent({  
             component: componentName,  
@@ -66,11 +110,12 @@
             });  
         });  
     }  
+  
     loadEnabled();  
-    if (window.appready) start();  
+    if (window.appready) { run(); start(); }  
     else {  
         Lampa.Listener.follow('app', function (event) {  
-            if (event.type === 'ready') start();  
+            if (event.type === 'ready') { run(); start(); }  
         });  
     }  
 })();
