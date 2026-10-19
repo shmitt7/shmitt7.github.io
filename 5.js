@@ -19,91 +19,54 @@
         { url: 'https://shmitt7.github.io/torrserver.js', name: 'TorrServer Free', descr: 'Просмотр торрентов через общедоступные сервера. Работает при включённом встроенном клиенте и дополнительной ссылки. Сервер автоматически переподключается при входе в торренты и в шапке появляется кнопка' },  
         { url: 'https://shmitt7.github.io/tweaks.js', name: 'Очистка интерфейса', descr: 'Убирает лишние иконки/кнопки/пункты меню. Отключает рекламу, DMCA, подписки и сервисы' }  
     ];  
-  
     var keyPrefix = 'shmitt7_';  
-    var migratedKey = 'shmitt7_migrated_v2';  
     var componentName = 'shmitt7_plugins';  
-  
     function pluginKey(plugin) {  
         return keyPrefix + encodeURIComponent(plugin.url).slice(0, 60);  
     }  
-  
     function isEnabled(key) {  
         var value = Lampa.Storage.get(key, 'true');  
         return value === true || value === 'true';  
     }  
-  
-    // Одноразовая миграция: удалить URL контейнера из общего списка плагинов,  
-    // если их добавляла старая версия через Lampa.Plugins.add  
-    function migrate() {  
-        if (Lampa.Storage.get(migratedKey, false)) return;  
-  
-        var urls = plugins.map(function (p) { return p.url; });  
-        var list = Lampa.Storage.get('plugins', '[]');  
-        if (Array.isArray(list)) {  
-            var filtered = list.filter(function (item) {  
-                var url = typeof item === 'string' ? item : item.url;  
-                return urls.indexOf(url) === -1;  
-            });  
-            if (filtered.length !== list.length) {  
-                Lampa.Storage.set('plugins', filtered);  
-            }  
-        }  
-        Lampa.Storage.set(migratedKey, true);  
+    function loadPlugin(plugin) {  
+        Lampa.Utils.putScriptAsync([plugin.url], false, function () {}, function () {});  
     }  
-  
-    // Загрузка включённых плагинов напрямую, без регистрации в Lampa.Plugins  
     function loadEnabled() {  
         plugins.forEach(function (plugin) {  
-            if (isEnabled(pluginKey(plugin))) {  
-                Lampa.Utils.putScriptAsync([plugin.url], function () {}, function () {  
-                    console.log('Container', 'load failed:', plugin.url);  
-                });  
-            }  
+            if (isEnabled(pluginKey(plugin))) loadPlugin(plugin);  
         });  
     }  
-  
     function start() {  
         Lampa.SettingsApi.addComponent({  
             component: componentName,  
             name: 'Плагины',  
             icon: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>'  
         });  
-  
         Lampa.SettingsApi.addParam({  
             component: componentName,  
             param: { name: 'shmitt7_reload', type: 'button' },  
-            field: {  
-                name: 'Перезагрузить приложение',  
-                description: 'Перезагрузить приложение для применения изменений в плагинах'  
-            },  
+            field: { name: 'Перезагрузить приложение', description: 'Перезагрузить приложение для применения изменений в плагинах' },  
             onChange: function () {  
                 window.location.reload();  
             }  
         });  
-  
         plugins.forEach(function (plugin) {  
             var key = pluginKey(plugin);  
             Lampa.SettingsApi.addParam({  
                 component: componentName,  
                 param: { name: key, type: 'trigger', default: true },  
                 field: { name: plugin.name, description: plugin.descr },  
-                onChange: function (value) {  
+                onChange: function () {  
                     if (isEnabled(key)) {  
-                        // Включили: подгружаем сразу, без перезагрузки  
-                        Lampa.Utils.putScriptAsync([plugin.url], function () {}, function () {});  
+                        loadPlugin(plugin);  
                     } else {  
-                        // Выключили: скрипт не выгрузить, нужна перезагрузка  
                         Lampa.Noty.show('Изменения применятся после перезагрузки', { time: 4000 });  
                     }  
                 }  
             });  
         });  
     }  
-  
-    migrate();  
     loadEnabled();  
-  
     if (window.appready) start();  
     else {  
         Lampa.Listener.follow('app', function (event) {  
