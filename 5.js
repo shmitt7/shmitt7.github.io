@@ -1,26 +1,26 @@
 (function () {  
-    if (!window.lampaPlugins) {  
-        window.lampaPlugins = true;
-        window.plugin_shots_ready = true;
-        Object.assign(window.lampa_settings || (window.lampa_settings = {}), {  
-            torrents_use: true,  
-            feed: false,  
-            services: false,  
-            lang_use: false,  
-            white_use: false,  
-            read_only: false,  
-            demo: false  
-        });  
-        Object.assign(window.lampa_settings.disable_features || (window.lampa_settings.disable_features = {}), {  
-            dmca: true,  
-            lgbt: true,  
-            ai: true,  
-            subscribe: true,  
-            blacklist: true,  
-            persons: true,  
-            ads: true,  
-            remote_configuration: true  
-        });  
+    if (window.lampaPlugins) return;  
+    window.lampaPlugins = true;  
+    window.plugin_shots_ready = true;  
+    Object.assign(window.lampa_settings || (window.lampa_settings = {}), {  
+        torrents_use: true,  
+        feed: false,  
+        services: false,  
+        lang_use: false,  
+        white_use: false,  
+        read_only: false,  
+        demo: false  
+    });  
+    Object.assign(window.lampa_settings.disable_features || (window.lampa_settings.disable_features = {}), {  
+        dmca: true,  
+        lgbt: true,  
+        ai: true,  
+        subscribe: true,  
+        blacklist: true,  
+        persons: true,  
+        ads: true,  
+        remote_configuration: true  
+    });  
     var plugins = [  
         { url: 'https://nb557.github.io/plugins/online_mod.js', name: 'Online Mod', descr: 'Источники онлайн-просмотра фильмов и сериалов | @t_anton/nb557' },  
         { url: 'http://z01.online/online.js?v=2', name: 'Z01 Online', descr: 'Источники онлайн-просмотра фильмов и сериалов | @skaztv/lena' },  
@@ -52,7 +52,7 @@
         return value === true || value === 'true';  
     }  
     function loadPlugin(plugin) {  
-        Lampa.Utils.putScriptAsync([plugin.url], false, function () {}, function () {});  
+        Lampa.Utils.putScriptAsync([plugin.url], false, function () {}, function () {}, false);  
     }  
     function loadEnabled() {  
         plugins.forEach(function (plugin) {  
@@ -61,9 +61,10 @@
     }  
     function hideItems() {  
         $('.menu .menu__item[data-action="catalog"],.menu .menu__item[data-action="relise"],.menu .menu__item[data-action="timetable"],.menu .menu__item[data-action="about"],.menu .menu__item[data-action="mytorrents"]').remove();  
-        var editItem = $('.menu [data-action="edit"]').detach();  
-        $('.menu .nosort:first .menu__list').append(editItem);  
-        var lastNosort = $('.menu .nosort:last');  
+        var menu = $('.menu');  
+        var editItem = menu.find('[data-action="edit"]').detach();  
+        if (editItem.length) menu.find('.nosort').first().find('.menu__list').append(editItem);  
+        var lastNosort = menu.find('.nosort').last();  
         lastNosort.prev('.menu__split').remove();  
         lastNosort.remove();  
     }  
@@ -98,7 +99,7 @@
                     if (isEnabled(key)) {  
                         loadPlugin(plugin);  
                     } else {  
-                        Lampa.Noty.show('Изменения применятся после перезагрузки', { time: 4000 });  
+                        Lampa.Noty.show('Изменения применятся после перезагрузки');  
                     }  
                 }  
             });  
@@ -116,4 +117,4 @@
             }  
         });  
     }  
-})(); 
+})();
