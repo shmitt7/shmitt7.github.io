@@ -2,16 +2,19 @@
     if (window.listCard) return;  
     window.listCard = true;  
     document.head.insertAdjacentHTML('beforeend', '<style>' +  
+        '.card[data-list-card]{height:auto!important}' +  
+        '.card[data-list-card] .card__view{margin-bottom:0!important}' +  
         '.card[data-list-card] .card__title{display:none!important}' +  
         '.card[data-list-card] .card__age{display:none!important}' +  
         '.card[data-list-card] .card__promo{display:none!important}' +  
-        '.card.focus .card-watched{display:none!important}' +  
+        '.card[data-list-card] .card-watched{display:none!important}' +  
+        '.card[data-list-card] .card__marker{display:none!important}' +  
         '.card__icons{top:0.5em!important;left:auto!important;right:0.5em!important;justify-content:flex-end!important}' +  
         '.card__icons-inner{background:none!important;border-radius:0!important;flex-direction:column!important}' +  
         '.card__icons-inner>.card__icon{margin-bottom:0.2em}' +  
         '.card__icon{filter:drop-shadow(0 1px 4px rgba(0,0,0,1)) drop-shadow(0 0 8px rgba(0,0,0,0.9))!important}' +  
         '.card__overlay{position:absolute;left:0.2em;right:0.2em;bottom:0.2em;padding:0.35em 0.35em 0.2em 0.35em;background:#3c3c3c;border-radius:0.8em;box-shadow:0 0.3em 0.6em rgba(0,0,0,0.55), 0 0.05em 0.15em rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.08);z-index:1;pointer-events:none;display:flex;flex-direction:column}' +  
-        '.card__overlay-title{font-size:1.45em;font-weight:500;line-height:1.15;color:#fff;overflow:hidden;margin-bottom:0.1em;white-space:normal;word-break:normal;max-height:2.5em;padding-bottom:0.08em}' +  
+        '.card__overlay-title{font-size:1.45em;font-weight:600;line-height:1.15;color:#fff;overflow:hidden;margin-bottom:0.1em;white-space:normal;word-break:normal;max-height:2.5em;padding-bottom:0.08em}' +  
         '.card__status-row{display:flex;align-items:baseline;margin-bottom:0.1em;line-height:1;overflow:hidden;white-space:nowrap;min-width:0}' +  
         '.card__status-row:empty{display:none}' +  
         '.card__status-row .card__status{position:static!important;left:auto!important;top:auto!important;bottom:auto!important;background:none!important;padding:0!important;border-radius:0!important;font-size:0.95em!important;display:flex!important;align-items:baseline!important;pointer-events:none;white-space:nowrap}' +  
@@ -32,6 +35,8 @@
     '</style>');  
     var WATCH_TIMEOUT = 8000;  
     var activeChildObservers = [];  
+    var pendingCards = [];  
+    var pendingTimer = null;  
     function clampTitleByChars(el, text) {  
         text = text || '';  
         el.textContent = text;  
@@ -66,13 +71,12 @@
             badgeRight.insertBefore(quality, vote && vote.parentNode === badgeRight ? vote : null);  
         }  
         if (vote && vote.parentNode !== badgeRight) badgeRight.appendChild(vote);  
-        return !!(status && type && quality && vote);  
     }  
     function watchOverlayInjects(view, statusRow, badge, badgeRight) {  
-        if (relocateExisting(view, statusRow, badge, badgeRight)) return;  
+        relocateExisting(view, statusRow, badge, badgeRight);  
         var watchTimer;  
         var childObserver = new MutationObserver(function () {  
-            if (relocateExisting(view, statusRow, badge, badgeRight)) stopWatching();  
+            relocateExisting(view, statusRow, badge, badgeRight);  
         });  
         function stopWatching() {  
             clearTimeout(watchTimer);  
@@ -84,18 +88,25 @@
         childObserver.observe(view, { childList: true });  
         activeChildObservers.push(childObserver);  
     }  
+    function getTitle(card) {  
+        var data = card.card_data || {};  
+        var titleEl = card.querySelector('.card__title');  
+        return data.title || data.name || (titleEl ? titleEl.textContent : '') || '';  
+    }  
+    function getYear(card) {  
+        var data = card.card_data || {};  
+        var year = ((data.release_date || data.first_air_date || data.release_year || '') + '').slice(0, 4);  
+        if (!year) {  
+            var ageEl = card.querySelector('.card__age');  
+            if (ageEl) year = (ageEl.textContent.match(/\d{4}/) || [''])[0];  
+        }  
+        return year;  
+    }  
     function processCard(card) {  
-        var data = card.card_data;  
-        if (!data) return;  
+        if (card.dataset.listCard) return;  
+        if (!card.querySelector('.card__view') || !card.querySelector('.card__title')) return;  
         card.dataset.listCard = '1';  
         var view = card.querySelector('.card__view');  
-        if (!view) return;  
-        var titleEl = card.querySelector('.card__title');  
-        var ageEl = card.querySelector('.card__age');  
-        var promoEl = card.querySelector('.card__promo');  
-        if (titleEl) titleEl.style.display = 'none';  
-        if (ageEl) ageEl.style.display = 'none';  
-        if (promoEl) promoEl.style.display = 'none';  
         var icons = card.querySelector('.card__icons');  
         if (icons) {  
             icons.style.cssText = 'top:0.5em;left:auto;right:0.5em;justify-content:flex-end;';  
@@ -112,7 +123,7 @@
         overlay.appendChild(statusRow);  
         var badge = document.createElement('div');  
         badge.className = 'card__badge';  
-        var year = ((data.release_date || data.first_air_date || '') + '').slice(0, 4);  
+        var year = getYear(card);  
         if (year) {  
             var yearEl = document.createElement('span');  
             yearEl.className = 'card__badge-year';  
@@ -124,24 +135,21 @@
         badge.appendChild(badgeRight);  
         overlay.appendChild(badge);  
         view.appendChild(overlay);  
-        clampTitleByChars(overlayTitle, data.title || data.name || '');  
+        clampTitleByChars(overlayTitle, getTitle(card));  
         watchOverlayInjects(view, statusRow, badge, badgeRight);  
     }  
-    var intersectionObserver = null;  
-    if (typeof IntersectionObserver !== 'undefined') {  
-        intersectionObserver = new IntersectionObserver(function (entries) {  
-            for (var i = 0; i < entries.length; i++) {  
-                var entry = entries[i];  
-                if (!entry.isIntersecting) continue;  
-                intersectionObserver.unobserve(entry.target);  
-                processCard(entry.target);  
-            }  
-        }, { rootMargin: '200px' });  
-    }  
     function observe(card) {  
-        if (!card.card_data || card.dataset.listCard) return;  
-        if (intersectionObserver) intersectionObserver.observe(card);  
-        else processCard(card);  
+        if (card.dataset.listCard) return;  
+        if (card.classList.contains('card--wide') || card.classList.contains('card--category') || card.classList.contains('card--collection') || card.classList.contains('card-parser')) return;  
+        pendingCards.push(card);  
+        if (!pendingTimer) {  
+            pendingTimer = setTimeout(function () {  
+                pendingTimer = null;  
+                var batch = pendingCards;  
+                pendingCards = [];  
+                for (var i = 0; i < batch.length; i++) processCard(batch[i]);  
+            }, 50);  
+        }  
     }  
     var mutationObserver = new MutationObserver(function (mutations) {  
         for (var i = 0; i < mutations.length; i++) {  
@@ -159,7 +167,7 @@
     Lampa.Listener.follow('app', function (e) {  
         if (e.type === 'ready') [].forEach.call(document.querySelectorAll('.card'), observe);  
         if (e.type === 'destroy') {  
-            if (intersectionObserver) intersectionObserver.disconnect();  
+            clearTimeout(pendingTimer);  
             mutationObserver.disconnect();  
             for (var i = 0; i < activeChildObservers.length; i++) activeChildObservers[i].disconnect();  
             activeChildObservers = [];  
