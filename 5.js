@@ -1,6 +1,6 @@
 (function () {  
-    if (!window.cleanTweaks) {  
-        window.cleanTweaks = true;
+    if (!window.lampaPlugins) {  
+        window.lampaPlugins = true;
         window.plugin_shots_ready = true;
         Object.assign(window.lampa_settings || (window.lampa_settings = {}), {  
             torrents_use: true,  
@@ -13,7 +13,7 @@
         });  
         Object.assign(window.lampa_settings.disable_features || (window.lampa_settings.disable_features = {}), {  
             dmca: true,  
-            lgbt: false,  
+            lgbt: true,  
             ai: true,  
             subscribe: true,  
             blacklist: true,  
@@ -21,8 +21,6 @@
             ads: true,  
             remote_configuration: true  
         });  
-        Lampa.Storage.set('lgbt_content_block', true);  
-    }  
     var plugins = [  
         { url: 'https://nb557.github.io/plugins/online_mod.js', name: 'Online Mod', descr: 'Источники онлайн-просмотра фильмов и сериалов | @t_anton/nb557' },  
         { url: 'http://z01.online/online.js?v=2', name: 'Z01 Online', descr: 'Источники онлайн-просмотра фильмов и сериалов | @skaztv/lena' },  
