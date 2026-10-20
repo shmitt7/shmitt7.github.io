@@ -1,49 +1,171 @@
 (function () {  
-    var ICONS = [  
-        { selector: '.button--play', svg: '<svg width="24" height="24" viewBox="0 0 48 48"><path fill="#3B82F6" d="M9.1 3.7C7.3 2.6 5 2.5 3 3.6C1.2 4.7 0 6.8 0 9v30c0 2.2 1.2 4.2 3 5.4c2 1 4.3 1 6.1-0.1l30-18c1.7-1 2.9-3 2.9-5.3s-1.2-4.3-2.9-5.3z"/></svg>' },  
-        { selector: '.view--torrent', svg: '<svg width="24" height="24" viewBox="0 0 48 48"><path fill="#4caf50" d="M23.501,44.125c11.016,0,20-8.984,20-20c0-11.015-8.984-20-20-20c-11.016,0-20,8.985-20,20C3.501,35.141,12.485,44.125,23.501,44.125z"/><path fill="#fff" d="M43.252,27.114C39.718,25.992,38.055,19.625,34,11l-7,1.077c1.615,4.905,8.781,16.872,0.728,18.853C20.825,32.722,17.573,20.519,15,14l-8,2l10.178,27.081c1.991,0.67,4.112,1.044,6.323,1.044c0.982,0,1.941-0.094,2.885-0.232l-4.443-8.376c6.868,1.552,12.308-0.869,12.962-6.203c1.727,2.29,4.089,3.183,6.734,3.172C42.419,30.807,42.965,29.006,43.252,27.114z"/></svg>' },  
-        { selector: '.view--trailer', svg: '<svg width="24" height="24" viewBox="0 0 48 48"><path d="M47.044 12.3709C46.7726 11.3497 46.2378 10.4178 45.493 9.66822C44.7483 8.91869 43.8197 8.37791 42.8003 8.1C39.0476 7.09091 24.0476 7.09091 24.0476 7.09091C24.0476 7.09091 9.04761 7.09091 5.29488 8.1C4.27547 8.37791 3.34693 8.91869 2.60218 9.66822C1.85744 10.4178 1.32262 11.3497 1.05124 12.3709C0.0476075 16.14 0.0476074 24 0.0476074 24C0.0476074 24 0.0476075 31.86 1.05124 35.6291C1.32262 36.6503 1.85744 37.5822 2.60218 38.3318C3.34693 39.0813 4.27547 39.6221 5.29488 39.9C9.04761 40.9091 24.0476 40.9091 24.0476 40.9091C24.0476 40.9091 39.0476 40.9091 42.8003 39.9C43.8197 39.6221 44.7483 39.0813 45.493 38.3318C46.2378 37.5822 46.7726 36.6503 47.044 35.6291C48.0476 31.86 48.0476 24 48.0476 24C48.0476 24 48.0476 16.14 47.044 12.3709Z" fill="#FF0302"/><path d="M19.1385 31.1373V16.8628L31.684 24.0001L19.1385 31.1373Z" fill="#FEFEFE"/></svg>' }  
-    ];  
-    var PINNED = ['.view--torrent', '.view--trailer'];  
-    var renderTimer = null;  
-    function replaceIcons(root) {  
-        for (var i = 0; i < ICONS.length; i++) {  
-            var item = ICONS[i];  
-            root.find(item.selector).each(function () {  
-                var oldSvg = $(this).find('svg');  
-                if (oldSvg.length) oldSvg.replaceWith(item.svg);  
-            });  
+    if (window.listCard) return;  
+    window.listCard = true;  
+  
+    document.head.insertAdjacentHTML('beforeend', '<style>' +  
+        '.card[data-list-card]{height:auto!important}' +  
+        '.card[data-list-card] .card__view{margin-bottom:0!important}' +  
+        '.card[data-list-card] .card__title{display:none!important}' +  
+        '.card[data-list-card] .card__age{display:none!important}' +  
+        '.card[data-list-card] .card__promo{display:none!important}' +  
+        '.card.focus .card-watched{display:none!important}' +  
+        '.card__icons{top:0.5em!important;left:auto!important;right:0.5em!important;justify-content:flex-end!important}' +  
+        '.card__icons-inner{background:none!important;border-radius:0!important;flex-direction:column!important}' +  
+        '.card__icons-inner>.card__icon{margin-bottom:0.2em}' +  
+        '.card__icon{filter:drop-shadow(0 1px 4px rgba(0,0,0,1)) drop-shadow(0 0 8px rgba(0,0,0,0.9))!important}' +  
+        '.card__overlay{position:absolute;left:0.2em;right:0.2em;bottom:0.2em;padding:0.35em 0.35em 0.2em 0.35em;background:#3c3c3c;border-radius:0.8em;box-shadow:0 0.3em 0.6em rgba(0,0,0,0.55), 0 0.05em 0.15em rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.08);z-index:1;pointer-events:none;display:flex;flex-direction:column}' +  
+        '.card__overlay-title{font-size:1.45em;font-weight:500;line-height:1.15;color:#fff;overflow:hidden;margin-bottom:0.1em;white-space:normal;word-break:normal;max-height:2.5em;padding-bottom:0.08em}' +  
+        '.card__status-row{display:flex;align-items:baseline;margin-bottom:0.1em;line-height:1;overflow:hidden;white-space:nowrap;min-width:0}' +  
+        '.card__status-row:empty{display:none}' +  
+        '.card__status-row .card__status{position:static!important;left:auto!important;top:auto!important;bottom:auto!important;background:none!important;padding:0!important;border-radius:0!important;font-size:0.95em!important;display:flex!important;align-items:baseline!important;pointer-events:none;white-space:nowrap}' +  
+        '.card__status-row .card__status .tvs-icon{font-size:1.1em;margin-right:0.2em;flex-shrink:0}' +  
+        '.card__status-row .card__status .tvs-text{font-size:0.95em;font-weight:500;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:1;min-width:0}' +  
+        '.card__badge{display:flex;flex-wrap:nowrap;align-items:center;line-height:1;width:100%;overflow:hidden;margin-top:auto}' +  
+        '.card__badge-year{font-size:0.95em;line-height:1;color:#fff;flex-shrink:0}' +  
+        '.card__badge-genre,.card__badge .card__type{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-left:0.4em;color:#fff;line-height:1}' +  
+        '.card__badge-year+.card__badge-genre::before,.card__badge-year+.card__type::before{content:none}' +  
+        '.card__badge .card__type{position:static!important;top:auto!important;left:auto!important;background:none!important;padding:0!important;border-radius:0!important;font-size:0.95em!important;line-height:1!important;color:#fff!important}' +  
+        '.card__badge-right{display:flex;align-items:center;flex-shrink:0;margin-left:auto}' +  
+        '.card__badge-right>*+*{margin-left:0.4em}' +  
+        '.card__badge-right .card__quality{position:static!important;left:auto!important;bottom:auto!important;padding:0!important;background:none!important;color:#fff!important;font-size:1.1em!important;line-height:1!important;font-weight:500;border-radius:0!important}' +  
+        '.card__badge-right .card__quality>div{display:inline}' +  
+        '.card__badge-right .card__vote{position:static!important;right:auto!important;bottom:auto!important;background:none!important;color:#fff!important;font-size:1.1em!important;line-height:1!important;font-weight:500;padding:0!important;border-radius:0!important}' +  
+        '.card__status,.card__type,.card__quality,.card__vote{visibility:hidden!important}' +  
+        '.card__status-row .card__status,.card__badge .card__type,.card__badge-right .card__quality,.card__badge-right .card__vote{visibility:visible!important}' +  
+    '</style>');  
+  
+    var WATCH_TIMEOUT = 8000;  
+    var activeChildObservers = [];  
+  
+    function clampTitleByChars(el, text) {  
+        text = text || '';  
+        el.textContent = text;  
+        if (!text) return;  
+        el.textContent = 'A';  
+        var oneLineHeight = el.scrollHeight;  
+        el.textContent = text;  
+        var maxHeight = oneLineHeight * 2 + Math.max(4, oneLineHeight * 0.12);  
+        if (el.scrollHeight <= maxHeight) return;  
+        var lo = 1, hi = text.length, best = 1;  
+        while (lo <= hi) {  
+            var mid = (lo + hi) >> 1;  
+            var candidate = text.slice(0, mid).replace(/\s+$/, '');  
+            el.textContent = candidate + '...';  
+            if (el.scrollHeight <= maxHeight) {  
+                best = mid;  
+                lo = mid + 1;  
+            } else {  
+                hi = mid - 1;  
+            }  
         }  
+        el.textContent = text.slice(0, best).replace(/\s+$/, '') + '...';  
     }  
-    function pinButtons(card) {  
-        var cont = card.find('.full-start-new__buttons');  
-        var play = cont.find('.button--play');  
-        if (!cont.length || !play.length) return;  
-        for (var i = 0; i < PINNED.length; i++) {  
-            var src = card.find('.buttons--container > ' + PINNED[i]).first();  
-            if (!src.length || src.hasClass('hide')) continue;  
-            var clon = src.clone();  
-            (function (original, cloneBtn) {  
-                cloneBtn.addClass('button--priority').on('hover:enter', function () {  
-                    original.trigger('hover:enter');  
-                });  
-            })(src, clon);  
-            src.addClass('hide');  
-            play.before(clon);  
+  
+    function relocateExisting(view, statusRow, badge, badgeRight) {  
+        var status = view.querySelector('.card__status');  
+        var type = view.querySelector('.card__type');  
+        var quality = view.querySelector('.card__quality');  
+        var vote = view.querySelector('.card__vote');  
+        if (status && status.parentNode !== statusRow) statusRow.appendChild(status);  
+        if (type && type.parentNode !== badge) badge.insertBefore(type, badgeRight);  
+        if (quality && (quality.parentNode !== badgeRight || quality.nextSibling !== vote)) {  
+            badgeRight.insertBefore(quality, vote && vote.parentNode === badgeRight ? vote : null);  
         }  
-        replaceIcons(card);  
+        if (vote && vote.parentNode !== badgeRight) badgeRight.appendChild(vote);  
+        return !!(status && type && quality && vote);  
     }  
-    Lampa.Listener.follow('full', function (e) {  
-        if (e.type !== 'complite') return;  
-        var act = e.object && e.object.activity;  
-        if (!act) return;  
-        var card = $(act.render());  
-        if (renderTimer) clearTimeout(renderTimer);  
-        renderTimer = setTimeout(function () {  
-            pinButtons(card);  
-        }, 100);  
+  
+    function watchOverlayInjects(view, statusRow, badge, badgeRight) {  
+        if (relocateExisting(view, statusRow, badge, badgeRight)) return;  
+        var watchTimer;  
+        var childObserver = new MutationObserver(function () {  
+            if (relocateExisting(view, statusRow, badge, badgeRight)) stopWatching();  
+        });  
+        function stopWatching() {  
+            clearTimeout(watchTimer);  
+            childObserver.disconnect();  
+            var idx = activeChildObservers.indexOf(childObserver);  
+            if (idx !== -1) activeChildObservers.splice(idx, 1);  
+        }  
+        watchTimer = setTimeout(stopWatching, WATCH_TIMEOUT);  
+        childObserver.observe(view, { childList: true });  
+        activeChildObservers.push(childObserver);  
+    }  
+  
+    function processCard(card) {  
+        var data = card.card_data;  
+        if (!data) return;  
+        card.dataset.listCard = '1';  
+  
+        var view = card.querySelector('.card__view');  
+        if (!view) return;  
+  
+        var icons = card.querySelector('.card__icons');  
+        if (icons) {  
+            icons.style.cssText = 'top:0.5em;left:auto;right:0.5em;justify-content:flex-end;';  
+            var iconsInner = icons.querySelector('.card__icons-inner');  
+            if (iconsInner) iconsInner.style.cssText = 'background:none;border-radius:0;flex-direction:column;';  
+        }  
+  
+        var overlay = document.createElement('div');  
+        overlay.className = 'card__overlay';  
+  
+        var overlayTitle = document.createElement('div');  
+        overlayTitle.className = 'card__overlay-title';  
+        overlay.appendChild(overlayTitle);  
+  
+        var statusRow = document.createElement('div');  
+        statusRow.className = 'card__status-row';  
+        overlay.appendChild(statusRow);  
+  
+        var badge = document.createElement('div');  
+        badge.className = 'card__badge';  
+  
+        var year = ((data.release_date || data.first_air_date || '') + '').slice(0, 4);  
+        if (year) {  
+            var yearEl = document.createElement('span');  
+            yearEl.className = 'card__badge-year';  
+            yearEl.textContent = year;  
+            badge.appendChild(yearEl);  
+        }  
+  
+        var badgeRight = document.createElement('div');  
+        badgeRight.className = 'card__badge-right';  
+        badge.appendChild(badgeRight);  
+  
+        overlay.appendChild(badge);  
+        view.appendChild(overlay);  
+  
+        clampTitleByChars(overlayTitle, data.title || data.name || '');  
+        watchOverlayInjects(view, statusRow, badge, badgeRight);  
+    }  
+  
+    function observe(card) {  
+        if (!card.card_data || card.dataset.listCard) return;  
+        processCard(card);  
+    }  
+  
+    var mutationObserver = new MutationObserver(function (mutations) {  
+        for (var i = 0; i < mutations.length; i++) {  
+            var addedNodes = mutations[i].addedNodes;  
+            for (var j = 0; j < addedNodes.length; j++) {  
+                var node = addedNodes[j];  
+                if (node.nodeType !== 1) continue;  
+                if (node.classList && node.classList.contains('card')) observe(node);  
+                if (node.querySelectorAll) [].forEach.call(node.querySelectorAll('.card'), observe);  
+            }  
+        }  
     });  
+    mutationObserver.observe(document.body, { childList: true, subtree: true });  
+  
+    [].forEach.call(document.querySelectorAll('.card'), observe);  
+  
     Lampa.Listener.follow('app', function (e) {  
-        if (e.type === 'destroy' && renderTimer) clearTimeout(renderTimer);  
+        if (e.type === 'ready') [].forEach.call(document.querySelectorAll('.card'), observe);  
+        if (e.type === 'destroy') {  
+            mutationObserver.disconnect();  
+            for (var i = 0; i < activeChildObservers.length; i++) activeChildObservers[i].disconnect();  
+            activeChildObservers = [];  
+        }  
     });  
 })();
