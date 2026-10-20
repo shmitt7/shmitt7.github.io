@@ -140,7 +140,6 @@
     }  
     function observe(card) {  
         if (card.dataset.listCard) return;  
-        if (card.classList.contains('card--wide') || card.classList.contains('card--category') || card.classList.contains('card--collection') || card.classList.contains('card-parser')) return;  
         pendingCards.push(card);  
         if (!pendingTimer) {  
             pendingTimer = setTimeout(function () {  
