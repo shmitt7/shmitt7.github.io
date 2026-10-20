@@ -92,13 +92,30 @@
         activeChildObservers.push(childObserver);  
     }  
   
+    function getTitle(card) {  
+        var data = card.card_data || {};  
+        var titleEl = card.querySelector('.card__title');  
+        return data.title || data.name || (titleEl ? titleEl.textContent : '') || '';  
+    }  
+  
+    function getYear(card) {  
+        var data = card.card_data || {};  
+        var year = ((data.release_date || data.first_air_date || '') + '').slice(0, 4);  
+        if (!year) {  
+            var ageEl = card.querySelector('.card__age');  
+            if (ageEl) year = (ageEl.textContent.match(/\d{4}/) || [''])[0];  
+        }  
+        return year;  
+    }  
+  
     function processCard(card) {  
-        var data = card.card_data;  
-        if (!data) return;  
-        card.dataset.listCard = '1';  
+        if (card.dataset.listCard) return;  
+        if (!card.classList.contains('card--loaded') && !card.querySelector('.card__title')) return;  
   
         var view = card.querySelector('.card__view');  
         if (!view) return;  
+  
+        card.dataset.listCard = '1';  
   
         var icons = card.querySelector('.card__icons');  
         if (icons) {  
@@ -121,7 +138,7 @@
         var badge = document.createElement('div');  
         badge.className = 'card__badge';  
   
-        var year = ((data.release_date || data.first_air_date || '') + '').slice(0, 4);  
+        var year = getYear(card);  
         if (year) {  
             var yearEl = document.createElement('span');  
             yearEl.className = 'card__badge-year';  
@@ -136,13 +153,24 @@
         overlay.appendChild(badge);  
         view.appendChild(overlay);  
   
-        clampTitleByChars(overlayTitle, data.title || data.name || '');  
+        clampTitleByChars(overlayTitle, getTitle(card));  
         watchOverlayInjects(view, statusRow, badge, badgeRight);  
     }  
   
+    var queue = [];  
+    var queueTimer = null;  
     function observe(card) {  
-        if (!card.card_data || card.dataset.listCard) return;  
-        processCard(card);  
+        if (card.dataset.listCard) return;  
+        // откладываем, чтобы карточка успела наполниться (title/age/view)  
+        queue.push(card);  
+        if (!queueTimer) {  
+            queueTimer = setTimeout(function () {  
+                queueTimer = null;  
+                var batch = queue;  
+                queue = [];  
+                for (var i = 0; i < batch.length; i++) processCard(batch[i]);  
+            }, 50);  
+        }  
     }  
   
     var mutationObserver = new MutationObserver(function (mutations) {  
@@ -163,6 +191,7 @@
     Lampa.Listener.follow('app', function (e) {  
         if (e.type === 'ready') [].forEach.call(document.querySelectorAll('.card'), observe);  
         if (e.type === 'destroy') {  
+            clearTimeout(queueTimer);  
             mutationObserver.disconnect();  
             for (var i = 0; i < activeChildObservers.length; i++) activeChildObservers[i].disconnect();  
             activeChildObservers = [];  
