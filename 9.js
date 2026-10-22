@@ -27,30 +27,6 @@
         }  
         return null;  
     }  
-    function getGenreLabels(movie, max) {  
-        var isTv = !!movie.name;  
-        var genres = movie.genres || [];  
-        var ids = genres.map(function(g) { return typeof g === 'object' ? g.id : g; });  
-        var priority = null;  
-        if (ids.indexOf(16) !== -1 && movie.original_language === 'ja') priority = 'Аниме';  
-        else if (ids.indexOf(10763) !== -1) priority = 'Новости';  
-        else if (ids.indexOf(10767) !== -1) priority = 'Ток-шоу';  
-        else if (ids.indexOf(10764) !== -1) priority = 'Реалити-шоу';  
-        else if (ids.indexOf(99) !== -1) priority = 'Документальный';  
-        else if (ids.indexOf(10766) !== -1) priority = 'Мыльная опера';  
-        else if (ids.indexOf(16) !== -1) priority = isTv ? 'Мультсериал' : 'Мультфильм';  
-        var result = [];  
-        if (priority) result.push(priority);  
-        for (var i = 0; i < genres.length && result.length < (max || 2); i++) {  
-            var g = genres[i];  
-            if (!g) continue;  
-            var gId = typeof g === 'object' ? g.id : g;  
-            if ((priority === 'Аниме' || priority === 'Мультсериал' || priority === 'Мультфильм') && gId === 16) continue;  
-            var name = Lampa.Utils.capitalizeFirstLetter(g.name);  
-            if (name && result.indexOf(name) === -1) result.push(name);  
-        }  
-        return result;  
-    }  
     function buildReactionsEl(reactionsData) {  
         if (!Lampa.Storage.field('card_interfice_reactions') || (window.lampa_settings && window.lampa_settings.disable_features && window.lampa_settings.disable_features.reactions)) return null;  
         if (!reactionsData || !reactionsData.result || !reactionsData.result.length) return null;  
@@ -80,15 +56,11 @@
         if (parts.length <= 1) return { first: fullName || '', last: '' };  
         return { first: parts.slice(0, parts.length - 1).join(' '), last: parts[parts.length - 1] };  
     }  
-    function syncCollection(right) {  
-        Lampa.Controller.collectionSet(right);  
-        if (typeof requestAnimationFrame !== 'undefined') {  
-            requestAnimationFrame(function() { Lampa.Controller.collectionSet(right); });  
-        } else {  
-            setTimeout(function() { Lampa.Controller.collectionSet(right); }, 50);  
-        }  
+    function roleLabel(p) {  
+        if (p.job === 'Director') return 'Режиссёр';  
+        return p.character || p.job || Lampa.Lang.translate('title_actor');  
     }  
-    function buildPersonColumn(persons, right) {  
+    function buildPersonColumn(persons, enterFrom) {  
         if (!persons) return null;  
         var directors = (persons.crew || []).filter(function(m) { return m.job === 'Director'; });  
         var cast = persons.cast || [];  
@@ -100,10 +72,14 @@
             list.push(p);  
         });  
         if (!list.length) return null;  
-        var VISIBLE = 5;  
+  
+        var VISIBLE = 6;  
         var visible = list.slice(0, VISIBLE);  
         var rest = list.slice(VISIBLE);  
         var col = $('<div class="fsc-person-col"></div>');  
+        var cards = [];  
+        var currentIndex = 0;  
+  
         function openPerson(p) {  
             Lampa.Activity.push({  
                 url: '',  
@@ -112,10 +88,7 @@
                 job: (p.known_for_department || 'actor').toLowerCase()  
             });  
         }  
-        function roleLabel(p) {  
-            if (p.job === 'Director') return 'Режиссёр';  
-            return p.character || p.job || Lampa.Lang.translate('title_actor');  
-        }  
+  
         function makeCard(p) {  
             var name = splitName(p.name);  
             var role = roleLabel(p);  
@@ -133,40 +106,82 @@
             card.on('hover:enter', function() { openPerson(p); });  
             return card;  
         }  
-        visible.forEach(function(p) { col.append(makeCard(p)); });  
+  
+        visible.forEach(function(p) {  
+            var card = makeCard(p);  
+            cards.push(card);  
+            col.append(card);  
+        });  
+  
         if (rest.length) {  
             var moreBtn = $(  
                 '<div class="selector fsc-person-card fsc-person-card--more">' +  
-                    '<div class="fsc-person-card__text">' +  
-                        '<div class="fsc-person-card__name">' + Lampa.Lang.translate('more') + ' (' + rest.length + ')</div>' +  
-                    '</div>' +  
+                    '<div class="fsc-person-card__photo fsc-person-card__photo--more">+' + rest.length + '</div>' +  
+                    '<div class="fsc-person-card__text"><div class="fsc-person-card__name">' + escapeHtml(Lampa.Lang.translate('more')) + '</div></div>' +  
                 '</div>'  
             );  
             moreBtn.on('hover:enter', function() {  
                 Lampa.Select.show({  
                     title: Lampa.Lang.translate('title_actors'),  
                     items: list.map(function(p) {  
-                        return { title: p.name, subtitle: roleLabel(p), person: p };  
+                        return { title: p.name, subtitle: p.character || p.job || '', person: p };  
                     }),  
                     onSelect: function(item) { openPerson(item.person); },  
-                    onBack: function() {  
-                        Lampa.Controller.toggle('full_start');  
-                        syncCollection(right);  
-                    }  
+                    onBack: function() { Lampa.Controller.toggle('fsc_person_col'); }  
                 });  
             });  
+            cards.push(moreBtn);  
             col.append(moreBtn);  
         }  
+  
+        function focusIndex(i) {  
+            if (i < 0 || i >= cards.length) return;  
+            currentIndex = i;  
+            Lampa.Controller.focus(cards[currentIndex][0]);  
+        }  
+  
+        var personController = {  
+            link: col,  
+            toggle: function() {  
+                focusIndex(currentIndex);  
+            },  
+            up: function() {  
+                if (currentIndex > 0) focusIndex(currentIndex - 1);  
+            },  
+            down: function() {  
+                if (currentIndex < cards.length - 1) focusIndex(currentIndex + 1);  
+            },  
+            left: function() {  
+                Lampa.Controller.toggle('full_start');  
+            },  
+            back: function() {  
+                Lampa.Controller.toggle('full_start');  
+            }  
+        };  
+  
+        Lampa.Controller.add('fsc_person_col', personController);  
+  
+        function enter() {  
+            currentIndex = 0;  
+            Lampa.Controller.toggle('fsc_person_col');  
+        }  
+  
+        if (enterFrom && enterFrom.length) {  
+            enterFrom.off('hover:right.fsc').on('hover:right.fsc', function() {  
+                enter();  
+            });  
+        }  
+  
         return col;  
     }  
     function init() {  
         if (!Lampa.Platform.screen('tv')) return;  
-        document.head.insertAdjacentHTML('beforeend', '<style>body.fsc--open .full-start__background{position:fixed!important;top:0!important;right:0!important;bottom:0!important;left:0!important;width:100vw!important;height:100vh!important;z-index:0!important;object-fit:cover!important;-webkit-mask-image:none!important;mask-image:none!important;pointer-events:none!important;filter:none!important;opacity:0;transition:opacity 0.5s ease-in-out;}body.fsc--open .full-start__background.loaded{opacity:0.8!important;}body.fsc--open .full-start__background.dim{opacity:0!important;transition:opacity 0s!important;}body.fsc--open:not(.fsc--scrolled) .background{opacity:0!important;transition:none!important;}body.fsc--open.fsc--scrolled .background{opacity:1!important;transition:opacity 0.4s!important;}body.fsc--open:not(.fsc--scrolled) .head{background:transparent!important;}body.fsc--open .full-start-new{position:relative!important;overflow:visible!important;}body.fsc--open .full-start-new__body{min-height:calc(100vh - 6em)!important;align-items:stretch!important;justify-content:center!important;overflow:visible!important;}body.fsc--open .full-start-new__right{display:flex!important;flex-direction:column!important;min-height:calc(100vh - 6em)!important;justify-content:flex-end!important;align-items:center!important;text-align:center!important;padding-bottom:0.8em!important;overflow:visible!important;position:relative!important;}body.fsc--open.fsc--scrolled .full-start-new__right{min-height:0!important;}body.fsc--open .full-start-new__left{display:none!important;}body.fsc--open .full-start-new__right>*:not(.fsc-main):not(.fsc-poster-fallback):not(.fsc-reactions-badge):not(.fsc-person-col){display:none!important;}.fsc-main{display:flex!important;flex-direction:column!important;align-items:center!important;text-align:center!important;margin-bottom:0.2em!important;width:100%!important;}body.fsc--open.fsc--scrolled .fsc-main{display:none!important;}body.fsc--open .full-start-new__title{text-align:center!important;max-width:100%!important;text-shadow:0 2px 12px rgba(0,0,0,0.95)!important;margin-bottom:0.15em!important;display:block!important;overflow:hidden!important;white-space:nowrap!important;text-overflow:ellipsis!important;-webkit-line-clamp:unset!important;line-clamp:unset!important;}body.fsc--open .full-start-new__title.fsc-title-split{white-space:normal!important;text-overflow:clip!important;display:-webkit-box!important;-webkit-box-orient:vertical!important;-webkit-line-clamp:2!important;line-clamp:2!important;}.fsc-logo{max-width:18em!important;max-height:5em!important;object-fit:contain!important;}.fsc-center-row{display:flex!important;flex-wrap:wrap!important;align-items:center!important;justify-content:center!important;margin-bottom:0.2em!important;}.fsc-serial-badge{display:inline-flex!important;align-items:center!important;height:1.5em!important;padding:0 0.5em!important;background:rgba(0,0,0,0.65)!important;color:#fff!important;font-size:1.25em!important;font-weight:600!important;border-radius:0.35em!important;white-space:nowrap!important;box-sizing:border-box!important;border:1px solid rgba(255,255,255,0.2)!important;margin:0.05em!important;text-shadow:none!important;}.fsc-poster-fallback{flex:1 1 0!important;min-height:0!important;max-width:60%!important;object-fit:cover!important;object-position:center top!important;margin-bottom:0.5em!important;border-radius:1em!important;}.fsc-react-icon{width:1em!important;height:1em!important;flex-shrink:0!important;}.fsc-reactions-badge{position:absolute!important;bottom:1em!important;right:0!important;z-index:10!important;}body.fsc--open.fsc--scrolled .fsc-reactions-badge{display:none!important;}body.fsc--open .fsc-main .full-start-new__buttons{margin-top:0.5em!important;}.fsc-person-col{position:absolute!important;top:1.2em!important;bottom:3em!important;right:0!important;display:flex!important;flex-direction:column!important;justify-content:space-between!important;align-items:flex-end!important;z-index:5!important;width:16em!important;}body.fsc--open.fsc--scrolled .fsc-person-col{display:none!important;}.fsc-person-card{display:flex!important;flex-direction:row-reverse!important;align-items:center!important;justify-content:flex-start!important;width:100%!important;padding:0.3em 0!important;box-sizing:border-box!important;background:none!important;}.fsc-person-card.focus .fsc-person-card__name,.fsc-person-card.focus .fsc-person-card__role{color:#ffd700!important;}.fsc-person-card__text{display:flex!important;flex-direction:column!important;align-items:flex-end!important;margin-right:0.7em!important;min-width:0!important;}.fsc-person-card__name{font-size:1.15em!important;font-weight:700!important;line-height:1.15!important;color:#fff!important;text-shadow:0 1px 3px rgba(0,0,0,0.95),0 0 5px rgba(0,0,0,0.9)!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;max-width:11em!important;}.fsc-person-card__role{font-size:0.9em!important;color:#fff!important;text-shadow:0 1px 3px rgba(0,0,0,0.95),0 0 5px rgba(0,0,0,0.9)!important;opacity:0.9!important;margin-top:0.15em!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;max-width:11em!important;}.fsc-person-card__photo{width:4.2em!important;height:4.2em!important;flex-shrink:0!important;border-radius:0.6em!important;overflow:hidden!important;background:#444!important;}.fsc-person-card__photo>img{width:100%!important;height:100%!important;object-fit:cover!important;}.fsc-person-card--more .fsc-person-card__name{color:#ffd700!important;max-width:none!important;text-shadow:0 1px 3px rgba(0,0,0,0.95),0 0 5px rgba(0,0,0,0.9)!important;}</style>');  
+        document.head.insertAdjacentHTML('beforeend', '<style>body.fsc--open .full-start__background{position:fixed!important;top:0!important;right:0!important;bottom:0!important;left:0!important;width:100vw!important;height:100vh!important;z-index:0!important;object-fit:cover!important;-webkit-mask-image:none!important;mask-image:none!important;pointer-events:none!important;filter:none!important;opacity:0;transition:opacity 0.5s ease-in-out;}body.fsc--open .full-start__background.loaded{opacity:0.8!important;}body.fsc--open .full-start__background.dim{opacity:0!important;transition:opacity 0s!important;}body.fsc--open:not(.fsc--scrolled) .background{opacity:0!important;transition:none!important;}body.fsc--open.fsc--scrolled .background{opacity:1!important;transition:opacity 0.4s!important;}body.fsc--open:not(.fsc--scrolled) .head{background:transparent!important;}body.fsc--open .full-start-new{position:relative!important;overflow:visible!important;}body.fsc--open .full-start-new__body{min-height:calc(100vh - 6em)!important;align-items:stretch!important;justify-content:center!important;overflow:visible!important;}body.fsc--open .full-start-new__right{display:flex!important;flex-direction:column!important;min-height:calc(100vh - 6em)!important;justify-content:flex-end!important;align-items:center!important;text-align:center!important;padding-bottom:0.8em!important;overflow:visible!important;position:relative!important;}body.fsc--open.fsc--scrolled .full-start-new__right{min-height:0!important;}body.fsc--open .full-start-new__left{display:none!important;}body.fsc--open .full-start-new__right>*:not(.fsc-main):not(.fsc-poster-fallback):not(.fsc-reactions-badge):not(.fsc-person-col){display:none!important;}.fsc-main{display:flex!important;flex-direction:column!important;align-items:center!important;text-align:center!important;margin-bottom:0.2em!important;width:100%!important;}body.fsc--open.fsc--scrolled .fsc-main{display:none!important;}body.fsc--open .full-start-new__title{text-align:center!important;max-width:100%!important;text-shadow:0 2px 12px rgba(0,0,0,0.95)!important;margin-bottom:0.15em!important;display:block!important;overflow:hidden!important;white-space:nowrap!important;text-overflow:ellipsis!important;-webkit-line-clamp:unset!important;line-clamp:unset!important;}body.fsc--open .full-start-new__title.fsc-title-split{white-space:normal!important;text-overflow:clip!important;display:-webkit-box!important;-webkit-box-orient:vertical!important;-webkit-line-clamp:2!important;line-clamp:2!important;}.fsc-logo{max-width:18em!important;max-height:5em!important;object-fit:contain!important;}.fsc-center-row{display:flex!important;flex-wrap:wrap!important;align-items:center!important;justify-content:center!important;margin-bottom:0.2em!important;}.fsc-serial-badge{display:inline-flex!important;align-items:center!important;height:1.5em!important;padding:0 0.5em!important;background:rgba(0,0,0,0.65)!important;color:#fff!important;font-size:1.25em!important;font-weight:600!important;border-radius:0.35em!important;white-space:nowrap!important;box-sizing:border-box!important;border:1px solid rgba(255,255,255,0.2)!important;margin:0.05em!important;text-shadow:none!important;}.fsc-poster-fallback{flex:1 1 0!important;min-height:0!important;max-width:60%!important;object-fit:cover!important;object-position:center top!important;margin-bottom:0.5em!important;border-radius:1em!important;}.fsc-react-icon{width:1em!important;height:1em!important;flex-shrink:0!important;}.fsc-reactions-badge{position:absolute!important;bottom:1em!important;right:0!important;z-index:10!important;}body.fsc--open.fsc--scrolled .fsc-reactions-badge{display:none!important;}body.fsc--open .fsc-main .full-start-new__buttons{margin-top:0.5em!important;}.fsc-person-col{position:absolute!important;top:1.2em!important;right:0!important;bottom:3em!important;display:flex!important;flex-direction:column!important;justify-content:flex-start!important;align-items:flex-end!important;z-index:5!important;width:11em!important;}.fsc-person-card{display:flex!important;flex-direction:row-reverse!important;align-items:center!important;width:100%!important;padding:0.1em 0!important;box-sizing:border-box!important;background:none!important;}.fsc-person-card__photo{width:5.5em!important;height:5.5em!important;border-radius:0.6em!important;overflow:hidden!important;background:#444!important;flex-shrink:0!important;}.fsc-person-card__photo--more{display:flex!important;align-items:center!important;justify-content:center!important;font-size:1.3em!important;font-weight:700!important;color:#fff!important;text-shadow:0 1px 3px rgba(0,0,0,0.95)!important;}.fsc-person-card__photo>img{width:100%!important;height:100%!important;object-fit:cover!important;}.fsc-person-card__text{flex:1!important;text-align:right!important;margin-right:0.5em!important;}.fsc-person-card__name{font-size:0.95em!important;font-weight:600!important;color:#fff!important;text-shadow:0 1px 2px rgba(0,0,0,0.95),0 0 4px rgba(0,0,0,0.9)!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;}.fsc-person-card__role{font-size:0.8em!important;opacity:0.9!important;color:#fff!important;text-shadow:0 1px 2px rgba(0,0,0,0.95),0 0 4px rgba(0,0,0,0.9)!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;}.fsc-person-card.focus{background:rgba(255,255,255,0.15)!important;border-radius:0.6em!important;}</style>');  
         var currentToken = null;  
         var currentFullComp = null;  
-        var fullTimer = null;  
-        var kpTimer = null;  
-        var qualityTimer = null;  
+        var fullTimer;  
+        var kpTimer;  
+        var qualityTimer;  
         Lampa.Listener.follow('full', function(e) {  
             if (e.type !== 'complite') return;  
             var fullComp = e.link;  
@@ -193,47 +208,39 @@
                 var minutes = runtimeRaw % 60;  
                 var runtime = runtimeRaw ? (hours > 0 ? hours + 'ч ' : '') + minutes + 'м' : '';  
                 var pg = render.find('.full-start__pg').not('.hide').text().trim();  
-                var countries = (movie.production_countries || []).slice(0, 2).map(function(c) {  
-                    var k = 'country_' + (c.iso_3166_1 || '').toLowerCase();  
-                    var t = Lampa.Lang.translate(k);  
-                    return (t && t !== k) ? t : (c.iso_3166_1 || '');  
-                }).filter(Boolean);  
-                var genreLabels = getGenreLabels(movie, 2);  
-                var tmdbRating = movie.vote_average ? parseFloat(movie.vote_average) : 0;  
-                var infoParts = [];  
-                if (year) infoParts.push(year);  
-                if (runtime) infoParts.push(runtime);  
-                if (countries.length) infoParts.push(countries.join(', '));  
-                if (genreLabels.length) infoParts.push(genreLabels.join(', '));  
-                if (pg) infoParts.push(pg);  
-                var currentKP = null;  
-                var currentQuality = null;  
+                var tmdbRating = parseFloat(movie.vote_average) || 0;  
+                var currentKP = 0;  
+                var currentQuality = '';  
                 var infoEl = $('<span class="fsc-serial-badge"></span>');  
                 function rebuildInfo() {  
-                    var parts = infoParts.slice();  
-                    if (currentKP !== null && currentKP >= 1) parts.push(currentKP.toFixed(1) + ' KP');  
+                    var parts = [];  
+                    if (year) parts.push(year);  
+                    if (pg) parts.push(pg);  
+                    if (runtime) parts.push(runtime);  
+                    if (currentKP >= 1) parts.push(currentKP.toFixed(1) + ' KP');  
                     else if (tmdbRating >= 1) parts.push(tmdbRating.toFixed(1) + ' TMDB');  
                     if (currentQuality) parts.push(currentQuality);  
                     infoEl.text(parts.join(' \u2022 '));  
                 }  
                 rebuildInfo();  
-                function pollEl(selector, timerSetter, extract, onFound, attempt) {  
+                function pollEl(selector, extract, onFound, attempt, saveTimer) {  
                     if (currentToken !== token || attempt > 30) return;  
                     var el = render.find(selector);  
                     if (el.length) {  
                         var val = extract(el);  
                         if (val !== null && val !== undefined) onFound(val);  
                     } else {  
-                        timerSetter(setTimeout(function() { pollEl(selector, timerSetter, extract, onFound, attempt + 1); }, 500));  
+                        var t = setTimeout(function() { pollEl(selector, extract, onFound, attempt + 1, saveTimer); }, 500);  
+                        saveTimer(t);  
                     }  
                 }  
-                pollEl('.rate--kp:not(.hide)', function(id) { kpTimer = id; }, function(el) {  
+                pollEl('.rate--kp:not(.hide)', function(el) {  
                     var val = parseFloat(el.find('> div').eq(0).text().replace(',', '.'));  
                     return (!isNaN(val) && val > 0) ? val : null;  
-                }, function(val) { currentKP = val; rebuildInfo(); }, 0);  
+                }, function(val) { currentKP = val; rebuildInfo(); }, 0, function(t) { kpTimer = t; });  
                 qualityTimer = setTimeout(function() {  
-                    pollEl('.tag--quality', function(id) { qualityTimer = id; }, function(el) { return el.first().text().trim() || null; },  
-                    function(val) { currentQuality = val; rebuildInfo(); }, 0);  
+                    pollEl('.tag--quality', function(el) { return el.first().text().trim() || null; },  
+                    function(val) { currentQuality = val; rebuildInfo(); }, 0, function(t) { qualityTimer = t; });  
                 }, 300);  
                 var serialEl = null;  
                 if (isTv) {  
@@ -291,7 +298,6 @@
                     }  
                 }  
                 var reactEl = buildReactionsEl(e.data && e.data.reactions);  
-                var personCol = buildPersonColumn(e.data && e.data.persons, right);  
                 var main = $('<div class="fsc-main"></div>');  
                 main.append(title);  
                 if (isTv && serialEl)  
@@ -303,6 +309,8 @@
                 right.find('.fsc-main, .fsc-reactions-badge, .fsc-poster-fallback, .fsc-person-col').remove();  
                 right.append(main);  
                 if (reactEl) right.append(reactEl);  
+                var lastButton = buttons.find('.selector').last();  
+                var personCol = buildPersonColumn(e.data && e.data.persons, lastButton);  
                 if (personCol) right.append(personCol);  
                 if (!movie.backdrop_path && movie.poster_path)  
                     right.prepend($('<img class="fsc-poster-fallback">').attr('src', Lampa.TMDB.image('t/p/original' + movie.poster_path)));  
@@ -340,7 +348,6 @@
                         $('body').toggleClass('fsc--scrolled', pos > 30);  
                     };  
                 }  
-                syncCollection(right);  
             }, 0);  
         });  
         Lampa.Listener.follow('activity', function(e) {  
