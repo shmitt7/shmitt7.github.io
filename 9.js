@@ -95,11 +95,12 @@
     function personCard(p, subtitle) {  
         var img = p.profile_path ? Lampa.TMDB.image('t/p/w185' + p.profile_path) : './img/actor.svg';  
         var el = $('<div class="fsc-person selector">' +  
-            '<div class="fsc-person__photo"><img src="' + img + '"></div>' +  
             '<div class="fsc-person__info">' +  
                 '<div class="fsc-person__name">' + escapeHtml(p.name || '') + '</div>' +  
                 (subtitle ? '<div class="fsc-person__role">' + escapeHtml(subtitle) + '</div>' : '') +  
-            '</div></div>');  
+            '</div>' +  
+            '<div class="fsc-person__photo"><img src="' + img + '"></div>' +  
+            '</div>');  
         el.on('hover:enter', function() { openPerson(p); });  
         return el;  
     }  
@@ -112,19 +113,17 @@
   
         var col = $('<div class="fsc-persons"></div>');  
   
-        // режиссёры первыми  
         directors.forEach(function(p) {  
             col.append(personCard(p, Lampa.Lang.translate('title_producer') || 'Режиссёр'));  
         });  
-        // актёры — максимум 6 штук  
         cast.slice(0, 6).forEach(function(p) {  
             col.append(personCard(p, p.character || ''));  
         });  
-        // кнопка "ещё" — полный список  
         if (all.length > directors.length + 6) {  
             var more = $('<div class="fsc-person fsc-person--more selector">' +  
+                '<div class="fsc-person__info"><div class="fsc-person__name">' + Lampa.Lang.translate('more') + '</div></div>' +  
                 '<div class="fsc-person__photo"><span>+' + (all.length - directors.length - 6) + '</span></div>' +  
-                '<div class="fsc-person__info"><div class="fsc-person__name">' + Lampa.Lang.translate('more') + '</div></div></div>');  
+                '</div>');  
             more.on('hover:enter', function() { showAllPersons(all); });  
             col.append(more);  
         }  
@@ -137,11 +136,11 @@
         if (!Lampa.Platform.screen('tv')) return;  
         var style = document.createElement('style');  
         style.textContent = 'body.fsc--open .full-start__background{position:fixed!important;top:0!important;right:0!important;bottom:0!important;left:0!important;width:100vw!important;height:100vh!important;z-index:0!important;object-fit:cover!important;-webkit-mask-image:none!important;mask-image:none!important;pointer-events:none!important;filter:none!important;opacity:0;transition:opacity 0.5s ease-in-out;}body.fsc--open .full-start__background.loaded{opacity:0.8!important;}body.fsc--open .full-start__background.dim{opacity:0!important;transition:opacity 0s!important;}body.fsc--open:not(.fsc--scrolled) .background{opacity:0!important;transition:none!important;}body.fsc--open.fsc--scrolled .background{opacity:1!important;transition:opacity 0.4s!important;}body.fsc--open:not(.fsc--scrolled) .head{background:transparent!important;}body.fsc--open .full-start-new{position:relative!important;overflow:visible!important;}body.fsc--open .full-start-new__body{min-height:calc(100vh - 6em)!important;align-items:stretch!important;justify-content:center!important;overflow:visible!important;}body.fsc--open .full-start-new__right{display:flex!important;flex-direction:column!important;min-height:calc(100vh - 6em)!important;justify-content:flex-end!important;align-items:center!important;text-align:center!important;padding-bottom:0.8em!important;overflow:visible!important;position:relative!important;}body.fsc--open.fsc--scrolled .full-start-new__right{min-height:0!important;}body.fsc--open .full-start-new__left{display:none!important;}body.fsc--open .full-start-new__right>*:not(.fsc-main):not(.fsc-poster-fallback):not(.fsc-reactions-badge):not(.fsc-persons){display:none!important;}.fsc-main{display:flex!important;flex-direction:column!important;align-items:center!important;text-align:center!important;margin-bottom:0.2em!important;width:100%!important;}body.fsc--open.fsc--scrolled .fsc-main{display:none!important;}body.fsc--open .full-start-new__title{text-align:center!important;max-width:100%!important;text-shadow:0 2px 12px rgba(0,0,0,0.95)!important;margin-bottom:0.15em!important;display:block!important;overflow:hidden!important;white-space:nowrap!important;text-overflow:ellipsis!important;-webkit-line-clamp:unset!important;line-clamp:unset!important;}body.fsc--open .full-start-new__title.fsc-title-split{white-space:normal!important;text-overflow:clip!important;display:-webkit-box!important;-webkit-box-orient:vertical!important;-webkit-line-clamp:2!important;line-clamp:2!important;}.fsc-logo{max-width:18em!important;max-height:5em!important;object-fit:contain!important;}.fsc-center-row{display:flex!important;flex-wrap:wrap!important;align-items:center!important;justify-content:center!important;margin-bottom:0.2em!important;}.fsc-serial-badge{display:inline-flex!important;align-items:center!important;height:1.5em!important;padding:0 0.5em!important;background:rgba(0,0,0,0.65)!important;color:#fff!important;font-size:1.25em!important;font-weight:600!important;border-radius:0.35em!important;white-space:nowrap!important;box-sizing:border-box!important;border:1px solid rgba(255,255,255,0.2)!important;margin:0.05em!important;text-shadow:none!important;}.fsc-poster-fallback{flex:1 1 0!important;min-height:0!important;max-width:60%!important;object-fit:cover!important;object-position:center top!important;margin-bottom:0.5em!important;border-radius:1em!important;}.fsc-react-icon{width:1em!important;height:1em!important;flex-shrink:0!important;}.fsc-reactions-badge{position:absolute!important;bottom:1em!important;right:0!important;z-index:10!important;}body.fsc--open.fsc--scrolled .fsc-reactions-badge{display:none!important;}body.fsc--open .fsc-main .full-start-new__buttons{margin-top: 0.5em !important;}' +  
-        '.fsc-persons{position:absolute!important;top:4.5em;right:0.5em;bottom:3.5em;z-index:10;display:flex!important;flex-direction:column;justify-content:center;gap:0.7em;width:11em;overflow:hidden;}' +  
-        '.fsc-person{display:flex;align-items:center;width:11em;cursor:pointer;flex-shrink:0;}' +  
-        '.fsc-person__photo{width:3.6em;height:3.6em;min-width:3.6em;border-radius:0.6em;overflow:hidden;background:rgba(0,0,0,0.6);border:1px solid rgba(255,255,255,0.25);box-sizing:border-box;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.2em;font-weight:700;}' +  
+        '.fsc-persons{position:absolute!important;top:1.2em;right:0;bottom:3.5em;z-index:10;display:flex!important;flex-direction:column;justify-content:flex-start;gap:0.6em;width:11.5em;overflow:hidden;}' +  
+        '.fsc-person{display:flex;align-items:center;justify-content:flex-end;width:100%;cursor:pointer;flex-shrink:0;}' +  
+        '.fsc-person__photo{width:3.6em;height:3.6em;min-width:3.6em;border-radius:0.6em;overflow:hidden;background:rgba(0,0,0,0.6);border:1px solid rgba(255,255,255,0.25);box-sizing:border-box;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.2em;font-weight:700;margin-left:0.6em;}' +  
         '.fsc-person__photo img{width:100%;height:100%;object-fit:cover;}' +  
-        '.fsc-person__info{margin-left:0.6em;text-align:left;overflow:hidden;min-width:0;}' +  
+        '.fsc-person__info{text-align:right;overflow:hidden;min-width:0;}' +  
         '.fsc-person__name{font-size:0.95em;color:#fff;line-height:1.2;overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;text-shadow:0 1px 4px rgba(0,0,0,0.9);}' +  
         '.fsc-person__role{font-size:0.78em;color:rgba(255,255,255,0.65);line-height:1.2;margin-top:0.15em;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}' +  
         '.fsc-person.focus .fsc-person__photo{border-color:#fff;box-shadow:0 0 12px rgba(255,255,255,0.6);}' +  
@@ -151,6 +150,8 @@
         var currentToken = null;  
         var currentFullComp = null;  
         var fullTimer;  
+        var lastFocused = null;  
+        $(document).on('hover:focus', '.selector', function(e) { lastFocused = e.target; });  
         Lampa.Listener.follow('full', function(e) {  
             if (e.type !== 'complite') return;  
             var fullComp = e.link;  
@@ -287,7 +288,13 @@
                 right.append(main);  
                 if (reactEl) right.append(reactEl);  
                 var personsCol = buildPersonsEl(e.data && e.data.persons);  
-                if (personsCol) right.append(personsCol);  
+                if (personsCol) {  
+                    right.append(personsCol);  
+                    // Пересобираем коллекцию фокусируемых элементов, иначе Navigator  
+                    // не узнает про новые .selector, добавленные уже после toggle()  
+                    Lampa.Controller.collectionSet(fullComp.render());  
+                    Lampa.Controller.collectionFocus(lastFocused || false, fullComp.render());  
+                }  
                 if (!movie.backdrop_path && movie.poster_path)  
                     right.prepend($('<img class="fsc-poster-fallback">').attr('src', Lampa.TMDB.image('t/p/original' + movie.poster_path)));  
                 if (movie.id) {  
