@@ -75,7 +75,15 @@
     function tvStatusLabel(s) {  
         return Lampa.Lang.translate('tv_status_' + s.toLowerCase().replace(/ /g, '_'));  
     }  
-    function buildPersonColumn(persons) {  
+    function syncCollection(right) {  
+        Lampa.Controller.collectionSet(right);  
+        if (typeof requestAnimationFrame !== 'undefined') {  
+            requestAnimationFrame(function() { Lampa.Controller.collectionSet(right); });  
+        } else {  
+            setTimeout(function() { Lampa.Controller.collectionSet(right); }, 50);  
+        }  
+    }  
+    function buildPersonColumn(persons, right) {  
         if (!persons) return null;  
         var directors = (persons.crew || []).filter(function(m) { return m.job === 'Director'; });  
         var cast = persons.cast || [];  
@@ -104,9 +112,11 @@
             var img = p.profile_path ? Lampa.TMDB.image('t/p/w276_and_h350_face' + p.profile_path) : './img/actor.svg';  
             var card = $(  
                 '<div class="selector fsc-person-card">' +  
-                    '<div class="fsc-person-card__name">' + escapeHtml(p.name || '') + '</div>' +  
+                    '<div class="fsc-person-card__text">' +  
+                        '<div class="fsc-person-card__name">' + escapeHtml(p.name || '') + '</div>' +  
+                        '<div class="fsc-person-card__role">' + escapeHtml(role) + '</div>' +  
+                    '</div>' +  
                     '<div class="fsc-person-card__photo"><img src="' + img + '"></div>' +  
-                    '<div class="fsc-person-card__role">' + escapeHtml(role) + '</div>' +  
                 '</div>'  
             );  
             card.on('hover:enter', function() { openPerson(p); });  
@@ -116,8 +126,9 @@
         if (rest.length) {  
             var moreBtn = $(  
                 '<div class="selector fsc-person-card fsc-person-card--more">' +  
-                    '<div class="fsc-person-card__more-icon">+' + rest.length + '</div>' +  
-                    '<div class="fsc-person-card__name">' + Lampa.Lang.translate('full_torrent_more') + '</div>' +  
+                    '<div class="fsc-person-card__text">' +  
+                        '<div class="fsc-person-card__name">' + Lampa.Lang.translate('full_torrent_more') + ' (' + rest.length + ')</div>' +  
+                    '</div>' +  
                 '</div>'  
             );  
             moreBtn.on('hover:enter', function() {  
@@ -127,7 +138,10 @@
                         return { title: p.name, subtitle: p.character || p.job || '', person: p };  
                     }),  
                     onSelect: function(item) { openPerson(item.person); },  
-                    onBack: function() { Lampa.Controller.toggle('full_start'); }  
+                    onBack: function() {  
+                        Lampa.Controller.toggle('full_start');  
+                        syncCollection(right);  
+                    }  
                 });  
             });  
             col.append(moreBtn);  
@@ -136,7 +150,7 @@
     }  
     function init() {  
         if (!Lampa.Platform.screen('tv')) return;  
-        document.head.insertAdjacentHTML('beforeend', '<style>body.fsc--open .full-start__background{position:fixed!important;top:0!important;right:0!important;bottom:0!important;left:0!important;width:100vw!important;height:100vh!important;z-index:0!important;object-fit:cover!important;-webkit-mask-image:none!important;mask-image:none!important;pointer-events:none!important;filter:none!important;opacity:0;transition:opacity 0.5s ease-in-out;}body.fsc--open .full-start__background.loaded{opacity:0.8!important;}body.fsc--open .full-start__background.dim{opacity:0!important;transition:opacity 0s!important;}body.fsc--open:not(.fsc--scrolled) .background{opacity:0!important;transition:none!important;}body.fsc--open.fsc--scrolled .background{opacity:1!important;transition:opacity 0.4s!important;}body.fsc--open:not(.fsc--scrolled) .head{background:transparent!important;}body.fsc--open .full-start-new{position:relative!important;overflow:visible!important;}body.fsc--open .full-start-new__body{min-height:calc(100vh - 6em)!important;align-items:stretch!important;justify-content:center!important;overflow:visible!important;}body.fsc--open .full-start-new__right{display:flex!important;flex-direction:column!important;min-height:calc(100vh - 6em)!important;justify-content:flex-end!important;align-items:center!important;text-align:center!important;padding-bottom:0.8em!important;overflow:visible!important;position:relative!important;}body.fsc--open.fsc--scrolled .full-start-new__right{min-height:0!important;}body.fsc--open .full-start-new__left{display:none!important;}body.fsc--open .full-start-new__right>*:not(.fsc-main):not(.fsc-poster-fallback):not(.fsc-reactions-badge):not(.fsc-person-col){display:none!important;}.fsc-main{display:flex!important;flex-direction:column!important;align-items:center!important;text-align:center!important;margin-bottom:0.2em!important;width:100%!important;}body.fsc--open.fsc--scrolled .fsc-main{display:none!important;}body.fsc--open .full-start-new__title{text-align:center!important;max-width:100%!important;text-shadow:0 2px 12px rgba(0,0,0,0.95)!important;margin-bottom:0.15em!important;display:block!important;overflow:hidden!important;white-space:nowrap!important;text-overflow:ellipsis!important;-webkit-line-clamp:unset!important;line-clamp:unset!important;}body.fsc--open .full-start-new__title.fsc-title-split{white-space:normal!important;text-overflow:clip!important;display:-webkit-box!important;-webkit-box-orient:vertical!important;-webkit-line-clamp:2!important;line-clamp:2!important;}.fsc-logo{max-width:18em!important;max-height:5em!important;object-fit:contain!important;}.fsc-center-row{display:flex!important;flex-wrap:wrap!important;align-items:center!important;justify-content:center!important;margin-bottom:0.2em!important;}.fsc-serial-badge{display:inline-flex!important;align-items:center!important;height:1.5em!important;padding:0 0.5em!important;background:rgba(0,0,0,0.65)!important;color:#fff!important;font-size:1.25em!important;font-weight:600!important;border-radius:0.35em!important;white-space:nowrap!important;box-sizing:border-box!important;border:1px solid rgba(255,255,255,0.2)!important;margin:0.05em!important;text-shadow:none!important;}.fsc-poster-fallback{flex:1 1 0!important;min-height:0!important;max-width:60%!important;object-fit:cover!important;object-position:center top!important;margin-bottom:0.5em!important;border-radius:1em!important;}.fsc-react-icon{width:1em!important;height:1em!important;flex-shrink:0!important;}.fsc-reactions-badge{position:absolute!important;bottom:1em!important;right:0!important;z-index:10!important;}body.fsc--open.fsc--scrolled .fsc-reactions-badge{display:none!important;}body.fsc--open .fsc-main .full-start-new__buttons{margin-top:0.5em!important;}.fsc-person-col{position:absolute!important;top:6em!important;right:0.8em!important;bottom:4.5em!important;display:flex!important;flex-direction:column!important;justify-content:space-between!important;align-items:flex-end!important;z-index:5!important;width:9em!important;}body.fsc--open.fsc--scrolled .fsc-person-col{display:none!important;}.fsc-person-card{display:flex!important;flex-direction:column!important;align-items:center!important;width:100%!important;padding:0.3em!important;border-radius:0.8em!important;box-sizing:border-box!important;background:rgba(0,0,0,0.45)!important;}.fsc-person-card.focus{background:#fff!important;color:#000!important;}.fsc-person-card__name{font-size:0.9em!important;font-weight:600!important;text-align:center!important;margin-bottom:0.3em!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;max-width:100%!important;}.fsc-person-card__photo{width:3.5em!important;height:3.5em!important;border-radius:50%!important;overflow:hidden!important;background:#444!important;}.fsc-person-card__photo>img{width:100%!important;height:100%!important;object-fit:cover!important;}.fsc-person-card__role{font-size:0.75em!important;opacity:0.8!important;text-align:center!important;margin-top:0.2em!important;}.fsc-person-card--more .fsc-person-card__more-icon{font-size:1.1em!important;font-weight:700!important;}</style>');  
+        document.head.insertAdjacentHTML('beforeend', '<style>body.fsc--open .full-start__background{position:fixed!important;top:0!important;right:0!important;bottom:0!important;left:0!important;width:100vw!important;height:100vh!important;z-index:0!important;object-fit:cover!important;-webkit-mask-image:none!important;mask-image:none!important;pointer-events:none!important;filter:none!important;opacity:0;transition:opacity 0.5s ease-in-out;}body.fsc--open .full-start__background.loaded{opacity:0.8!important;}body.fsc--open .full-start__background.dim{opacity:0!important;transition:opacity 0s!important;}body.fsc--open:not(.fsc--scrolled) .background{opacity:0!important;transition:none!important;}body.fsc--open.fsc--scrolled .background{opacity:1!important;transition:opacity 0.4s!important;}body.fsc--open:not(.fsc--scrolled) .head{background:transparent!important;}body.fsc--open .full-start-new{position:relative!important;overflow:visible!important;}body.fsc--open .full-start-new__body{min-height:calc(100vh - 6em)!important;align-items:stretch!important;justify-content:center!important;overflow:visible!important;}body.fsc--open .full-start-new__right{display:flex!important;flex-direction:column!important;min-height:calc(100vh - 6em)!important;justify-content:flex-end!important;align-items:center!important;text-align:center!important;padding-bottom:0.8em!important;overflow:visible!important;position:relative!important;}body.fsc--open.fsc--scrolled .full-start-new__right{min-height:0!important;}body.fsc--open .full-start-new__left{display:none!important;}body.fsc--open .full-start-new__right>*:not(.fsc-main):not(.fsc-poster-fallback):not(.fsc-reactions-badge):not(.fsc-person-col){display:none!important;}.fsc-main{display:flex!important;flex-direction:column!important;align-items:center!important;text-align:center!important;margin-bottom:0.2em!important;width:100%!important;}body.fsc--open.fsc--scrolled .fsc-main{display:none!important;}body.fsc--open .full-start-new__title{text-align:center!important;max-width:100%!important;text-shadow:0 2px 12px rgba(0,0,0,0.95)!important;margin-bottom:0.15em!important;display:block!important;overflow:hidden!important;white-space:nowrap!important;text-overflow:ellipsis!important;-webkit-line-clamp:unset!important;line-clamp:unset!important;}body.fsc--open .full-start-new__title.fsc-title-split{white-space:normal!important;text-overflow:clip!important;display:-webkit-box!important;-webkit-box-orient:vertical!important;-webkit-line-clamp:2!important;line-clamp:2!important;}.fsc-logo{max-width:18em!important;max-height:5em!important;object-fit:contain!important;}.fsc-center-row{display:flex!important;flex-wrap:wrap!important;align-items:center!important;justify-content:center!important;margin-bottom:0.2em!important;}.fsc-serial-badge{display:inline-flex!important;align-items:center!important;height:1.5em!important;padding:0 0.5em!important;background:rgba(0,0,0,0.65)!important;color:#fff!important;font-size:1.25em!important;font-weight:600!important;border-radius:0.35em!important;white-space:nowrap!important;box-sizing:border-box!important;border:1px solid rgba(255,255,255,0.2)!important;margin:0.05em!important;text-shadow:none!important;}.fsc-poster-fallback{flex:1 1 0!important;min-height:0!important;max-width:60%!important;object-fit:cover!important;object-position:center top!important;margin-bottom:0.5em!important;border-radius:1em!important;}.fsc-react-icon{width:1em!important;height:1em!important;flex-shrink:0!important;}.fsc-reactions-badge{position:absolute!important;bottom:1em!important;right:0!important;z-index:10!important;}body.fsc--open.fsc--scrolled .fsc-reactions-badge{display:none!important;}body.fsc--open .fsc-main .full-start-new__buttons{margin-top:0.5em!important;}.fsc-person-col{position:absolute!important;top:3em!important;right:0.8em!important;display:flex!important;flex-direction:column!important;align-items:stretch!important;z-index:5!important;width:14em!important;}body.fsc--open.fsc--scrolled .fsc-person-col{display:none!important;}.fsc-person-card{display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:flex-end!important;width:100%!important;padding:0.25em 0!important;box-sizing:border-box!important;background:none!important;}.fsc-person-card.focus .fsc-person-card__name,.fsc-person-card.focus .fsc-person-card__role{text-shadow:none!important;color:#ffd700!important;}.fsc-person-card__text{display:flex!important;flex-direction:column!important;align-items:flex-end!important;margin-right:0.6em!important;min-width:0!important;}.fsc-person-card__name{font-size:0.95em!important;font-weight:600!important;color:#fff!important;text-shadow:0 1px 2px rgba(0,0,0,0.95),0 0 4px rgba(0,0,0,0.9)!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;max-width:11em!important;}.fsc-person-card__role{font-size:0.78em!important;color:#fff!important;text-shadow:0 1px 2px rgba(0,0,0,0.95),0 0 4px rgba(0,0,0,0.9)!important;opacity:0.9!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;max-width:11em!important;}.fsc-person-card__photo{width:2.6em!important;height:2.6em!important;flex-shrink:0!important;border-radius:0.4em!important;overflow:hidden!important;background:#444!important;}.fsc-person-card__photo>img{width:100%!important;height:100%!important;object-fit:cover!important;}.fsc-person-card--more .fsc-person-card__name{color:#ffd700!important;max-width:none!important;}</style>');  
         var currentToken = null;  
         var currentFullComp = null;  
         var fullTimer = null;  
@@ -266,7 +280,7 @@
                     }  
                 }  
                 var reactEl = buildReactionsEl(e.data && e.data.reactions);  
-                var personCol = buildPersonColumn(e.data && e.data.persons);  
+                var personCol = buildPersonColumn(e.data && e.data.persons, right);  
                 var main = $('<div class="fsc-main"></div>');  
                 main.append(title);  
                 if (isTv && serialEl)  
@@ -315,7 +329,7 @@
                         $('body').toggleClass('fsc--scrolled', pos > 30);  
                     };  
                 }  
-                Lampa.Controller.collectionSet(right);  
+                syncCollection(right);  
             }, 0);  
         });  
         Lampa.Listener.follow('activity', function(e) {  
