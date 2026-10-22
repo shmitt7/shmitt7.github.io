@@ -2,15 +2,19 @@
     if (window.fullCardActorsRight) return;  
     window.fullCardActorsRight = true;  
   
+    function escapeHtml(s){  
+        return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');  
+    }  
+  
     function buildPersonCard(person){  
         var photo = person.profile_path  
             ? Lampa.TMDB.image('t/p/w185' + person.profile_path)  
-            : './img/person.svg';  
+            : './img/img_broken.svg';  
   
         var card = $('<div class="selector fsc-person"></div>');  
         card.append('<div class="fsc-person__photo"><img src="'+photo+'"></div>');  
-        card.append('<div class="fsc-person__name">'+ Lampa.Utils.escape(person.name || '') +'</div>');  
-        card.append('<div class="fsc-person__role">'+ Lampa.Utils.escape(person.character || person.job || '') +'</div>');  
+        card.append('<div class="fsc-person__name">'+ escapeHtml(person.name) +'</div>');  
+        card.append('<div class="fsc-person__role">'+ escapeHtml(person.character || person.job || '') +'</div>');  
   
         card.on('hover:enter', function(){  
             // Повторяем router.add('actor', ...) из src/core/router.js  
@@ -28,6 +32,8 @@
     }  
   
     function init(){  
+        if (!Lampa.Platform.screen('tv')) return;  
+  
         var style = document.createElement('style');  
         style.textContent =  
             '.fsc-persons-col{display:flex;flex-direction:column;gap:0.5em;margin-top:0.8em;width:100%;max-width:20em;}' +  
@@ -42,29 +48,22 @@
         document.head.appendChild(style);  
   
         Lampa.Listener.follow('full', function(e){  
-            if (e.type !== 'build' || e.name !== 'persons') return;  
+            if (e.type !== 'complite') return;  
   
-            // Отличаем актёров от режиссёров по заголовку ряда (см. src/components/full.js, title_actors)  
-            var isActors = e.data && e.data.title === Lampa.Lang.translate('title_actors');  
-            if (!isActors) return;  
-  
-            var startComponent = e.item; // это сам Persons/Line-компонент, он нам не нужен -  
-            // мы строим свою колонку напрямую из e.data.results, не трогая штатный Line  
-  
-            var results = (e.data && e.data.results) || [];  
-            if (!results.length) return;  
-  
-            // Ищем корень .full-start-new в теле карточки, которое пришло в событии  
-            var root = e.body;  
-            var right = root.find('.full-start-new__right');  
+            var fullComp = e.link;  
+            var render = fullComp.render();  
+            var right = render.find('.full-start-new__right');  
             if (!right.length) return;  
   
             // Не дублируем, если уже построили для этой карточки  
-            if (right.find('.fsc-persons-col').length) return;  
+            right.find('.fsc-persons-col').remove();  
+  
+            var cast = (e.data.persons && e.data.persons.cast) || [];  
+            if (!cast.length) return;  
   
             var visibleCount = 6;  
-            var shown = results.slice(0, visibleCount);  
-            var rest = results.slice(visibleCount);  
+            var shown = cast.slice(0, visibleCount);  
+            var rest = cast.slice(visibleCount);  
   
             var col = $('<div class="fsc-persons-col"></div>');  
             var grid = $('<div class="fsc-persons-col__grid"></div>');  
@@ -85,7 +84,7 @@
                     });  
                     more.remove();  
   
-                    // Добавляем новые .selector в активную коллекцию навигации без сброса фокуса  
+                    // Добавляем новые .selector в коллекцию навигации без сброса фокуса  
                     Lampa.Controller.collectionAppend(grid.find('.selector'));  
                 });  
   
@@ -94,8 +93,8 @@
   
             right.append(col);  
   
-            // Если контроллер 'full_start' уже активен (toggle() уже отработал),  
-            // добавляем новые элементы в его коллекцию вручную  
+            // Если контроллер 'full_start' уже активен, добавляем новые элементы вручную.  
+            // Если ещё не активен - toggle() сам подхватит их через Controller.collectionSet(this.html)  
             if (Lampa.Controller.enabled && Lampa.Controller.enabled().name === 'full_start'){  
                 Lampa.Controller.collectionAppend(col.find('.selector'));  
             }  
