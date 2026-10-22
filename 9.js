@@ -72,87 +72,76 @@
         );  
         return el;  
     }  
-    function openPerson(p) {  
-        Lampa.Activity.push({  
-            url: '',  
-            component: 'actor',  
-            id: p.id,  
-            job: (p.known_for_department || 'actor').toLowerCase(),  
-            source: p.source || Lampa.Storage.field('source'),  
-            page: 1  
-        });  
-    }  
-    function showAllPersons(all) {  
-        Lampa.Select.show({  
-            title: Lampa.Lang.translate('title_actors'),  
-            items: all.map(function(p) {  
-                return { title: p.name || '', subtitle: p.character || p.job || '', person: p };  
-            }),  
-            onSelect: function(item) { openPerson(item.person); },  
-            onBack: function() { Lampa.Controller.toggle('content'); }  
-        });  
-    }  
-    function personCard(p, subtitle) {  
-        var img = p.profile_path ? Lampa.TMDB.image('t/p/w185' + p.profile_path) : './img/actor.svg';  
-        var el = $('<div class="fsc-person selector">' +  
-            '<div class="fsc-person__info">' +  
-                '<div class="fsc-person__name">' + escapeHtml(p.name || '') + '</div>' +  
-                (subtitle ? '<div class="fsc-person__role">' + escapeHtml(subtitle) + '</div>' : '') +  
-            '</div>' +  
-            '<div class="fsc-person__photo"><img src="' + img + '"></div>' +  
-            '</div>');  
-        el.on('hover:enter', function() { openPerson(p); });  
-        return el;  
-    }  
-    function buildPersonsEl(persons) {  
-        if (!persons) return null;  
-        var directors = (persons.crew || []).filter(function(m) { return m.job === 'Director'; });  
-        var cast = persons.cast || [];  
-        var all = directors.concat(cast);  
-        if (!all.length) return null;  
-  
-        var col = $('<div class="fsc-persons"></div>');  
-  
-        directors.forEach(function(p) {  
-            col.append(personCard(p, Lampa.Lang.translate('title_producer') || 'Режиссёр'));  
-        });  
-        cast.slice(0, 6).forEach(function(p) {  
-            col.append(personCard(p, p.character || ''));  
-        });  
-        if (all.length > directors.length + 6) {  
-            var more = $('<div class="fsc-person fsc-person--more selector">' +  
-                '<div class="fsc-person__info"><div class="fsc-person__name">' + Lampa.Lang.translate('more') + '</div></div>' +  
-                '<div class="fsc-person__photo"><span>+' + (all.length - directors.length - 6) + '</span></div>' +  
-                '</div>');  
-            more.on('hover:enter', function() { showAllPersons(all); });  
-            col.append(more);  
-        }  
-        return col;  
-    }  
     function tvStatusLabel(s) {  
         return Lampa.Lang.translate('tv_status_' + s.toLowerCase().replace(/ /g, '_'));  
     }  
+    function buildPersonColumn(persons) {  
+        if (!persons) return null;  
+        var directors = (persons.crew || []).filter(function(m) { return m.job === 'Director'; });  
+        var cast = persons.cast || [];  
+        var seen = {};  
+        var list = [];  
+        directors.concat(cast).forEach(function(p) {  
+            if (!p || !p.id || seen[p.id]) return;  
+            seen[p.id] = true;  
+            list.push(p);  
+        });  
+        if (!list.length) return null;  
+        var VISIBLE = 5;  
+        var visible = list.slice(0, VISIBLE);  
+        var rest = list.slice(VISIBLE);  
+        var col = $('<div class="fsc-person-col"></div>');  
+        function openPerson(p) {  
+            Lampa.Activity.push({  
+                url: '',  
+                component: 'actor',  
+                id: p.id,  
+                job: (p.known_for_department || 'actor').toLowerCase()  
+            });  
+        }  
+        function makeCard(p) {  
+            var role = p.character || p.job || Lampa.Lang.translate('title_actor');  
+            var img = p.profile_path ? Lampa.TMDB.image('t/p/w276_and_h350_face' + p.profile_path) : './img/actor.svg';  
+            var card = $(  
+                '<div class="selector fsc-person-card">' +  
+                    '<div class="fsc-person-card__name">' + escapeHtml(p.name || '') + '</div>' +  
+                    '<div class="fsc-person-card__photo"><img src="' + img + '"></div>' +  
+                    '<div class="fsc-person-card__role">' + escapeHtml(role) + '</div>' +  
+                '</div>'  
+            );  
+            card.on('hover:enter', function() { openPerson(p); });  
+            return card;  
+        }  
+        visible.forEach(function(p) { col.append(makeCard(p)); });  
+        if (rest.length) {  
+            var moreBtn = $(  
+                '<div class="selector fsc-person-card fsc-person-card--more">' +  
+                    '<div class="fsc-person-card__more-icon">+' + rest.length + '</div>' +  
+                    '<div class="fsc-person-card__name">' + Lampa.Lang.translate('full_torrent_more') + '</div>' +  
+                '</div>'  
+            );  
+            moreBtn.on('hover:enter', function() {  
+                Lampa.Select.show({  
+                    title: Lampa.Lang.translate('title_actors'),  
+                    items: list.map(function(p) {  
+                        return { title: p.name, subtitle: p.character || p.job || '', person: p };  
+                    }),  
+                    onSelect: function(item) { openPerson(item.person); },  
+                    onBack: function() { Lampa.Controller.toggle('full_start'); }  
+                });  
+            });  
+            col.append(moreBtn);  
+        }  
+        return col;  
+    }  
     function init() {  
         if (!Lampa.Platform.screen('tv')) return;  
-        var style = document.createElement('style');  
-        style.textContent = 'body.fsc--open .full-start__background{position:fixed!important;top:0!important;right:0!important;bottom:0!important;left:0!important;width:100vw!important;height:100vh!important;z-index:0!important;object-fit:cover!important;-webkit-mask-image:none!important;mask-image:none!important;pointer-events:none!important;filter:none!important;opacity:0;transition:opacity 0.5s ease-in-out;}body.fsc--open .full-start__background.loaded{opacity:0.8!important;}body.fsc--open .full-start__background.dim{opacity:0!important;transition:opacity 0s!important;}body.fsc--open:not(.fsc--scrolled) .background{opacity:0!important;transition:none!important;}body.fsc--open.fsc--scrolled .background{opacity:1!important;transition:opacity 0.4s!important;}body.fsc--open:not(.fsc--scrolled) .head{background:transparent!important;}body.fsc--open .full-start-new{position:relative!important;overflow:visible!important;}body.fsc--open .full-start-new__body{min-height:calc(100vh - 6em)!important;align-items:stretch!important;justify-content:center!important;overflow:visible!important;}body.fsc--open .full-start-new__right{display:flex!important;flex-direction:column!important;min-height:calc(100vh - 6em)!important;justify-content:flex-end!important;align-items:center!important;text-align:center!important;padding-bottom:0.8em!important;overflow:visible!important;position:relative!important;}body.fsc--open.fsc--scrolled .full-start-new__right{min-height:0!important;}body.fsc--open .full-start-new__left{display:none!important;}body.fsc--open .full-start-new__right>*:not(.fsc-main):not(.fsc-poster-fallback):not(.fsc-reactions-badge):not(.fsc-persons){display:none!important;}.fsc-main{display:flex!important;flex-direction:column!important;align-items:center!important;text-align:center!important;margin-bottom:0.2em!important;width:100%!important;}body.fsc--open.fsc--scrolled .fsc-main{display:none!important;}body.fsc--open .full-start-new__title{text-align:center!important;max-width:100%!important;text-shadow:0 2px 12px rgba(0,0,0,0.95)!important;margin-bottom:0.15em!important;display:block!important;overflow:hidden!important;white-space:nowrap!important;text-overflow:ellipsis!important;-webkit-line-clamp:unset!important;line-clamp:unset!important;}body.fsc--open .full-start-new__title.fsc-title-split{white-space:normal!important;text-overflow:clip!important;display:-webkit-box!important;-webkit-box-orient:vertical!important;-webkit-line-clamp:2!important;line-clamp:2!important;}.fsc-logo{max-width:18em!important;max-height:5em!important;object-fit:contain!important;}.fsc-center-row{display:flex!important;flex-wrap:wrap!important;align-items:center!important;justify-content:center!important;margin-bottom:0.2em!important;}.fsc-serial-badge{display:inline-flex!important;align-items:center!important;height:1.5em!important;padding:0 0.5em!important;background:rgba(0,0,0,0.65)!important;color:#fff!important;font-size:1.25em!important;font-weight:600!important;border-radius:0.35em!important;white-space:nowrap!important;box-sizing:border-box!important;border:1px solid rgba(255,255,255,0.2)!important;margin:0.05em!important;text-shadow:none!important;}.fsc-poster-fallback{flex:1 1 0!important;min-height:0!important;max-width:60%!important;object-fit:cover!important;object-position:center top!important;margin-bottom:0.5em!important;border-radius:1em!important;}.fsc-react-icon{width:1em!important;height:1em!important;flex-shrink:0!important;}.fsc-reactions-badge{position:absolute!important;bottom:1em!important;right:0!important;z-index:10!important;}body.fsc--open.fsc--scrolled .fsc-reactions-badge{display:none!important;}body.fsc--open .fsc-main .full-start-new__buttons{margin-top: 0.5em !important;}' +  
-        '.fsc-persons{position:absolute!important;top:0.3em;right:0;bottom:3.5em;z-index:10;display:flex!important;flex-direction:column;justify-content:flex-start;gap:0.6em;width:12em;overflow:hidden;}' +  
-        '.fsc-person{display:flex;align-items:center;justify-content:flex-end;width:100%;cursor:pointer;flex-shrink:0;}' +  
-        '.fsc-person__photo{width:4.1em;height:4.1em;min-width:4.1em;border-radius:0.6em;overflow:hidden;background:rgba(0,0,0,0.6);border:1px solid rgba(255,255,255,0.25);box-sizing:border-box;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.2em;font-weight:700;margin-left:0.6em;}' +  
-        '.fsc-person__photo img{width:100%;height:100%;object-fit:cover;}' +  
-        '.fsc-person__info{text-align:right;overflow:hidden;min-width:0;}' +  
-        '.fsc-person__name{font-size:0.95em;color:#fff;line-height:1.2;overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;text-shadow:0 1px 4px rgba(0,0,0,0.9), 0 0 6px rgba(0,0,0,0.6)!important;}' +  
-        '.fsc-person__role{font-size:0.78em;color:rgba(255,255,255,0.8);line-height:1.2;margin-top:0.15em;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;text-shadow:0 1px 3px rgba(0,0,0,0.9), 0 0 5px rgba(0,0,0,0.6)!important;}' +  
-        '.fsc-person.focus .fsc-person__photo{border-color:#fff;box-shadow:0 0 12px rgba(255,255,255,0.6);}' +  
-        '.fsc-person.focus .fsc-person__name{color:#fff;}' +  
-        'body.fsc--open.fsc--scrolled .fsc-persons{display:none!important;}';  
-        document.head.appendChild(style);  
+        document.head.insertAdjacentHTML('beforeend', '<style>body.fsc--open .full-start__background{position:fixed!important;top:0!important;right:0!important;bottom:0!important;left:0!important;width:100vw!important;height:100vh!important;z-index:0!important;object-fit:cover!important;-webkit-mask-image:none!important;mask-image:none!important;pointer-events:none!important;filter:none!important;opacity:0;transition:opacity 0.5s ease-in-out;}body.fsc--open .full-start__background.loaded{opacity:0.8!important;}body.fsc--open .full-start__background.dim{opacity:0!important;transition:opacity 0s!important;}body.fsc--open:not(.fsc--scrolled) .background{opacity:0!important;transition:none!important;}body.fsc--open.fsc--scrolled .background{opacity:1!important;transition:opacity 0.4s!important;}body.fsc--open:not(.fsc--scrolled) .head{background:transparent!important;}body.fsc--open .full-start-new{position:relative!important;overflow:visible!important;}body.fsc--open .full-start-new__body{min-height:calc(100vh - 6em)!important;align-items:stretch!important;justify-content:center!important;overflow:visible!important;}body.fsc--open .full-start-new__right{display:flex!important;flex-direction:column!important;min-height:calc(100vh - 6em)!important;justify-content:flex-end!important;align-items:center!important;text-align:center!important;padding-bottom:0.8em!important;overflow:visible!important;position:relative!important;}body.fsc--open.fsc--scrolled .full-start-new__right{min-height:0!important;}body.fsc--open .full-start-new__left{display:none!important;}body.fsc--open .full-start-new__right>*:not(.fsc-main):not(.fsc-poster-fallback):not(.fsc-reactions-badge):not(.fsc-person-col){display:none!important;}.fsc-main{display:flex!important;flex-direction:column!important;align-items:center!important;text-align:center!important;margin-bottom:0.2em!important;width:100%!important;}body.fsc--open.fsc--scrolled .fsc-main{display:none!important;}body.fsc--open .full-start-new__title{text-align:center!important;max-width:100%!important;text-shadow:0 2px 12px rgba(0,0,0,0.95)!important;margin-bottom:0.15em!important;display:block!important;overflow:hidden!important;white-space:nowrap!important;text-overflow:ellipsis!important;-webkit-line-clamp:unset!important;line-clamp:unset!important;}body.fsc--open .full-start-new__title.fsc-title-split{white-space:normal!important;text-overflow:clip!important;display:-webkit-box!important;-webkit-box-orient:vertical!important;-webkit-line-clamp:2!important;line-clamp:2!important;}.fsc-logo{max-width:18em!important;max-height:5em!important;object-fit:contain!important;}.fsc-center-row{display:flex!important;flex-wrap:wrap!important;align-items:center!important;justify-content:center!important;margin-bottom:0.2em!important;}.fsc-serial-badge{display:inline-flex!important;align-items:center!important;height:1.5em!important;padding:0 0.5em!important;background:rgba(0,0,0,0.65)!important;color:#fff!important;font-size:1.25em!important;font-weight:600!important;border-radius:0.35em!important;white-space:nowrap!important;box-sizing:border-box!important;border:1px solid rgba(255,255,255,0.2)!important;margin:0.05em!important;text-shadow:none!important;}.fsc-poster-fallback{flex:1 1 0!important;min-height:0!important;max-width:60%!important;object-fit:cover!important;object-position:center top!important;margin-bottom:0.5em!important;border-radius:1em!important;}.fsc-react-icon{width:1em!important;height:1em!important;flex-shrink:0!important;}.fsc-reactions-badge{position:absolute!important;bottom:1em!important;right:0!important;z-index:10!important;}body.fsc--open.fsc--scrolled .fsc-reactions-badge{display:none!important;}body.fsc--open .fsc-main .full-start-new__buttons{margin-top:0.5em!important;}.fsc-person-col{position:absolute!important;top:6em!important;right:0.8em!important;bottom:4.5em!important;display:flex!important;flex-direction:column!important;justify-content:space-between!important;align-items:flex-end!important;z-index:5!important;width:9em!important;}body.fsc--open.fsc--scrolled .fsc-person-col{display:none!important;}.fsc-person-card{display:flex!important;flex-direction:column!important;align-items:center!important;width:100%!important;padding:0.3em!important;border-radius:0.8em!important;box-sizing:border-box!important;background:rgba(0,0,0,0.45)!important;}.fsc-person-card.focus{background:#fff!important;color:#000!important;}.fsc-person-card__name{font-size:0.9em!important;font-weight:600!important;text-align:center!important;margin-bottom:0.3em!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;max-width:100%!important;}.fsc-person-card__photo{width:3.5em!important;height:3.5em!important;border-radius:50%!important;overflow:hidden!important;background:#444!important;}.fsc-person-card__photo>img{width:100%!important;height:100%!important;object-fit:cover!important;}.fsc-person-card__role{font-size:0.75em!important;opacity:0.8!important;text-align:center!important;margin-top:0.2em!important;}.fsc-person-card--more .fsc-person-card__more-icon{font-size:1.1em!important;font-weight:700!important;}</style>');  
         var currentToken = null;  
         var currentFullComp = null;  
-        var fullTimer;  
-        var lastFocused = null;  
-        var collectionInterval = null;  
-        $(document).on('hover:focus', '.selector', function(e) { lastFocused = e.target; });  
+        var fullTimer = null;  
+        var kpTimer = null;  
+        var qualityTimer = null;  
         Lampa.Listener.follow('full', function(e) {  
             if (e.type !== 'complite') return;  
             var fullComp = e.link;  
@@ -162,7 +151,6 @@
             $('body').addClass('fsc--open').removeClass('fsc--scrolled');  
             if (!Lampa.Storage.field('card_interfice_cover')) $('body').removeClass('card--no-cover');  
             clearTimeout(fullTimer);  
-            clearInterval(collectionInterval);  
             fullTimer = setTimeout(function() {  
                 if (currentToken !== token) return;  
                 var render = fullComp.render();  
@@ -204,22 +192,22 @@
                     infoEl.text(parts.join(' \u2022 '));  
                 }  
                 rebuildInfo();  
-                function pollEl(selector, extract, onFound, attempt) {  
+                function pollEl(selector, timerSetter, extract, onFound, attempt) {  
                     if (currentToken !== token || attempt > 30) return;  
                     var el = render.find(selector);  
                     if (el.length) {  
                         var val = extract(el);  
                         if (val !== null && val !== undefined) onFound(val);  
                     } else {  
-                        setTimeout(function() { pollEl(selector, extract, onFound, attempt + 1); }, 500);  
+                        timerSetter(setTimeout(function() { pollEl(selector, timerSetter, extract, onFound, attempt + 1); }, 500));  
                     }  
                 }  
-                pollEl('.rate--kp:not(.hide)', function(el) {  
+                pollEl('.rate--kp:not(.hide)', function(id) { kpTimer = id; }, function(el) {  
                     var val = parseFloat(el.find('> div').eq(0).text().replace(',', '.'));  
                     return (!isNaN(val) && val > 0) ? val : null;  
                 }, function(val) { currentKP = val; rebuildInfo(); }, 0);  
-                setTimeout(function() {  
-                    pollEl('.tag--quality', function(el) { return el.first().text().trim() || null; },  
+                qualityTimer = setTimeout(function() {  
+                    pollEl('.tag--quality', function(id) { qualityTimer = id; }, function(el) { return el.first().text().trim() || null; },  
                     function(val) { currentQuality = val; rebuildInfo(); }, 0);  
                 }, 300);  
                 var serialEl = null;  
@@ -278,6 +266,7 @@
                     }  
                 }  
                 var reactEl = buildReactionsEl(e.data && e.data.reactions);  
+                var personCol = buildPersonColumn(e.data && e.data.persons);  
                 var main = $('<div class="fsc-main"></div>');  
                 main.append(title);  
                 if (isTv && serialEl)  
@@ -286,28 +275,10 @@
                     main.append($('<div class="fsc-center-row"></div>').append(movieStatusEl));  
                 main.append($('<div class="fsc-center-row"></div>').append(infoEl));  
                 main.append(buttons);  
-                right.find('.fsc-main, .fsc-reactions-badge, .fsc-poster-fallback, .fsc-persons').remove();  
+                right.find('.fsc-main, .fsc-reactions-badge, .fsc-poster-fallback, .fsc-person-col').remove();  
                 right.append(main);  
                 if (reactEl) right.append(reactEl);  
-                var personsCol = buildPersonsEl(e.data && e.data.persons);  
-                if (personsCol) {  
-                    right.append(personsCol);  
-  
-                    function refreshCollection() {  
-                        if (currentToken !== token) return;  
-                        Lampa.Controller.collectionSet(fullComp.render());  
-                        Lampa.Controller.collectionFocus(lastFocused || false, fullComp.render());  
-                    }  
-                    // первый вызов с отступом, чтобы перебить toggle() самого компонента  
-                    setTimeout(refreshCollection, 50);  
-                    // и подстраховка: периодически актуализируем коллекцию,  
-                    // пока открыта эта полная карточка (на случай повторных toggle())  
-                    clearInterval(collectionInterval);  
-                    collectionInterval = setInterval(function() {  
-                        if (currentToken !== token) { clearInterval(collectionInterval); return; }  
-                        refreshCollection();  
-                    }, 1000);  
-                }  
+                if (personCol) right.append(personCol);  
                 if (!movie.backdrop_path && movie.poster_path)  
                     right.prepend($('<img class="fsc-poster-fallback">').attr('src', Lampa.TMDB.image('t/p/original' + movie.poster_path)));  
                 if (movie.id) {  
@@ -344,6 +315,7 @@
                         $('body').toggleClass('fsc--scrolled', pos > 30);  
                     };  
                 }  
+                Lampa.Controller.collectionSet(right);  
             }, 0);  
         });  
         Lampa.Listener.follow('activity', function(e) {  
@@ -354,7 +326,8 @@
             }  
             if (e.type === 'destroy' && e.component === 'full') {  
                 clearTimeout(fullTimer);  
-                clearInterval(collectionInterval);  
+                clearTimeout(kpTimer);  
+                clearTimeout(qualityTimer);  
                 var destroyedComp = e.object && e.object.activity && e.object.activity.component;  
                 if (destroyedComp && destroyedComp.scroll) destroyedComp.scroll._fscWrapped = false;  
                 if (destroyedComp === currentFullComp) {  
