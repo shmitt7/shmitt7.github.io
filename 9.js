@@ -1,376 +1,107 @@
-(function() {  
-    if (window.fullCardTV) return;  
-    window.fullCardTV = true;  
-    var logoCache = {};  
-    var logoCacheSize = 0;  
-    var network = new Lampa.Reguest();  
-    var FORMAT_PATTERNS = [  
-        { sep: ': ', keep: 1 },  
-        { sep: ' - ', keep: 2 },  
-        { sep: ' \u2013', keep: 2 },  
-        { sep: ' \u2014', keep: 2 }  
-    ];  
-    function escapeHtml(s) {  
-        return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');  
-    }  
-    function formatTitle(text) {  
-        if (!text || text.length <= 30) return null;  
-        for (var pi = 0; pi < FORMAT_PATTERNS.length; pi++) {  
-            var sep = FORMAT_PATTERNS[pi].sep;  
-            var keep = FORMAT_PATTERNS[pi].keep;  
-            var idx = text.indexOf(sep);  
-            if (idx > 2 && idx + sep.length < text.length - 2) {  
-                var part1 = text.slice(0, idx + keep);  
-                var part2 = text.slice(idx + keep).replace(/^\s+/, '');  
-                if (part2.length >= 3) return escapeHtml(part1) + '<br>' + escapeHtml(part2);  
-            }  
-        }  
-        return null;  
-    }  
-    function buildReactionsEl(reactionsData) {  
-        if (!Lampa.Storage.field('card_interfice_reactions') || (window.lampa_settings && window.lampa_settings.disable_features && window.lampa_settings.disable_features.reactions)) return null;  
-        if (!reactionsData || !reactionsData.result || !reactionsData.result.length) return null;  
-        var map = {};  
-        reactionsData.result.forEach(function(r) { map[r.type] = r.counter || 0; });  
-        var think = map['think'] || 0;  
-        var thinkPos = Math.floor(think / 2);  
-        var pos = (map['fire'] || 0) + (map['nice'] || 0) + thinkPos;  
-        var neg = (map['bore'] || 0) + (map['shit'] || 0) + (think - thinkPos);  
-        if (!pos && !neg) return null;  
-        var posStyle = pos > neg ? 'color:#6fcf6f' : 'color:#fff';  
-        var negStyle = neg > pos ? 'color:#e05555' : 'color:#fff';  
-        var base = Lampa.Utils.protocol() + Lampa.Manifest.cub_domain + '/img/reactions/';  
-        var el = $('<span class="fsc-serial-badge fsc-reactions-badge"></span>');  
-        el.html(  
-            '<span style="display:inline-flex;align-items:center;' + posStyle + '"><img class="fsc-react-icon" src="' + base + 'fire.svg" style="margin-right:0.2em">' + Lampa.Utils.bigNumberToShort(pos) + '</span>' +  
-            '<span style="color:#fff;margin:0 0.3em">\u2022</span>' +  
-            '<span style="display:inline-flex;align-items:center;' + negStyle + '"><img class="fsc-react-icon" src="' + base + 'shit.svg" style="margin-right:0.2em">' + Lampa.Utils.bigNumberToShort(neg) + '</span>'  
-        );  
-        return el;  
-    }  
-    function tvStatusLabel(s) {  
-        return Lampa.Lang.translate('tv_status_' + s.toLowerCase().replace(/ /g, '_'));  
-    }  
-    function splitName(fullName) {  
-        var parts = (fullName || '').trim().split(/\s+/);  
-        if (parts.length <= 1) return { first: fullName || '', last: '' };  
-        return { first: parts.slice(0, parts.length - 1).join(' '), last: parts[parts.length - 1] };  
-    }  
-    function roleLabel(p) {  
-        if (p.job === 'Director') return 'Режиссёр';  
-        return p.character || p.job || Lampa.Lang.translate('title_actor');  
-    }  
-    function buildPersonColumn(persons, enterFrom) {  
-        if (!persons) return null;  
-        var directors = (persons.crew || []).filter(function(m) { return m.job === 'Director'; });  
-        var cast = persons.cast || [];  
-        var seen = {};  
-        var list = [];  
-        directors.concat(cast).forEach(function(p) {  
-            if (!p || !p.id || seen[p.id]) return;  
-            seen[p.id] = true;  
-            list.push(p);  
-        });  
-        if (!list.length) return null;  
+(function(){  
+    if (window.fullCardActorsRight) return;  
+    window.fullCardActorsRight = true;  
   
-        var VISIBLE = 6;  
-        var visible = list.slice(0, VISIBLE);  
-        var rest = list.slice(VISIBLE);  
-        var col = $('<div class="fsc-person-col"></div>');  
-        var cards = [];  
-        var currentIndex = 0;  
+    function buildPersonCard(person){  
+        var photo = person.profile_path  
+            ? Lampa.TMDB.image('t/p/w185' + person.profile_path)  
+            : './img/person.svg';  
   
-        function openPerson(p) {  
+        var card = $('<div class="selector fsc-person"></div>');  
+        card.append('<div class="fsc-person__photo"><img src="'+photo+'"></div>');  
+        card.append('<div class="fsc-person__name">'+ Lampa.Utils.escape(person.name || '') +'</div>');  
+        card.append('<div class="fsc-person__role">'+ Lampa.Utils.escape(person.character || person.job || '') +'</div>');  
+  
+        card.on('hover:enter', function(){  
+            // Повторяем router.add('actor', ...) из src/core/router.js  
             Lampa.Activity.push({  
+                id: person.id,  
+                job: (person.known_for_department || 'actor').toLowerCase(),  
                 url: '',  
                 component: 'actor',  
-                id: p.id,  
-                job: (p.known_for_department || 'actor').toLowerCase()  
+                source: person.source || Lampa.Storage.field('source'),  
+                page: 1  
             });  
-        }  
-  
-        function makeCard(p) {  
-            var name = splitName(p.name);  
-            var role = roleLabel(p);  
-            var img = p.profile_path ? Lampa.TMDB.image('t/p/w276_and_h350_face' + p.profile_path) : './img/actor.svg';  
-            var card = $(  
-                '<div class="selector fsc-person-card">' +  
-                    '<div class="fsc-person-card__photo"><img src="' + img + '"></div>' +  
-                    '<div class="fsc-person-card__text">' +  
-                        '<div class="fsc-person-card__name">' + escapeHtml(name.first) + '</div>' +  
-                        (name.last ? '<div class="fsc-person-card__name">' + escapeHtml(name.last) + '</div>' : '') +  
-                        '<div class="fsc-person-card__role">' + escapeHtml(role) + '</div>' +  
-                    '</div>' +  
-                '</div>'  
-            );  
-            card.on('hover:enter', function() { openPerson(p); });  
-            return card;  
-        }  
-  
-        visible.forEach(function(p) {  
-            var card = makeCard(p);  
-            cards.push(card);  
-            col.append(card);  
         });  
   
-        if (rest.length) {  
-            var moreBtn = $(  
-                '<div class="selector fsc-person-card fsc-person-card--more">' +  
-                    '<div class="fsc-person-card__photo fsc-person-card__photo--more">+' + rest.length + '</div>' +  
-                    '<div class="fsc-person-card__text"><div class="fsc-person-card__name">' + escapeHtml(Lampa.Lang.translate('more')) + '</div></div>' +  
-                '</div>'  
-            );  
-            moreBtn.on('hover:enter', function() {  
-                Lampa.Select.show({  
-                    title: Lampa.Lang.translate('title_actors'),  
-                    items: list.map(function(p) {  
-                        return { title: p.name, subtitle: p.character || p.job || '', person: p };  
-                    }),  
-                    onSelect: function(item) { openPerson(item.person); },  
-                    onBack: function() { Lampa.Controller.toggle('fsc_person_col'); }  
+        return card;  
+    }  
+  
+    function init(){  
+        var style = document.createElement('style');  
+        style.textContent =  
+            '.fsc-persons-col{display:flex;flex-direction:column;gap:0.5em;margin-top:0.8em;width:100%;max-width:20em;}' +  
+            '.fsc-persons-col__grid{display:grid;grid-template-columns:repeat(3,1fr);gap:0.5em;}' +  
+            '.fsc-person{display:flex;flex-direction:column;align-items:center;text-align:center;padding:0.4em;border-radius:0.6em;background:rgba(0,0,0,0.35);}' +  
+            '.fsc-person.focus{background:rgba(255,255,255,0.25);}' +  
+            '.fsc-person__photo img{width:100%;aspect-ratio:2/3;object-fit:cover;border-radius:0.4em;}' +  
+            '.fsc-person__name{font-size:0.8em;margin-top:0.3em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;width:100%;}' +  
+            '.fsc-person__role{font-size:0.7em;opacity:0.7;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;width:100%;}' +  
+            '.fsc-persons-more{align-self:center;padding:0.3em 1em;border-radius:1em;background:rgba(255,255,255,0.1);font-size:0.8em;}' +  
+            '.fsc-persons-more.focus{background:rgba(255,255,255,0.3);}';  
+        document.head.appendChild(style);  
+  
+        Lampa.Listener.follow('full', function(e){  
+            if (e.type !== 'build' || e.name !== 'persons') return;  
+  
+            // Отличаем актёров от режиссёров по заголовку ряда (см. src/components/full.js, title_actors)  
+            var isActors = e.data && e.data.title === Lampa.Lang.translate('title_actors');  
+            if (!isActors) return;  
+  
+            var startComponent = e.item; // это сам Persons/Line-компонент, он нам не нужен -  
+            // мы строим свою колонку напрямую из e.data.results, не трогая штатный Line  
+  
+            var results = (e.data && e.data.results) || [];  
+            if (!results.length) return;  
+  
+            // Ищем корень .full-start-new в теле карточки, которое пришло в событии  
+            var root = e.body;  
+            var right = root.find('.full-start-new__right');  
+            if (!right.length) return;  
+  
+            // Не дублируем, если уже построили для этой карточки  
+            if (right.find('.fsc-persons-col').length) return;  
+  
+            var visibleCount = 6;  
+            var shown = results.slice(0, visibleCount);  
+            var rest = results.slice(visibleCount);  
+  
+            var col = $('<div class="fsc-persons-col"></div>');  
+            var grid = $('<div class="fsc-persons-col__grid"></div>');  
+  
+            shown.forEach(function(person){  
+                grid.append(buildPersonCard(person));  
+            });  
+  
+            col.append(grid);  
+  
+            if (rest.length){  
+                var more = $('<div class="selector fsc-persons-more"></div>')  
+                    .text(Lampa.Lang.translate('more') + ' (' + rest.length + ')');  
+  
+                more.on('hover:enter', function(){  
+                    rest.forEach(function(person){  
+                        grid.append(buildPersonCard(person));  
+                    });  
+                    more.remove();  
+  
+                    // Добавляем новые .selector в активную коллекцию навигации без сброса фокуса  
+                    Lampa.Controller.collectionAppend(grid.find('.selector'));  
                 });  
-            });  
-            cards.push(moreBtn);  
-            col.append(moreBtn);  
-        }  
   
-        function focusIndex(i) {  
-            if (i < 0 || i >= cards.length) return;  
-            currentIndex = i;  
-            Lampa.Controller.focus(cards[currentIndex][0]);  
-        }  
-  
-        var personController = {  
-            link: col,  
-            toggle: function() {  
-                focusIndex(currentIndex);  
-            },  
-            up: function() {  
-                if (currentIndex > 0) focusIndex(currentIndex - 1);  
-            },  
-            down: function() {  
-                if (currentIndex < cards.length - 1) focusIndex(currentIndex + 1);  
-            },  
-            left: function() {  
-                Lampa.Controller.toggle('full_start');  
-            },  
-            back: function() {  
-                Lampa.Controller.toggle('full_start');  
+                col.append(more);  
             }  
-        };  
   
-        Lampa.Controller.add('fsc_person_col', personController);  
+            right.append(col);  
   
-        function enter() {  
-            currentIndex = 0;  
-            Lampa.Controller.toggle('fsc_person_col');  
-        }  
-  
-        if (enterFrom && enterFrom.length) {  
-            enterFrom.off('hover:right.fsc').on('hover:right.fsc', function() {  
-                enter();  
-            });  
-        }  
-  
-        return col;  
-    }  
-    function init() {  
-        if (!Lampa.Platform.screen('tv')) return;  
-        document.head.insertAdjacentHTML('beforeend', '<style>body.fsc--open .full-start__background{position:fixed!important;top:0!important;right:0!important;bottom:0!important;left:0!important;width:100vw!important;height:100vh!important;z-index:0!important;object-fit:cover!important;-webkit-mask-image:none!important;mask-image:none!important;pointer-events:none!important;filter:none!important;opacity:0;transition:opacity 0.5s ease-in-out;}body.fsc--open .full-start__background.loaded{opacity:0.8!important;}body.fsc--open .full-start__background.dim{opacity:0!important;transition:opacity 0s!important;}body.fsc--open:not(.fsc--scrolled) .background{opacity:0!important;transition:none!important;}body.fsc--open.fsc--scrolled .background{opacity:1!important;transition:opacity 0.4s!important;}body.fsc--open:not(.fsc--scrolled) .head{background:transparent!important;}body.fsc--open .full-start-new{position:relative!important;overflow:visible!important;}body.fsc--open .full-start-new__body{min-height:calc(100vh - 6em)!important;align-items:stretch!important;justify-content:center!important;overflow:visible!important;}body.fsc--open .full-start-new__right{display:flex!important;flex-direction:column!important;min-height:calc(100vh - 6em)!important;justify-content:flex-end!important;align-items:center!important;text-align:center!important;padding-bottom:0.8em!important;overflow:visible!important;position:relative!important;}body.fsc--open.fsc--scrolled .full-start-new__right{min-height:0!important;}body.fsc--open .full-start-new__left{display:none!important;}body.fsc--open .full-start-new__right>*:not(.fsc-main):not(.fsc-poster-fallback):not(.fsc-reactions-badge):not(.fsc-person-col){display:none!important;}.fsc-main{display:flex!important;flex-direction:column!important;align-items:center!important;text-align:center!important;margin-bottom:0.2em!important;width:100%!important;}body.fsc--open.fsc--scrolled .fsc-main{display:none!important;}body.fsc--open .full-start-new__title{text-align:center!important;max-width:100%!important;text-shadow:0 2px 12px rgba(0,0,0,0.95)!important;margin-bottom:0.15em!important;display:block!important;overflow:hidden!important;white-space:nowrap!important;text-overflow:ellipsis!important;-webkit-line-clamp:unset!important;line-clamp:unset!important;}body.fsc--open .full-start-new__title.fsc-title-split{white-space:normal!important;text-overflow:clip!important;display:-webkit-box!important;-webkit-box-orient:vertical!important;-webkit-line-clamp:2!important;line-clamp:2!important;}.fsc-logo{max-width:18em!important;max-height:5em!important;object-fit:contain!important;}.fsc-center-row{display:flex!important;flex-wrap:wrap!important;align-items:center!important;justify-content:center!important;margin-bottom:0.2em!important;}.fsc-serial-badge{display:inline-flex!important;align-items:center!important;height:1.5em!important;padding:0 0.5em!important;background:rgba(0,0,0,0.65)!important;color:#fff!important;font-size:1.25em!important;font-weight:600!important;border-radius:0.35em!important;white-space:nowrap!important;box-sizing:border-box!important;border:1px solid rgba(255,255,255,0.2)!important;margin:0.05em!important;text-shadow:none!important;}.fsc-poster-fallback{flex:1 1 0!important;min-height:0!important;max-width:60%!important;object-fit:cover!important;object-position:center top!important;margin-bottom:0.5em!important;border-radius:1em!important;}.fsc-react-icon{width:1em!important;height:1em!important;flex-shrink:0!important;}.fsc-reactions-badge{position:absolute!important;bottom:1em!important;right:0!important;z-index:10!important;}body.fsc--open.fsc--scrolled .fsc-reactions-badge{display:none!important;}body.fsc--open .fsc-main .full-start-new__buttons{margin-top:0.5em!important;}.fsc-person-col{position:absolute!important;top:1.2em!important;right:0!important;bottom:3em!important;display:flex!important;flex-direction:column!important;justify-content:flex-start!important;align-items:flex-end!important;z-index:5!important;width:11em!important;}.fsc-person-card{display:flex!important;flex-direction:row-reverse!important;align-items:center!important;width:100%!important;padding:0.1em 0!important;box-sizing:border-box!important;background:none!important;}.fsc-person-card__photo{width:5.5em!important;height:5.5em!important;border-radius:0.6em!important;overflow:hidden!important;background:#444!important;flex-shrink:0!important;}.fsc-person-card__photo--more{display:flex!important;align-items:center!important;justify-content:center!important;font-size:1.3em!important;font-weight:700!important;color:#fff!important;text-shadow:0 1px 3px rgba(0,0,0,0.95)!important;}.fsc-person-card__photo>img{width:100%!important;height:100%!important;object-fit:cover!important;}.fsc-person-card__text{flex:1!important;text-align:right!important;margin-right:0.5em!important;}.fsc-person-card__name{font-size:0.95em!important;font-weight:600!important;color:#fff!important;text-shadow:0 1px 2px rgba(0,0,0,0.95),0 0 4px rgba(0,0,0,0.9)!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;}.fsc-person-card__role{font-size:0.8em!important;opacity:0.9!important;color:#fff!important;text-shadow:0 1px 2px rgba(0,0,0,0.95),0 0 4px rgba(0,0,0,0.9)!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;}.fsc-person-card.focus{background:rgba(255,255,255,0.15)!important;border-radius:0.6em!important;}</style>');  
-        var currentToken = null;  
-        var currentFullComp = null;  
-        var fullTimer;  
-        var kpTimer;  
-        var qualityTimer;  
-        Lampa.Listener.follow('full', function(e) {  
-            if (e.type !== 'complite') return;  
-            var fullComp = e.link;  
-            var token = {};  
-            currentToken = token;  
-            currentFullComp = fullComp;  
-            $('body').addClass('fsc--open').removeClass('fsc--scrolled');  
-            if (!Lampa.Storage.field('card_interfice_cover')) $('body').removeClass('card--no-cover');  
-            clearTimeout(fullTimer);  
-            fullTimer = setTimeout(function() {  
-                if (currentToken !== token) return;  
-                var render = fullComp.render();  
-                var right = render.find('.full-start-new__right');  
-                var title = render.find('.full-start-new__title');  
-                var buttons = render.find('.full-start-new__buttons');  
-                if (!right.length || !title.length || !buttons.length) return;  
-                var movie = e.data.movie || {};  
-                var isTv = !!movie.first_air_date;  
-                var mediaType = isTv ? 'tv' : 'movie';  
-                var relDate = movie.release_date || movie.first_air_date || '';  
-                var year = relDate ? relDate.slice(0, 4) : '';  
-                var runtimeRaw = (movie.episode_run_time || [])[0] || movie.runtime || 0;  
-                var hours = Math.floor(runtimeRaw / 60);  
-                var minutes = runtimeRaw % 60;  
-                var runtime = runtimeRaw ? (hours > 0 ? hours + 'ч ' : '') + minutes + 'м' : '';  
-                var pg = render.find('.full-start__pg').not('.hide').text().trim();  
-                var tmdbRating = parseFloat(movie.vote_average) || 0;  
-                var currentKP = 0;  
-                var currentQuality = '';  
-                var infoEl = $('<span class="fsc-serial-badge"></span>');  
-                function rebuildInfo() {  
-                    var parts = [];  
-                    if (year) parts.push(year);  
-                    if (pg) parts.push(pg);  
-                    if (runtime) parts.push(runtime);  
-                    if (currentKP >= 1) parts.push(currentKP.toFixed(1) + ' KP');  
-                    else if (tmdbRating >= 1) parts.push(tmdbRating.toFixed(1) + ' TMDB');  
-                    if (currentQuality) parts.push(currentQuality);  
-                    infoEl.text(parts.join(' \u2022 '));  
-                }  
-                rebuildInfo();  
-                function pollEl(selector, extract, onFound, attempt, saveTimer) {  
-                    if (currentToken !== token || attempt > 30) return;  
-                    var el = render.find(selector);  
-                    if (el.length) {  
-                        var val = extract(el);  
-                        if (val !== null && val !== undefined) onFound(val);  
-                    } else {  
-                        var t = setTimeout(function() { pollEl(selector, extract, onFound, attempt + 1, saveTimer); }, 500);  
-                        saveTimer(t);  
-                    }  
-                }  
-                pollEl('.rate--kp:not(.hide)', function(el) {  
-                    var val = parseFloat(el.find('> div').eq(0).text().replace(',', '.'));  
-                    return (!isNaN(val) && val > 0) ? val : null;  
-                }, function(val) { currentKP = val; rebuildInfo(); }, 0, function(t) { kpTimer = t; });  
-                qualityTimer = setTimeout(function() {  
-                    pollEl('.tag--quality', function(el) { return el.first().text().trim() || null; },  
-                    function(val) { currentQuality = val; rebuildInfo(); }, 0, function(t) { qualityTimer = t; });  
-                }, 300);  
-                var serialEl = null;  
-                if (isTv) {  
-                    var lastEpisode = movie.last_episode_to_air;  
-                    var currentSeason = lastEpisode ? lastEpisode.season_number : 0;  
-                    var totalSeasons = movie.number_of_seasons || 0;  
-                    var totalEpisodes = movie.number_of_episodes || 0;  
-                    var currentEpisode = lastEpisode ? lastEpisode.episode_number : 0;  
-                    var airedTotal = 0;  
-                    if (movie.seasons && lastEpisode) {  
-                        for (var si = 0; si < movie.seasons.length; si++) {  
-                            var season = movie.seasons[si];  
-                            if (season.season_number > 0 && season.season_number < currentSeason) airedTotal += season.episode_count || 0;  
-                        }  
-                        airedTotal += currentEpisode;  
-                    }  
-                    var tvStatus = movie.status || '';  
-                    var hasNextEpisode = false;  
-                    var nextEpisodeText = '';  
-                    var nextEpisode = movie.next_episode_to_air;  
-                    if (nextEpisode && nextEpisode.air_date) {  
-                        var daysLeft = Math.ceil((Lampa.Utils.parseToDate(nextEpisode.air_date).getTime() - Date.now()) / 86400000);  
-                        if (daysLeft > 0) {  
-                            hasNextEpisode = true;  
-                            nextEpisodeText = Lampa.Lang.translate('full_next_episode') + ': '  
-                                + Lampa.Utils.parseTime(nextEpisode.air_date).short + ' / '  
-                                + Lampa.Lang.translate('full_episode_days_left') + ': ' + daysLeft;  
-                        }  
-                    }  
-                    var serialParts = [];  
-                    if (tvStatus && !(tvStatus === 'Returning Series' && hasNextEpisode))  
-                        serialParts.push(tvStatusLabel(tvStatus));  
-                    if (totalSeasons > 0) {  
-                        var seasonsText = (currentSeason > 0 && currentSeason < totalSeasons)  
-                            ? currentSeason + '/' + totalSeasons  
-                            : totalSeasons;  
-                        serialParts.push(Lampa.Lang.translate('title_seasons') + ': ' + seasonsText);  
-                    }  
-                    if (totalEpisodes > 0) {  
-                        var episodesText = (airedTotal > 0 && airedTotal < totalEpisodes)  
-                            ? airedTotal + '/' + totalEpisodes  
-                            : totalEpisodes;  
-                        serialParts.push(Lampa.Lang.translate('title_episodes') + ': ' + episodesText);  
-                    }  
-                    if (hasNextEpisode) serialParts.push(nextEpisodeText);  
-                    if (serialParts.length) serialEl = $('<span class="fsc-serial-badge"></span>').text(serialParts.join(' \u2022 '));  
-                }  
-                var movieStatusEl = null;  
-                if (!isTv) {  
-                    var movieStatus = movie.status || '';  
-                    if (movieStatus && movieStatus.toLowerCase() !== 'released') {  
-                        var movieParts = [tvStatusLabel(movieStatus)];  
-                        if (movie.release_date) movieParts.push(Lampa.Utils.parseTime(movie.release_date).short);  
-                        movieStatusEl = $('<span class="fsc-serial-badge"></span>').text(movieParts.join(' \u2022 '));  
-                    }  
-                }  
-                var reactEl = buildReactionsEl(e.data && e.data.reactions);  
-                var main = $('<div class="fsc-main"></div>');  
-                main.append(title);  
-                if (isTv && serialEl)  
-                    main.append($('<div class="fsc-center-row"></div>').append(serialEl));  
-                else if (!isTv && movieStatusEl)  
-                    main.append($('<div class="fsc-center-row"></div>').append(movieStatusEl));  
-                main.append($('<div class="fsc-center-row"></div>').append(infoEl));  
-                main.append(buttons);  
-                right.find('.fsc-main, .fsc-reactions-badge, .fsc-poster-fallback, .fsc-person-col').remove();  
-                right.append(main);  
-                if (reactEl) right.append(reactEl);  
-                var lastButton = buttons.find('.selector').last();  
-                var personCol = buildPersonColumn(e.data && e.data.persons, lastButton);  
-                if (personCol) right.append(personCol);  
-                if (!movie.backdrop_path && movie.poster_path)  
-                    right.prepend($('<img class="fsc-poster-fallback">').attr('src', Lampa.TMDB.image('t/p/original' + movie.poster_path)));  
-                if (movie.id) {  
-                    var rawHtml = title.html();  
-                    var titleText = title.text().trim();  
-                    var formatted = formatTitle(titleText);  
-                    var origHtml = formatted !== null ? formatted : rawHtml;  
-                    if (formatted !== null) { title.html(origHtml); title.addClass('fsc-title-split'); }  
-                    function applyLogo(url) {  
-                        title.html('<img class="fsc-logo" src="' + url + '" alt="">');  
-                        title.removeClass('fsc-title-split');  
-                    }  
-                    var cacheKey = mediaType + '_' + movie.id;  
-                    if (logoCache[cacheKey] !== undefined) {  
-                        if (logoCache[cacheKey]) applyLogo(logoCache[cacheKey]);  
-                    } else {  
-                        var logoUrl = Lampa.TMDB.api(mediaType + '/' + movie.id + '/images?api_key=' + Lampa.TMDB.key() + '&language=ru&include_image_language=ru');  
-                        network.silent(logoUrl, function(data) {  
-                            if (currentToken !== token) return;  
-                            var logos = (data.logos || []).filter(function(l) { return l.file_path && l.file_path.slice(-4) !== '.svg' && l.iso_639_1 === 'ru'; });  
-                            logos.sort(function(a, b) { return b.vote_average - a.vote_average; });  
-                            if (logoCacheSize > 200) { logoCache = {}; logoCacheSize = 0; }  
-                            logoCache[cacheKey] = logos.length ? Lampa.TMDB.image('t/p/original' + logos[0].file_path) : null;  
-                            logoCacheSize++;  
-                            if (logoCache[cacheKey]) applyLogo(logoCache[cacheKey]);  
-                        }, function() {}, false, { cache: { life: 1440 } });  
-                    }  
-                }  
-                if (fullComp.scroll && !fullComp.scroll._fscWrapped) {  
-                    fullComp.scroll._fscWrapped = true;  
-                    var origOnScroll = fullComp.scroll.onScroll;  
-                    fullComp.scroll.onScroll = function(pos) {  
-                        if (origOnScroll) origOnScroll(pos);  
-                        $('body').toggleClass('fsc--scrolled', pos > 30);  
-                    };  
-                }  
-            }, 0);  
-        });  
-        Lampa.Listener.follow('activity', function(e) {  
-            if (e.type === 'archive' && e.component === 'full') {  
-                $('body').addClass('fsc--open').removeClass('fsc--scrolled');  
-                if (!Lampa.Storage.field('card_interfice_cover')) $('body').removeClass('card--no-cover');  
-                currentFullComp = e.object && e.object.activity && e.object.activity.component;  
-            }  
-            if (e.type === 'destroy' && e.component === 'full') {  
-                clearTimeout(fullTimer);  
-                clearTimeout(kpTimer);  
-                clearTimeout(qualityTimer);  
-                var destroyedComp = e.object && e.object.activity && e.object.activity.component;  
-                if (destroyedComp && destroyedComp.scroll) destroyedComp.scroll._fscWrapped = false;  
-                if (destroyedComp === currentFullComp) {  
-                    currentToken = null;  
-                    currentFullComp = null;  
-                    $('body').removeClass('fsc--open fsc--scrolled');  
-                    if (!Lampa.Storage.field('card_interfice_cover')) $('body').addClass('card--no-cover');  
-                }  
+            // Если контроллер 'full_start' уже активен (toggle() уже отработал),  
+            // добавляем новые элементы в его коллекцию вручную  
+            if (Lampa.Controller.enabled && Lampa.Controller.enabled().name === 'full_start'){  
+                Lampa.Controller.collectionAppend(col.find('.selector'));  
             }  
         });  
     }  
+  
     if (window.appready) init();  
-    else Lampa.Listener.follow('app', function(e) { if (e.type === 'ready') init(); });  
+    else Lampa.Listener.follow('app', function(e){ if (e.type === 'ready') init(); });  
 })();
