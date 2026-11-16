@@ -1,14 +1,24 @@
+// trailers_ru.js — плагин для Lampa  
 (function () {  
     'use strict';  
   
     var manifest = {  
         type: 'video',  
-        version: '1.0.0',  
+        version: '1.1.0',  
         name: 'Трейлеры RU',  
-        description: 'Поиск русских трейлеров на YouTube'  
+        description: 'Поиск русских трейлеров на YouTube (Piped + Invidious)'  
     };  
   
-    // Публичные Invidious-инстансы; если один не отвечает — берём следующий  
+    // Основной источник — Piped  
+    var PIPED = [  
+        'https://pipedapi.kavin.rocks',  
+        'https://pipedapi.adminforge.de',  
+        'https://api.piped.private.coffee',  
+        'https://pipedapi.reallyaweso.me',  
+        'https://pipedapi.leptons.xyz'  
+    ];  
+  
+    // Фолбэк — Invidious  
     var INVIDIOUS = [  
         'https://inv.nadeko.net',  
         'https://invidious.nerdvpn.de',  
@@ -16,18 +26,60 @@
         'https://invidious.f5.si'  
     ];  
   
+    // Приводим ответ Piped к единому формату  
+    function parsePiped(json) {  
+        var items = (json && json.items) || [];  
+  
+        return items.filter(function (v) {  
+            return v.type === 'stream' && v.url && v.url.indexOf('v=') > -1;  
+        }).slice(0, 5).map(function (v) {  
+            return {  
+                videoId: v.url.split('v=')[1].split('&')[0],  
+                title: v.title,  
+                author: v.uploaderName,  
+                publishedText: v.uploadedDate  
+            };  
+        });  
+    }  
+  
+    // Приводим ответ Invidious к единому формату  
+    function parseInvidious(json) {  
+        return (json || []).filter(function (v) {  
+            return v.type === 'video' && v.videoId;  
+        }).slice(0, 5).map(function (v) {  
+            return {  
+                videoId: v.videoId,  
+                title: v.title,  
+                author: v.author,  
+                publishedText: v.publishedText  
+            };  
+        });  
+    }  
+  
     function searchYouTube(query, oncomplite, onerror, index) {  
         index = index || 0;  
   
-        if (index >= INVIDIOUS.length) return onerror();  
+        var url, parser;  
   
-        var url = INVIDIOUS[index] + '/api/v1/search?q=' +  
-            encodeURIComponent(query) + '&type=video&region=RU';  
+        if (index < PIPED.length) {  
+            url = PIPED[index] + '/search?q=' + encodeURIComponent(query) + '&filter=videos';  
+            parser = parsePiped;  
+        } else if (index - PIPED.length < INVIDIOUS.length) {  
+            url = INVIDIOUS[index - PIPED.length] + '/api/v1/search?q=' +  
+                encodeURIComponent(query) + '&type=video&region=RU';  
+            parser = parseInvidious;  
+        } else {  
+            return onerror();  
+        }  
   
         Lampa.Network.silent(url, function (json) {  
-            var items = (json || []).filter(function (v) {  
-                return v.type === 'video' && v.videoId;  
-            }).slice(0, 5);  
+            var items;  
+  
+            try {  
+                items = parser(json);  
+            } catch (e) {  
+                items = [];  
+            }  
   
             if (items.length) oncomplite(items);  
             else searchYouTube(query, oncomplite, onerror, index + 1);  
@@ -47,14 +99,13 @@
         searchYouTube(query, function (videos) {  
             var items = videos.map(function (v) {  
                 return {  
-                    title: Lampa.Utils.shortText(v.title || '', 60),  
+                    title: (v.title || '').slice(0, 80),  
                     subtitle: (v.author || '') + (v.publishedText ? ' — ' + v.publishedText : ''),  
                     id: v.videoId,  
                     url: 'https://www.youtube.com/watch?v=' + v.videoId,  
                     youtube: true,  
                     icon: '<img class="size-youtube" src="https://img.youtube.com/vi/' + v.videoId + '/default.jpg" />',  
-                    template: 'selectbox_icon',  
-                    thumbnail: 'https://img.youtube.com/vi/' + v.videoId + '/default.jpg'  
+                    template: 'selectbox_icon'  
                 };  
             });  
   
